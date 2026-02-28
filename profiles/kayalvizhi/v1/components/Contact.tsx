@@ -1,5 +1,5 @@
 const BASE_URL = import.meta.env.BASE_URL ?? "/";
-const RESUME_PDF = `${BASE_URL}profiles/kayalvizhi/resume.pdf`;
+const RESUME_PDF = `${BASE_URL}profiles/_public/kayalvizhi/resume.pdf`;
 
 export function Contact() {
   return (

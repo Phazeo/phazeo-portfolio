@@ -18,5 +18,5 @@ export const seo: ProfileSeo = {
   title: "Sriram S M | Generative AI Developer | TCS",
   description:
     "Sriram S M - Generative AI Developer with 2 years experience. Agentic AI, RAG, LLMs. Designing end-to-end GenAI solutions at Tata Consultancy Services.",
-  ogImage: "profiles/sriram/profile-photo.jpg",
+  ogImage: "profiles/_public/sriram/profile-photo.jpg",
 };

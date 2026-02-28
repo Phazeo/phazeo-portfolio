@@ -4,6 +4,7 @@ import { DEFAULT_THEME, getActiveProfileVersion, getActiveVersion } from "../typ
 import { kayalvizhiConfig } from "../profiles/kayalvizhi/meta";
 import { sriramConfig } from "../profiles/sriram/meta";
 import { testerRobotConfig } from "../profiles/tester-robot/meta";
+import { yokeshwarConfig } from "../profiles/yokeshwar/meta";
 
 /**
  * Central registry of all profiles in this repo.
@@ -16,6 +17,7 @@ export const profileRegistry: ProfileRegistry = {
   kayalvizhi: kayalvizhiConfig,
   sriram: sriramConfig,
   "tester-robot": testerRobotConfig,
+  yokeshwar: yokeshwarConfig,
 };
 
 export function getProfile(slug: string): ProfileConfig | undefined {
