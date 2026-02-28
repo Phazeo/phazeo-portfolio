@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+# Strip Cursor co-author from commit message
+msgfile="$1"
+[ -z "$msgfile" ] || [ ! -f "$msgfile" ] && exit 0
+tmp=$(mktemp) && grep -vi 'Co-authored-by:.*cursor' "$msgfile" > "$tmp" && mv "$tmp" "$msgfile"
+rm -f "$tmp"
+exit 0

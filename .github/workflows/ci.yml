@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Quality check (lint + typecheck)
+        run: pnpm quality
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Build failed: dist directory not found"
+            exit 1
+          fi
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ Build failed: index.html not found"
+            exit 1
+          fi
+          echo "✅ Build verification successful"
+          ls -lah dist/
