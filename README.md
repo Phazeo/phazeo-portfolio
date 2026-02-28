@@ -9,7 +9,7 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:5173 to preview profiles locally.
+Open http://localhost:5173 to preview profiles locally. Profiles use the `componentLoader` pattern for lazy loading—each profile is loaded on demand when visited.
 
 ## Structure
 
@@ -19,8 +19,9 @@ phazeo-portfolio-profiles/
 │   └── <slug>/
 │       ├── meta.ts     # ProfileConfig (slug, displayName, role, versions, etc.)
 │       └── v1/
-│           ├── index.tsx   # Main component + profileVersion export
-│           ├── theme.ts    # Theme + SEO
+│           ├── index.tsx      # Exports componentLoader, theme, seo (enables lazy loading)
+│           ├── ProfilePage.tsx # Default export: the actual portfolio UI
+│           ├── theme.ts       # Theme + SEO
 │           └── components/
 ├── types/              # Shared types (ProfileConfig, ProfileVersion, etc.)
 ├── src/                # Dev server (Vite + React Router)
@@ -36,16 +37,19 @@ phazeo-portfolio-profiles/
 
 1. Create `profiles/<slug>/meta.ts` with `ProfileConfig`
 2. Create `profiles/<slug>/v1/theme.ts` with theme and SEO
-3. Create `profiles/<slug>/v1/index.tsx` exporting `profileVersion`
-4. Add components in `profiles/<slug>/v1/components/`
-5. Import and register in `src/registry.ts`
+3. Create `profiles/<slug>/v1/ProfilePage.tsx` with your portfolio component (default export)
+4. Create `profiles/<slug>/v1/index.tsx` exporting `profileVersion` with `componentLoader: () => import("./ProfilePage")`, `theme`, and `seo`
+5. Add components in `profiles/<slug>/v1/components/`
+6. Import and register in `src/registry.ts`
+
+The `componentLoader` pattern enables lazy loading so each profile is loaded on demand when visited.
 
 See `profiles/sriram/` for a complete example.
 
 ## Types
 
 - `ProfileConfig` – metadata (slug, displayName, role, skills, socials, versions)
-- `ProfileVersion` – `{ Component, theme, seo }`
+- `ProfileVersion` – `{ componentLoader, theme, seo }` (componentLoader enables per-profile code splitting)
 - `ProfileTheme` – CSS variables, optional font URL
 - `ProfileSeo` – title, description, ogImage
 

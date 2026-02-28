@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import type { ProfileTheme } from "../../types";
 import { DEFAULT_THEME, getActiveProfileVersion, getProfile, isValidSlug } from "../registry";
@@ -127,11 +127,12 @@ export function PortfolioPage() {
     return <NotFoundPage />;
   }
 
-  const { Component } = profileData.activeVersion;
+  const { componentLoader, Component } = profileData.activeVersion;
+  const LazyComponent = componentLoader ? lazy(componentLoader) : null;
 
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <Component />
+      {LazyComponent ? <LazyComponent /> : Component ? <Component /> : null}
     </Suspense>
   );
 }

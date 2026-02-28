@@ -19,10 +19,20 @@ export interface ProfileSeo {
 }
 
 /**
+ * Lazy loader for a profile component. Enables code splitting so each profile
+ * is loaded on demand when visited (e.g. /sriram loads only Sriram's chunk).
+ */
+export type ProfileComponentLoader = () => Promise<{ default: ComponentType }>;
+
+/**
  * A single version of a profile (v1, v2, etc.)
+ * Use componentLoader for lazy loading; Component is legacy.
  */
 export interface ProfileVersion {
-  Component: ComponentType;
+  /** Lazy loader for the React component (enables per-profile code splitting) */
+  componentLoader?: ProfileComponentLoader;
+  /** Legacy: direct component. Prefer componentLoader for new profiles. */
+  Component?: ComponentType;
   theme: ProfileTheme;
   seo?: ProfileSeo;
 }
