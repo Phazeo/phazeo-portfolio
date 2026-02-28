@@ -1,7 +1,9 @@
 import type { ProfileConfig, ProfileRegistry } from "../types";
 import { DEFAULT_THEME, getActiveProfileVersion, getActiveVersion } from "../types";
 
+import { kayalvizhiConfig } from "../profiles/kayalvizhi/meta";
 import { sriramConfig } from "../profiles/sriram/meta";
+import { testerRobotConfig } from "../profiles/tester-robot/meta";
 
 /**
  * Central registry of all profiles in this repo.
@@ -11,7 +13,9 @@ import { sriramConfig } from "../profiles/sriram/meta";
  * 3. Import and add to this registry
  */
 export const profileRegistry: ProfileRegistry = {
+  kayalvizhi: kayalvizhiConfig,
   sriram: sriramConfig,
+  "tester-robot": testerRobotConfig,
 };
 
 export function getProfile(slug: string): ProfileConfig | undefined {

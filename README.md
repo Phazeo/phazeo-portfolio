@@ -53,6 +53,18 @@ See `profiles/sriram/` for a complete example.
 
 The private `phazeo-portfolio` repo clones this repo at build time, merges the registry, and deploys. Your changes here are pulled in on the next deploy.
 
+### Auto-deploy on push to main
+
+The `trigger-deploy.yml` workflow calls Cloudflare's deploy hook when changes are pushed to `main`, so the live site rebuilds with the latest profiles.
+
+**Setup (one-time):** Add a GitHub secret in this repo:
+
+- **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+- Name: `CLOUDFLARE_DEPLOY_HOOK`
+- Value: the deploy hook URL from Cloudflare Pages (e.g. `https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/...`)
+
+Do not commit the URL. Keep it as a secret.
+
 ## License
 
 See [LICENSE](./LICENSE).

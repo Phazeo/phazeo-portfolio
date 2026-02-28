@@ -1,0 +1,14 @@
+name: Trigger portfolio deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  trigger:
+    name: Trigger Cloudflare deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deploy
+        run: |
+          curl -X POST -d "" "${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}"
