@@ -1,6 +1,6 @@
 # Phazeo Portfolio Profiles
 
-Public repository for portfolio profiles. External developers can add and edit profiles here without access to the private monorepo.
+Public repository for portfolio profiles. External developers can add and edit profiles here without needing access to the private monorepo.
 
 ## Quick Start
 
