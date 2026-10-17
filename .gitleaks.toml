@@ -1,0 +1,68 @@
+title = "phazeo-portfolio-profiles leak guard"
+
+[extend]
+useDefault = true
+
+# Fixture and tool paths are scanned only via scripts/check-leaks --self-test.
+[[allowlists]]
+description = "Leak-guard fixtures and local tool cache — never production content"
+paths = [
+  '''(^|/)test/leak-fixtures/''',
+  '''(^|/)\.tools/''',
+  '''(^|/)node_modules/''',
+  '''pnpm-lock\.yaml$''',
+]
+
+# --- IPv4: default-deny; only loopback, unspecified, RFC 5737 docs ranges ---
+[[rules]]
+id = "phazeo-ipv4-literal"
+description = "IPv4 literal — private and unexpected ranges fail; loopback/docs allowed"
+regex = '''\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\b'''
+
+[[rules.allowlists]]
+regexTarget = "match"
+regexes = [
+  '''^0\.0\.0\.0$''',
+  '''^127\.(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){2}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)$''',
+  '''^192\.0\.2\.(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d))$''',
+  '''^198\.51\.100\.(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d))$''',
+  '''^203\.0\.113\.(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d))$''',
+]
+
+# --- IPv6: default-deny; only ::1 and RFC 3849 (2001:db8::/32) ---
+[[rules]]
+id = "phazeo-ipv6-literal"
+description = "IPv6 literal — ULA/private fail; ::1 and documentation allowed"
+regex = '''(?i)\b(?:(?:[0-9a-f]{1,4}:){2,7}[0-9a-f]{1,4}|::1|::)\b'''
+
+[[rules.allowlists]]
+regexTarget = "match"
+regexes = [
+  '''(?i)^::1$''',
+  '''(?i)^::$''',
+  '''(?i)^2001:db8:''',
+]
+
+# --- Connection strings ---
+[[rules]]
+id = "phazeo-connection-string"
+description = "Database/message-broker connection string with credentials or host"
+regex = '''(?i)\b(?:postgres(?:ql)?|mysql|redis|mongodb(?:\+srv)?|amqp|amqps):\/\/[^\s"'`]+'''
+
+# --- Literal credential assignments ---
+[[rules]]
+id = "phazeo-credential-assignment"
+description = "password/passwd/secret/token/api_key assigned a quoted literal"
+regex = '''(?i)(?:password|passwd|secret|token|api[_-]?key)\s*[=:]\s*['"][^'"]{8,}['"]'''
+
+# --- Authorization headers ---
+[[rules]]
+id = "phazeo-authorization-header"
+description = "Authorization header with a bearer/basic literal"
+regex = '''(?i)(?:authorization)\s*[=:]\s*['"]?(?:bearer|basic)\s+[A-Za-z0-9+/=._-]{8,}'''
+
+# --- Private key blocks ---
+[[rules]]
+id = "phazeo-private-key-block"
+description = "PEM private key block"
+regex = '''-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'''

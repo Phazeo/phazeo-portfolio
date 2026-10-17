@@ -87,7 +87,7 @@ the Cloudflare deploy hook so the live site rebuilds with the latest profiles.
 
 - **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 - Name: `CLOUDFLARE_DEPLOY_HOOK`
-- Value: the deploy hook URL from Cloudflare Pages (e.g. `https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/...`)
+- Value: the deploy hook URL from Cloudflare Pages (Pages → project → Settings → Deploy hooks)
 
 Do not commit the URL. Keep it as a secret.
 

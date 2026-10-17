@@ -1,0 +1,16 @@
+# Reviewed allowlist for hostnames/URLs outside profile data files.
+# One host per line. Adding a host requires review.
+# Intentionally NOT listed: Cloudflare API hostnames (deploy hooks live in secrets).
+phazeo.com
+portfolio.phazeo.com
+github.com
+githubusercontent.com
+fonts.googleapis.com
+fonts.gstatic.com
+cdn.jsdelivr.net
+linkedin.com
+www.linkedin.com
+x.com
+twitter.com
+biomejs.dev
+www.w3.org
