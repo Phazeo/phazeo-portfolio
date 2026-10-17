@@ -151,5 +151,28 @@ if [ "$rc" -eq 0 ]; then
 fi
 echo "OK: commits binary-then-deleted failed as expected (exit $rc)"
 
+# --- --commits: executable bit from git mode (100755), even if later cleared ---
+echo "=== PROVE FAIL commits: executable-image-then-fixed ==="
+git reset -q --hard HEAD
+git clean -fdq
+# Minimal JPEG (SOI + EOI) — content is not a binary signature; mode is.
+printf '\377\330\377\331' >prove.jpg
+git add prove.jpg
+chmod +x prove.jpg
+git update-index --chmod=+x prove.jpg
+git commit -q -m "add executable image"
+chmod a-x prove.jpg
+git update-index --chmod=-x prove.jpg
+git commit -q -m "clear executable bit on image"
+set +e
+sh scripts/check-leaks --commits HEAD~2..HEAD
+rc=$?
+set -e
+if [ "$rc" -eq 0 ]; then
+  echo "PROVE FAILED: --commits over executable-image-then-fixed expected non-zero" >&2
+  exit 1
+fi
+echo "OK: commits executable-image-then-fixed failed as expected (exit $rc)"
+
 cd "$ROOT"
 echo "prove-leak-guard: all cases OK"
