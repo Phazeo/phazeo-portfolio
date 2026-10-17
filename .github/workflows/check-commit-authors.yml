@@ -26,6 +26,9 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: "24"
+          # This job only runs node scripts — no install. v5 defaults
+          # package-manager-cache:true from package.json and fails without pnpm.
+          package-manager-cache: false
 
       - name: Check commit messages and AI author emails
         env:
