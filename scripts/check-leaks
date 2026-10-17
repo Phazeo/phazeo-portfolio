@@ -107,13 +107,13 @@ run_path_scanners() {
       mkdir -p "$staged_tree/$dir"
       git -C "$ROOT" show ":$rel" >"$staged_tree/$rel" 2>/dev/null || cp "$ROOT/$rel" "$staged_tree/$rel"
     done <"$staged_list"
-    echo "check-leaks: forbidden files / GPS images (staged)..." >&2
+    echo "check-leaks: forbidden files / image metadata (staged)..." >&2
     node "$ROOT/scripts/check-forbidden-files.mjs" --root "$staged_tree"
     echo "check-leaks: host allowlist (staged)..." >&2
     node "$ROOT/scripts/check-hosts.mjs" --root "$staged_tree"
     return 0
   fi
-  echo "check-leaks: forbidden files / GPS images ($target)..." >&2
+  echo "check-leaks: forbidden files / image metadata ($target)..." >&2
   node "$ROOT/scripts/check-forbidden-files.mjs" --root "$target"
   echo "check-leaks: host allowlist ($target)..." >&2
   node "$ROOT/scripts/check-hosts.mjs" --root "$target"

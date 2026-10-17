@@ -1,5 +1,5 @@
-# Reviewed allowlist for hostnames/URLs outside profile data files.
-# One host per line. Adding a host requires review.
+# Reviewed allowlist for hostnames/URLs anywhere in the repository
+# (including profiles/ and reference/). One host per line. Adding a host requires review.
 # Intentionally NOT listed: Cloudflare API hostnames (deploy hooks live in secrets).
 phazeo.com
 portfolio.phazeo.com
