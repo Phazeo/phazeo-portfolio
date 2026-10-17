@@ -17,4 +17,11 @@ if echo "$NAME" | grep -Eqi 'cursor agent|github copilot|chatgpt|claude code'; t
   exit 1
 fi
 
+# Leak guard — staged changes only. Fail closed if gitleaks cannot be installed.
+if ! sh scripts/check-leaks --staged; then
+  echo "COMMIT BLOCKED: leak guard failed."
+  echo "Install hint: sh scripts/ensure-gitleaks.sh  (pinned binary + SHA-256 in scripts/gitleaks.pin)"
+  exit 1
+fi
+
 pnpm lint-staged

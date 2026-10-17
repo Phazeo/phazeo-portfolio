@@ -1,0 +1,2 @@
+# Fixture only — obviously fake private IP outside RFC 5737 documentation ranges.
+server_bind = 10.42.0.99
