@@ -62,6 +62,7 @@ export function CardContainer({
         className={`flex items-center justify-center ${containerClassName}`}
         style={{ perspective: "1000px" }}
       >
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: decorative pointer tilt/spotlight; no keyboard function lost */}
         <div
           ref={containerRef}
           onMouseMove={handleMouseMove}

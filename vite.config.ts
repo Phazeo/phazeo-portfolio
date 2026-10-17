@@ -22,7 +22,7 @@ export default defineConfig({
           groups: [
             {
               name: "vendor",
-              test: /node_modules\/(react|react-dom|react-router(?:-dom)?|motion)\//,
+              test: /node_modules\/(react|react-dom|react-router(?:-dom)?)\//,
             },
           ],
         },
