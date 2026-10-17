@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source "../../profiles/**/*.{js,ts,jsx,tsx}";
 @source "../../index.html";
+@source "../**/*.{js,ts,jsx,tsx}";
 
 @theme {
   --font-display: var(--font-heading), Inter, sans-serif;
@@ -78,5 +81,21 @@
   h5,
   h6 {
     font-family: var(--font-heading);
+  }
+}
+
+/* Dark mode: make brand-colored icons (GitHub, etc.) visible on dark backgrounds.
+   brightness(0) normalizes to black, invert(1) flips to white. */
+.dark .icon-dark-mode-invert {
+  filter: brightness(0) invert(1);
+}
+
+/* Animated gradient border sweep (activates on card hover) */
+@keyframes gradient-border-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
