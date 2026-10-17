@@ -26,6 +26,7 @@ export function SpotlightCard({
   };
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: decorative pointer tilt/spotlight; no keyboard function lost
     <div
       ref={divRef}
       onMouseMove={handleMouseMove}
