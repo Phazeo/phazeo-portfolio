@@ -1,7 +1,11 @@
+import reservedSlugsText from "../.github/reserved-slugs.txt?raw";
+import retiredSlugsText from "../.github/retired-slugs.txt?raw";
 import type { ProfileConfig, ProfileRegistry } from "../types";
 import { DEFAULT_THEME, getActiveProfileVersion, getActiveVersion } from "../types";
 
-const SLUG_PATTERN = /^[a-z][a-z0-9-]{1,38}$/;
+/** At least two hyphen-separated parts; max 40 chars. */
+export const SLUG_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)+$/;
+export const SLUG_MAX_LEN = 40;
 
 type MetaModule = {
   default?: ProfileConfig;
@@ -16,6 +20,21 @@ const metaModules = import.meta.glob("../profiles/*/meta.ts", { eager: true }) a
   string,
   MetaModule
 >;
+
+function parseSlugList(text: string): Set<string> {
+  const set = new Set<string>();
+  for (const line of text.split("\n")) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) {
+      continue;
+    }
+    set.add(t);
+  }
+  return set;
+}
+
+const RETIRED_SLUGS = parseSlugList(retiredSlugsText);
+const RESERVED_SLUGS = parseSlugList(reservedSlugsText);
 
 function folderNameFromGlobPath(path: string): string {
   const match = path.match(/\/profiles\/([^/]+)\/meta\.ts$/);
@@ -37,6 +56,27 @@ function resolveConfig(mod: MetaModule, folder: string): ProfileConfig {
   throw new Error(`registry: profiles/${folder}/meta.ts must export a ProfileConfig`);
 }
 
+export function assertValidSlug(slug: string, pathHint = slug): void {
+  if (slug.length > SLUG_MAX_LEN) {
+    throw new Error(`registry: slug "${slug}" exceeds ${SLUG_MAX_LEN} characters (${pathHint})`);
+  }
+  if (RETIRED_SLUGS.has(slug)) {
+    throw new Error(`registry: slug "${slug}" is retired (${pathHint})`);
+  }
+  if (RESERVED_SLUGS.has(slug)) {
+    throw new Error(`registry: slug "${slug}" is reserved (${pathHint})`);
+  }
+  const parts = slug.split("-");
+  if (parts.length < 2) {
+    throw new Error(
+      `registry: slug "${slug}" must have at least two hyphen-separated parts (${pathHint})`
+    );
+  }
+  if (!SLUG_PATTERN.test(slug)) {
+    throw new Error(`registry: slug "${slug}" must match ${SLUG_PATTERN} (${pathHint})`);
+  }
+}
+
 function buildRegistry(): ProfileRegistry {
   const registry: ProfileRegistry = {};
   const seenSlugs = new Map<string, string>();
@@ -52,8 +92,12 @@ function buildRegistry(): ProfileRegistry {
         `registry: folder "${folder}" must equal meta.slug "${config.slug}" (${path})`
       );
     }
-    if (!SLUG_PATTERN.test(config.slug)) {
-      throw new Error(`registry: slug "${config.slug}" must match ${SLUG_PATTERN} (${path})`);
+    assertValidSlug(config.slug, path);
+    if (!config.owner?.githubId || !config.owner?.githubLogin) {
+      throw new Error(`registry: profiles/${folder}/meta.ts missing owner`);
+    }
+    if (config.affiliation !== "team" && config.affiliation !== "guest") {
+      throw new Error(`registry: profiles/${folder}/meta.ts missing affiliation`);
     }
     const prior = seenSlugs.get(config.slug);
     if (prior) {

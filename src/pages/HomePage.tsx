@@ -119,10 +119,120 @@ function ThemeToggle() {
   );
 }
 
-export function HomePage() {
-  const profiles = getListedProfiles().sort((a, b) =>
+function sortProfiles(
+  list: ReturnType<typeof getListedProfiles>
+): ReturnType<typeof getListedProfiles> {
+  return [...list].sort((a, b) =>
     (a.displayName ?? "").localeCompare(b.displayName ?? "", undefined, { sensitivity: "base" })
   );
+}
+
+function ProfileCard({ profile }: { profile: ReturnType<typeof getListedProfiles>[number] }) {
+  const initials = profile.displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2);
+  const gradient = profile.avatarGradient ?? "from-violet-500 to-fuchsia-500";
+  const expYears = getExperienceYearsDisplay(profile);
+
+  return (
+    <Link to={`/${profile.slug}`} className="group relative block rounded-2xl overflow-hidden">
+      <div
+        className="absolute -inset-[2px] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:[animation:gradient-border-sweep_3s_linear_infinite]"
+        style={{
+          background: "conic-gradient(from 0deg, #06b6d4, #a855f7, #ec4899, #06b6d4)",
+        }}
+        aria-hidden="true"
+      />
+
+      <div className="relative m-[2px] rounded-2xl bg-white/90 dark:bg-white/6 backdrop-blur-xl border border-gray-200 dark:border-white/8 shadow-lg p-6 transition-colors">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <div
+              className={`w-14 h-14 shrink-0 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center text-white text-xl font-bold shadow-lg group-hover:scale-105 transition-transform`}
+            >
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                {profile.displayName}
+              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm text-gray-500 dark:text-zinc-400 truncate">
+                  {profile.role ?? "Professional Portfolio"}
+                </p>
+                {expYears && (
+                  <span
+                    className="inline-flex items-center justify-center min-w-8 h-5 px-2 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-700 dark:bg-cyan-400/20 dark:text-cyan-300"
+                    title={`${expYears.replace("+", "")} years of experience`}
+                  >
+                    {expYears}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          {profile.status && (
+            <div className="shrink-0 pt-1.5">
+              <StatusDot status={profile.status} />
+            </div>
+          )}
+        </div>
+
+        {profile.cardSummary ? (
+          <p className="mt-4 text-sm text-gray-600 dark:text-zinc-400 line-clamp-2">
+            {profile.cardSummary}
+          </p>
+        ) : null}
+
+        <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100 dark:border-white/8">
+          <SocialLinks socials={profile.socials} />
+          <span className="text-gray-400 dark:text-zinc-500 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all inline-flex">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function ProfileGroup({
+  title,
+  profiles,
+}: {
+  title: string;
+  profiles: ReturnType<typeof getListedProfiles>;
+}) {
+  if (profiles.length === 0) {
+    return null;
+  }
+  return (
+    <section className="mb-14">
+      <h2 className="text-sm font-semibold tracking-wide uppercase text-gray-500 dark:text-zinc-500 mb-6">
+        {title}
+      </h2>
+      <div className="grid gap-6 sm:grid-cols-2">
+        {profiles.map((profile) => (
+          <ProfileCard key={profile.slug} profile={profile} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function HomePage() {
+  const profiles = getListedProfiles();
+  const team = sortProfiles(profiles.filter((p) => p.affiliation === "team"));
+  const guests = sortProfiles(profiles.filter((p) => p.affiliation === "guest"));
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0a0a0f] text-gray-900 dark:text-white transition-colors">
@@ -138,94 +248,8 @@ export function HomePage() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          {profiles.map((profile) => {
-            const initials = profile.displayName
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .slice(0, 2);
-            const gradient = profile.avatarGradient ?? "from-violet-500 to-fuchsia-500";
-            const expYears = getExperienceYearsDisplay(profile);
-
-            return (
-              <Link
-                key={profile.slug}
-                to={`/${profile.slug}`}
-                className="group relative block rounded-2xl overflow-hidden"
-              >
-                <div
-                  className="absolute -inset-[2px] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:[animation:gradient-border-sweep_3s_linear_infinite]"
-                  style={{
-                    background: "conic-gradient(from 0deg, #06b6d4, #a855f7, #ec4899, #06b6d4)",
-                  }}
-                  aria-hidden="true"
-                />
-
-                <div className="relative m-[2px] rounded-2xl bg-white/90 dark:bg-white/6 backdrop-blur-xl border border-gray-200 dark:border-white/8 shadow-lg p-6 transition-colors">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div
-                        className={`w-14 h-14 shrink-0 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center text-white text-xl font-bold shadow-lg group-hover:scale-105 transition-transform`}
-                      >
-                        {initials}
-                      </div>
-                      <div className="min-w-0">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
-                          {profile.displayName}
-                        </h2>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm text-gray-500 dark:text-zinc-400 truncate">
-                            {profile.role ?? "Professional Portfolio"}
-                          </p>
-                          {expYears && (
-                            <span
-                              className="inline-flex items-center justify-center min-w-8 h-5 px-2 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-700 dark:bg-cyan-400/20 dark:text-cyan-300"
-                              title={`${expYears.replace("+", "")} years of experience`}
-                            >
-                              {expYears}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {profile.status && (
-                      <div className="shrink-0 pt-1.5">
-                        <StatusDot status={profile.status} />
-                      </div>
-                    )}
-                  </div>
-
-                  {profile.cardSummary ? (
-                    <p className="mt-4 text-sm text-gray-600 dark:text-zinc-400 line-clamp-2">
-                      {profile.cardSummary}
-                    </p>
-                  ) : null}
-
-                  <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100 dark:border-white/8">
-                    <SocialLinks socials={profile.socials} />
-                    <span className="text-gray-400 dark:text-zinc-500 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all inline-flex">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+        <ProfileGroup title="Team" profiles={team} />
+        <ProfileGroup title="Guests" profiles={guests} />
 
         {profiles.length === 0 && (
           <div className="text-center py-12">

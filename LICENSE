@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Profile content exception: personal portfolio content under profiles/*/ and
+matching assets under public/profiles/*/ (biographical text, experience and
+project write-ups, and similar materials) is not licensed under MIT and remains
+the profile owner's. See PROFILE-TERMS.md.
+

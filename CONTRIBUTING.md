@@ -9,12 +9,15 @@
 5. **Test** locally with `pnpm dev`
 6. **Open a PR** with your changes
 
-## Profile Slug
+## Profile Slug (address)
 
-- Use lowercase, hyphenated slug (e.g. `john-doe`)
-- Must be unique across all profiles
-- Do **not** reuse a slug that already exists on the private monorepo site
-  (public merge currently wins on collisions — avoid accidental overrides)
+- The address is the person's **full name as they write it**, lowercase and hyphenated
+  (e.g. `jane-doe`). Initials for a later part are accepted (e.g. `jane-d`).
+- Must match `^[a-z][a-z0-9]*(-[a-z0-9]+)+$`, max 40 characters, **at least two**
+  hyphen-separated parts.
+- Must not appear in `.github/retired-slugs.txt` or `.github/reserved-slugs.txt`.
+- Must be unique across all profiles. The repository owner approves the address.
+- Read [PROFILE-TERMS.md](./PROFILE-TERMS.md) before publishing anything personal.
 
 ## Required Files
 
@@ -27,7 +30,7 @@
 
 ## File Structure (Code Splitting)
 
-Each profile version uses a **componentLoader** pattern for lazy loading. This ensures each profile is loaded on demand when a user visits its URL (e.g. `/sriram` loads only Sriram's chunk, not everyone else's).
+Each profile version uses a **componentLoader** pattern for lazy loading. This ensures each profile is loaded on demand when a user visits its URL (e.g. `/sriram-sm` loads only that profile’s chunk, not everyone else’s).
 
 ```
 profiles/<slug>/
@@ -74,7 +77,7 @@ export default function SriramProfilePage() {
 }
 ```
 
-See `profiles/sriram/` for a complete example.
+See `profiles/sriram-sm/` for a complete example.
 
 ## Assets
 
@@ -88,7 +91,7 @@ See `profiles/sriram/` for a complete example.
 
 ## Guidelines
 
-- Follow existing patterns in `profiles/sriram/`
+- Follow existing patterns in `profiles/sriram-sm/`
 - Keep profiles self-contained; share only via `profiles/_shared/` when needed
 - Run `pnpm quality` before opening a PR
 

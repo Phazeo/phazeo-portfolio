@@ -1,0 +1,1 @@
+Depends on motion@14.3.0 and node 24.16.0

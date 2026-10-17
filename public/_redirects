@@ -1,1 +1,33 @@
+# Specific retired-slug redirects (single-hop 301) before the generic _public rule.
+/dinesh /dinesh-allimuthu 301
+/dinesh/* /dinesh-allimuthu/:splat 301
+/profiles/dinesh/* /profiles/dinesh-allimuthu/:splat 301
+/profiles/_public/dinesh/* /profiles/dinesh-allimuthu/:splat 301
+
+/sowmipriya /sowmipriya-rajendiran 301
+/sowmipriya/* /sowmipriya-rajendiran/:splat 301
+/profiles/sowmipriya/* /profiles/sowmipriya-rajendiran/:splat 301
+/profiles/_public/sowmipriya/* /profiles/sowmipriya-rajendiran/:splat 301
+
+/sriram /sriram-sm 301
+/sriram/* /sriram-sm/:splat 301
+/profiles/sriram/* /profiles/sriram-sm/:splat 301
+/profiles/_public/sriram/* /profiles/sriram-sm/:splat 301
+
+/kayalvizhi /kayalvizhi-sm 301
+/kayalvizhi/* /kayalvizhi-sm/:splat 301
+/profiles/kayalvizhi/* /profiles/kayalvizhi-sm/:splat 301
+/profiles/_public/kayalvizhi/* /profiles/kayalvizhi-sm/:splat 301
+
+/yokeshwar /yokeshwar-vs 301
+/yokeshwar/* /yokeshwar-vs/:splat 301
+/profiles/yokeshwar/* /profiles/yokeshwar-vs/:splat 301
+/profiles/_public/yokeshwar/* /profiles/yokeshwar-vs/:splat 301
+
+/tester-robot / 301
+/tester-robot/* /:splat 301
+/profiles/tester-robot/* /:splat 301
+/profiles/_public/tester-robot/* /:splat 301
+
+# Legacy private-monorepo asset prefix → public layout
 /profiles/_public/* /profiles/:splat 301
