@@ -1,0 +1,2 @@
+# ULA IPv6, must FAIL
+bind = fd12:3456:789a::1

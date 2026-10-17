@@ -1,0 +1,2 @@
+# time-like, must NOT trip IPv6 rule
+schedule = 10:30:00

@@ -1,0 +1,59 @@
+# Leak guard — single entry point scripts/check-leaks on every PR and push.
+name: Leak guard
+
+on:
+  pull_request:
+  push:
+
+concurrency:
+  group: leak-guard-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  leak-guard:
+    name: check-leaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        # actions/checkout@v5.1.0 (tag v5 → this commit)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        # actions/setup-node@v5 (tag v5 → this commit)
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Wiring test (only scripts/check-leaks)
+        run: node scripts/test-leak-guard-wiring.mjs
+
+      - name: Scan PR commits
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.sha }}
+        run: sh scripts/check-leaks --commits "origin/${BASE_REF}..${HEAD_SHA}"
+
+      - name: Scan push commits
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            sh scripts/check-leaks --history
+            # Also walk each commit reachable from HEAD when before is unknown.
+            sh scripts/check-leaks --commits "${HEAD_SHA}"
+          else
+            sh scripts/check-leaks --commits "${BEFORE}..${HEAD_SHA}"
+          fi
+
+      - name: Scan full working tree
+        run: sh scripts/check-leaks --tree
