@@ -99,10 +99,10 @@ This repository is **public**. Treat every commit as visible forever.
 Never commit:
 
 - **Internal IPs** — private ranges (`10/8`, `172.16/12`, `192.168/16`, `fc00::/7`) or other non-documentation literals. Loopback, `0.0.0.0`, and RFC 5737 / RFC 3849 documentation ranges are the only IP literals the gate allows.
-- **Unreviewed hosts/URLs** — outside profile data files (`profiles/<slug>/…`), every hostname must appear in `.github/allowed-hosts.txt`. Do not add Cloudflare API (or other unreviewed) hosts without review.
+- **Unreviewed hosts/URLs** — every hostname anywhere (including `profiles/` and `reference/`) must appear in `.github/allowed-hosts.txt`. Do not add Cloudflare API (or other unreviewed) hosts without review.
 - **Credentials** — connection strings, password/token/api_key literals, `Authorization` headers, private key blocks, cloud tokens.
 - **Internal architecture details** that would help an attacker (private hostnames, VPN endpoints, runner IPs, deploy secrets).
-- **Location metadata** — JPEG/PNG/WebP under `public/` must not carry GPS EXIF/XMP. Strip GPS before adding images.
+- **Image metadata** — JPEG/PNG/WebP/GIF anywhere must not carry EXIF or XMP (including orientation-only EXIF). Strip metadata before adding images.
 - **Forbidden filenames** — `.env*`, `*.pem` / `*.key` / `*.p12` / `*.pfx`, `id_rsa*` / `id_ed25519*`, `*.tfstate*`, `*.sqlite*` / `*.db` / `*.dump`, `docker-compose*.yml`, nginx/caddy configs, `*.kdbx`.
 
 Run the single entry point before you push (also runs on husky pre-commit for staged changes, and in CI):

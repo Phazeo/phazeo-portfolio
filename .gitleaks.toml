@@ -10,6 +10,7 @@ paths = [
   '''(^|/)test/leak-fixtures/''',
   '''(^|/)\.tools/''',
   '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
   '''pnpm-lock\.yaml$''',
 ]
 
@@ -30,10 +31,12 @@ regexes = [
 ]
 
 # --- IPv6: default-deny; only ::1 and RFC 3849 (2001:db8::/32) ---
+# Require a real IPv6 shape so time-like values (e.g. 10:30:00) do not match:
+# compressed form with "::", or full 8 groups, or at least one a-f hex letter.
 [[rules]]
 id = "phazeo-ipv6-literal"
 description = "IPv6 literal — ULA/private fail; ::1 and documentation allowed"
-regex = '''(?i)\b(?:(?:[0-9a-f]{1,4}:){2,7}[0-9a-f]{1,4}|::1|::)\b'''
+regex = '''(?i)\b(?:(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}|(?:[0-9a-f]{0,4}:){1,7}:[0-9a-f]{0,4}|:(?::[0-9a-f]{1,4}){1,7}|(?:[0-9a-f]*[a-f][0-9a-f]{0,3}:){1,7}[0-9a-f]{1,4})\b'''
 
 [[rules.allowlists]]
 regexTarget = "match"

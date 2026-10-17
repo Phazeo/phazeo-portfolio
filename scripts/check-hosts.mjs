@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * Default-deny hostname scanner for non-profile files.
- * Profile data under profiles/<slug>/ (not _shared) is skipped.
+ * Default-deny hostname scanner for the whole tree (including profiles/).
  * Never prints full URLs that might embed secrets - host + file:line only.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -16,7 +15,6 @@ const SKIP_DIR = new Set([".git", "node_modules", ".tools", "dist", "test/leak-f
 const TEXT_EXT =
   /\.(md|mdx|txt|ts|tsx|js|jsx|mjs|cjs|json|yml|yaml|toml|html|css|svg|sh|mjs|cjs|env|example|gitignore|npmrc|editorconfig)$/i;
 
-// Rough host extractor - does not print the full match.
 // Bare "//" is omitted: it false-positives on JavaScript regex literals like /\/\//i.test(...).
 const HOST_RE =
   /(?:https?|wss?):\/\/([a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+)/gi;
@@ -42,16 +40,6 @@ function loadAllowlist() {
     hosts.add(t);
   }
   return hosts;
-}
-
-function isProfileDataPath(rel) {
-  const norm = rel.split(sep).join("/");
-  // profiles/_shared is shared code - scan it.
-  if (norm.startsWith("profiles/_shared/")) return false;
-  if (/^profiles\/[^/_][^/]*\//.test(norm)) return true;
-  // reference/<slug>/ holds profile samples - treat as profile data.
-  if (/^reference\/[^/_][^/]*\//.test(norm)) return true;
-  return false;
 }
 
 function shouldSkipDir(rel) {
@@ -85,7 +73,6 @@ function* walk(dir, base, includeFixtures) {
 function hostAllowed(host, allow) {
   const h = host.toLowerCase();
   if (allow.has(h)) return true;
-  // Allow subdomains of an allowlisted registrable-ish suffix when listed without www.
   for (const a of allow) {
     if (h === a || h.endsWith(`.${a}`)) return true;
   }
@@ -103,7 +90,6 @@ function main() {
 
   for (const root of args.roots) {
     for (const { abs, rel } of walk(root, root, args.includeFixtures)) {
-      if (isProfileDataPath(rel)) continue;
       const base = rel.split(sep).pop() ?? "";
       if (!(TEXT_EXT.test(base) || base === "Dockerfile" || !base.includes("."))) {
         if (!TEXT_EXT.test(rel)) continue;
@@ -114,7 +100,6 @@ function main() {
       } catch {
         continue;
       }
-      // Skip binary-ish
       if (text.includes("\0")) continue;
       const lines = text.split(/\r?\n/);
       for (let i = 0; i < lines.length; i++) {

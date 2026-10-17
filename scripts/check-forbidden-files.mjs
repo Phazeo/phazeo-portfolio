@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Fail on forbidden filenames and GPS EXIF/XMP in JPEG/PNG/WebP under public/.
- * No new dependencies - pure Node buffer scans for GPS markers.
- * Never prints secret or EXIF coordinate values.
+ * Fail on forbidden filenames and any EXIF/XMP metadata in JPEG/PNG/WebP/GIF
+ * anywhere in the tree (rule id: image-metadata).
+ * Pure Node container parsers over the whole file. Never prints EXIF values.
  */
-import { createReadStream, existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,7 +23,7 @@ const SKIP_DIR = new Set([
   "test/leak-fixtures",
 ]);
 
-const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif"]);
 
 function parseArgs(argv) {
   const out = { roots: [], includeFixtures: false, reportImages: false };
@@ -83,80 +83,173 @@ function isForbiddenPath(rel) {
   return false;
 }
 
-/** Read up to max bytes. */
-async function readHead(path, max = 512 * 1024) {
-  const chunks = [];
-  let total = 0;
-  const stream = createReadStream(path, { start: 0, end: max - 1 });
-  for await (const chunk of stream) {
-    chunks.push(chunk);
-    total += chunk.length;
-    if (total >= max) break;
-  }
-  return Buffer.concat(chunks, total);
+function looksLikeXmp(buf) {
+  const n = Math.min(buf.length, 512);
+  const head = buf.toString("latin1", 0, n);
+  // Avoid http(s):// host literals in this source file (host scanner).
+  return (
+    head.includes("ns.adobe.com/xap/") ||
+    head.includes("adobe:ns:meta") ||
+    head.includes("<x:xmpmeta") ||
+    head.includes("xmlns:xmp=")
+  );
 }
 
-/**
- * Detect GPS metadata without decoding coordinates.
- * JPEG: EXIF IFD0 tag 0x8825 (GPSInfo) or XMP gps namespace.
- * PNG: eXIf chunk or XMP gps.
- * WebP: EXIF chunk or XMP gps.
- */
-function hasGpsMetadata(buf, ext) {
-  if (buf.length < 12) return false;
-  const lower = buf.toString("latin1").toLowerCase();
-  if (
-    lower.includes("exif:gps") ||
-    lower.includes("gpslatitude") ||
-    lower.includes("gpslongitude") ||
-    lower.includes("xmlns:gps=") ||
-    lower.includes("/gps/")
-  ) {
-    return true;
-  }
-
-  if (ext === ".jpg" || ext === ".jpeg") {
-    // APP1 Exif + GPS IFD tag 0x8825 as big/little endian
-    if (buf[0] !== 0xff || buf[1] !== 0xd8) return false;
-    for (let i = 0; i < buf.length - 10; i++) {
-      if (buf[i] === 0xff && buf[i + 1] === 0xe1) {
-        const marker = buf.toString("ascii", i + 4, i + 8);
-        if (marker === "Exif") {
-          // Search for GPS IFD pointer tag inside EXIF
-          for (let j = i; j < Math.min(buf.length - 1, i + 65535); j++) {
-            // tag 0x8825 little-endian: 25 88 ; big-endian: 88 25
-            if (
-              (buf[j] === 0x25 && buf[j + 1] === 0x88) ||
-              (buf[j] === 0x88 && buf[j + 1] === 0x25)
-            ) {
-              return true;
-            }
-          }
-        }
+/** JPEG: walk markers; APP1 Exif\0\0 or XMP packet. */
+function jpegHasMetadata(buf) {
+  if (buf.length < 4 || buf[0] !== 0xff || buf[1] !== 0xd8) return false;
+  let i = 2;
+  while (i + 3 < buf.length) {
+    if (buf[i] !== 0xff) {
+      i += 1;
+      continue;
+    }
+    const marker = buf[i + 1];
+    if (marker === 0xd9 || marker === 0xda) break;
+    if (marker === 0x00 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+      i += 2;
+      continue;
+    }
+    if (i + 3 >= buf.length) break;
+    const segLen = buf.readUInt16BE(i + 2);
+    if (segLen < 2 || i + 2 + segLen > buf.length) break;
+    const payload = buf.subarray(i + 4, i + 2 + segLen);
+    if (marker === 0xe1) {
+      if (
+        payload.length >= 6 &&
+        payload.toString("ascii", 0, 4) === "Exif" &&
+        payload[4] === 0x00 &&
+        payload[5] === 0x00
+      ) {
+        return true;
       }
+      if (looksLikeXmp(payload)) return true;
+    } else if (marker >= 0xe0 && marker <= 0xef) {
+      if (looksLikeXmp(payload)) return true;
     }
+    i += 2 + segLen;
+  }
+  return false;
+}
+
+/** PNG: eXIf chunk, or text chunks carrying XMP. */
+function pngHasMetadata(buf) {
+  if (buf.length < 8) return false;
+  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (!buf.subarray(0, 8).equals(sig)) return false;
+  let i = 8;
+  while (i + 12 <= buf.length) {
+    const len = buf.readUInt32BE(i);
+    const type = buf.toString("ascii", i + 4, i + 8);
+    const dataStart = i + 8;
+    const dataEnd = dataStart + len;
+    if (dataEnd + 4 > buf.length) break;
+    const data = buf.subarray(dataStart, dataEnd);
+    if (type === "eXIf") return true;
+    if (type === "iTXt" || type === "tEXt" || type === "zTXt") {
+      const keywordEnd = data.indexOf(0);
+      const keyword =
+        keywordEnd >= 0 ? data.toString("latin1", 0, keywordEnd) : data.toString("latin1");
+      if (keyword === "XML:com.adobe.xmp" || keyword.toLowerCase().includes("xmp")) return true;
+      if (looksLikeXmp(data)) return true;
+    }
+    if (type === "IEND") break;
+    i = dataEnd + 4;
+  }
+  return false;
+}
+
+/** WebP: EXIF / XMP chunks. */
+function webpHasMetadata(buf) {
+  if (buf.length < 16) return false;
+  if (buf.toString("ascii", 0, 4) !== "RIFF" || buf.toString("ascii", 8, 12) !== "WEBP") {
     return false;
   }
-
-  if (ext === ".png") {
-    // Look for eXIf chunk type
-    for (let i = 8; i < buf.length - 8; i++) {
-      if (buf.toString("ascii", i, i + 4) === "eXIf") return true;
+  let i = 12;
+  while (i + 8 <= buf.length) {
+    const fourcc = buf.toString("ascii", i, i + 4);
+    const size = buf.readUInt32LE(i + 4);
+    const dataStart = i + 8;
+    const dataEnd = dataStart + size;
+    if (dataEnd > buf.length) break;
+    if (fourcc === "EXIF" || fourcc === "exif" || fourcc === "XMP " || fourcc === "XMP\0") {
+      return true;
     }
-    return false;
+    const data = buf.subarray(dataStart, dataEnd);
+    if (looksLikeXmp(data)) return true;
+    i = dataEnd + (size % 2);
   }
+  return false;
+}
 
-  if (ext === ".webp") {
-    if (buf.toString("ascii", 0, 4) !== "RIFF" || buf.toString("ascii", 8, 12) !== "WEBP") {
-      return false;
+/** GIF: Application Extension carrying XMP. */
+function gifHasMetadata(buf) {
+  if (buf.length < 6) return false;
+  const header = buf.toString("ascii", 0, 6);
+  if (header !== "GIF87a" && header !== "GIF89a") return false;
+  let i = 6;
+  while (i + 2 < buf.length) {
+    const b = buf[i];
+    if (b === 0x3b) break; // trailer
+    if (b === 0x2c) {
+      // image descriptor
+      if (i + 10 > buf.length) break;
+      i += 10;
+      const packed = buf[i - 1];
+      if (packed & 0x80) {
+        const lzw = packed & 0x07;
+        i += 3 * 2 ** (lzw + 1);
+      }
+      if (i >= buf.length) break;
+      i += 1; // LZW min code size
+      while (i < buf.length) {
+        const block = buf[i];
+        i += 1;
+        if (block === 0) break;
+        i += block;
+      }
+      continue;
     }
-    for (let i = 12; i < buf.length - 4; i++) {
-      const fourcc = buf.toString("ascii", i, i + 4);
-      if (fourcc === "EXIF" || fourcc === "exif") return true;
+    if (b === 0x21) {
+      const label = buf[i + 1];
+      i += 2;
+      if (label === 0xff && i + 11 <= buf.length) {
+        const ident = buf.toString("latin1", i, i + 8);
+        const auth = buf.toString("latin1", i + 8, i + 11);
+        i += 11;
+        if (ident.startsWith("XMP") || `${ident}${auth}`.includes("XMP")) {
+          return true;
+        }
+        // drain data sub-blocks; inspect for XMP packet
+        const chunks = [];
+        while (i < buf.length) {
+          const block = buf[i];
+          i += 1;
+          if (block === 0) break;
+          chunks.push(buf.subarray(i, i + block));
+          i += block;
+        }
+        if (looksLikeXmp(Buffer.concat(chunks))) return true;
+        continue;
+      }
+      while (i < buf.length) {
+        const block = buf[i];
+        i += 1;
+        if (block === 0) break;
+        i += block;
+      }
+      continue;
     }
-    return false;
+    i += 1;
   }
+  return false;
+}
 
+function hasImageMetadata(buf, ext) {
+  if (ext === ".jpg" || ext === ".jpeg") return jpegHasMetadata(buf);
+  if (ext === ".png") return pngHasMetadata(buf);
+  if (ext === ".webp") return webpHasMetadata(buf);
+  if (ext === ".gif") return gifHasMetadata(buf);
   return false;
 }
 
@@ -165,7 +258,7 @@ function extOf(rel) {
   return m ? `.${m[1].toLowerCase()}` : "";
 }
 
-async function main() {
+function main() {
   const args = parseArgs(process.argv.slice(2));
   const findings = [];
   const imageReport = [];
@@ -181,15 +274,7 @@ async function main() {
         continue;
       }
       const ext = extOf(rel);
-      const norm = rel.split(sep).join("/");
-      const rootNorm = root.split(sep).join("/");
-      const underPublic =
-        norm.startsWith("public/") ||
-        norm.includes("/public/") ||
-        rootNorm === "public" ||
-        rootNorm.endsWith("/public");
       if (!IMAGE_EXT.has(ext)) continue;
-      if (!underPublic && !args.reportImages && !args.includeFixtures) continue;
 
       let size = 0;
       try {
@@ -197,13 +282,18 @@ async function main() {
       } catch {
         continue;
       }
-      const head = await readHead(abs);
-      const gps = hasGpsMetadata(head, ext);
-      if (args.reportImages) {
-        imageReport.push({ file: rel, size, gps });
+      let buf;
+      try {
+        buf = readFileSync(abs);
+      } catch {
+        continue;
       }
-      if (gps && (underPublic || args.includeFixtures)) {
-        findings.push({ rule: "image-gps-metadata", file: rel, line: 1 });
+      const meta = hasImageMetadata(buf, ext);
+      if (args.reportImages) {
+        imageReport.push({ file: rel, size, metadata: meta });
+      }
+      if (meta) {
+        findings.push({ rule: "image-metadata", file: rel, line: 1 });
       }
     }
   }
@@ -214,7 +304,7 @@ async function main() {
         JSON.stringify({
           file: row.file,
           size: row.size,
-          gps: row.gps,
+          metadata: row.metadata,
         })
       );
     }
@@ -228,8 +318,4 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("check-forbidden-files: unexpected error");
-  console.error(err instanceof Error ? err.message : String(err));
-  process.exit(2);
-});
+main();
