@@ -48,9 +48,15 @@ jobs:
           HEAD_SHA: ${{ github.sha }}
         run: |
           if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            # New branch / unknown before: gitleaks over full history, path scanners
+            # only over commits not already on origin/main (avoids re-failing ancient
+            # main history that predates the host allowlist).
             sh scripts/check-leaks --history
-            # Also walk each commit reachable from HEAD when before is unknown.
-            sh scripts/check-leaks --commits "${HEAD_SHA}"
+            if git rev-parse --verify origin/main >/dev/null 2>&1; then
+              sh scripts/check-leaks --commits "origin/main..${HEAD_SHA}"
+            else
+              sh scripts/check-leaks --commits "${HEAD_SHA}"
+            fi
           else
             sh scripts/check-leaks --commits "${BEFORE}..${HEAD_SHA}"
           fi
