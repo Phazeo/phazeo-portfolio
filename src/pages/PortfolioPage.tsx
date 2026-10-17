@@ -1,9 +1,38 @@
-import { Suspense, lazy, useEffect, useMemo, useRef } from "react";
+import { type ComponentType, lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
-import type { ProfileTheme } from "../../types";
+import type { ProfileComponentLoader, ProfileTheme } from "../../types";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { DEFAULT_THEME, getActiveProfileVersion, getProfile, isValidSlug } from "../registry";
 
 import { NotFoundPage } from "./NotFoundPage";
+
+const ALLOWED_FONT_HOSTS = new Set(["fonts.googleapis.com", "fonts.gstatic.com"]);
+const lazyComponentCache = new Map<string, ComponentType>();
+
+function getLazyProfileComponent(
+  slug: string,
+  componentLoader: ProfileComponentLoader
+): ComponentType {
+  const cached = lazyComponentCache.get(slug);
+  if (cached) {
+    return cached;
+  }
+  const LazyComponent = lazy(componentLoader);
+  lazyComponentCache.set(slug, LazyComponent);
+  return LazyComponent;
+}
+
+function isAllowedFontUrl(fontUrl: string): boolean {
+  try {
+    const url = new URL(fontUrl);
+    if (url.protocol !== "https:") {
+      return false;
+    }
+    return ALLOWED_FONT_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
 
 function applyTheme(theme: ProfileTheme): () => void {
   const root = document.documentElement;
@@ -20,6 +49,12 @@ function applyTheme(theme: ProfileTheme): () => void {
 }
 
 function loadFont(fontUrl: string): () => void {
+  if (!isAllowedFontUrl(fontUrl)) {
+    return function noop() {
+      /* Untrusted font URL rejected */
+    };
+  }
+
   const linkId = `profile-font-${fontUrl.replace(/[^a-z0-9]/gi, "-")}`;
   if (document.getElementById(linkId)) {
     return function noop() {
@@ -39,25 +74,59 @@ function loadFont(fontUrl: string): () => void {
   };
 }
 
+function ensureMeta(selector: string, create: () => HTMLMetaElement): HTMLMetaElement {
+  const existing = document.querySelector(selector);
+  if (existing instanceof HTMLMetaElement) {
+    return existing;
+  }
+  const meta = create();
+  document.head.appendChild(meta);
+  return meta;
+}
+
 function applySeo(title: string, description: string, ogImage?: string): () => void {
   const originalTitle = document.title;
   const originalValues: Map<Element, string> = new Map();
-  const updateMeta = (selector: string, attribute: string, value: string) => {
-    const element = document.querySelector(selector);
-    if (element) {
-      originalValues.set(element, element.getAttribute(attribute) ?? "");
-      element.setAttribute(attribute, value);
-    }
+  const updateMeta = (
+    selector: string,
+    attribute: string,
+    value: string,
+    create: () => HTMLMetaElement
+  ) => {
+    const element = ensureMeta(selector, create);
+    originalValues.set(element, element.getAttribute(attribute) ?? "");
+    element.setAttribute(attribute, value);
   };
+
   document.title = title;
-  updateMeta('meta[name="description"]', "content", description);
-  updateMeta('meta[name="title"]', "content", title);
-  updateMeta('meta[property="og:title"]', "content", title);
-  updateMeta('meta[property="og:description"]', "content", description);
+  updateMeta('meta[name="description"]', "content", description, () => {
+    const meta = document.createElement("meta");
+    meta.name = "description";
+    return meta;
+  });
+  updateMeta('meta[name="title"]', "content", title, () => {
+    const meta = document.createElement("meta");
+    meta.name = "title";
+    return meta;
+  });
+  updateMeta('meta[property="og:title"]', "content", title, () => {
+    const meta = document.createElement("meta");
+    meta.setAttribute("property", "og:title");
+    return meta;
+  });
+  updateMeta('meta[property="og:description"]', "content", description, () => {
+    const meta = document.createElement("meta");
+    meta.setAttribute("property", "og:description");
+    return meta;
+  });
   if (ogImage) {
     const baseUrl = window.location.origin;
     const imagePath = import.meta.env.BASE_URL + ogImage;
-    updateMeta('meta[property="og:image"]', "content", `${baseUrl}${imagePath}`);
+    updateMeta('meta[property="og:image"]', "content", `${baseUrl}${imagePath}`, () => {
+      const meta = document.createElement("meta");
+      meta.setAttribute("property", "og:image");
+      return meta;
+    });
   }
   return () => {
     document.title = originalTitle;
@@ -69,7 +138,7 @@ function applySeo(title: string, description: string, ogImage?: string): () => v
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
+    <div className="min-h-screen flex items-center justify-center bg-(--color-background)">
       <div className="animate-pulse text-gray-500">Loading...</div>
     </div>
   );
@@ -88,6 +157,7 @@ export function PortfolioPage() {
       return null;
     }
     return {
+      slug,
       profile,
       activeVersion: getActiveProfileVersion(profile),
     };
@@ -128,11 +198,23 @@ export function PortfolioPage() {
   }
 
   const { componentLoader, Component } = profileData.activeVersion;
-  const LazyComponent = componentLoader ? lazy(componentLoader) : null;
+  const LazyComponent = componentLoader
+    ? getLazyProfileComponent(profileData.slug, componentLoader)
+    : null;
+
+  if (!LazyComponent && !Component) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-(--color-background) px-4">
+        <p className="text-gray-600">This profile has no renderable version.</p>
+      </div>
+    );
+  }
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      {LazyComponent ? <LazyComponent /> : Component ? <Component /> : null}
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingFallback />}>
+        {LazyComponent ? <LazyComponent /> : Component ? <Component /> : null}
+      </Suspense>
+    </ErrorBoundary>
   );
 }

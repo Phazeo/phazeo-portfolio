@@ -50,7 +50,7 @@ export function HomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <main className="min-h-screen bg-white text-gray-900">
       <div className="max-w-4xl mx-auto px-4 py-16 sm:py-24">
         <div className="text-center mb-16">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
@@ -72,42 +72,52 @@ export function HomePage() {
             const expYears = getExperienceYearsDisplay(profile);
 
             return (
-              <Link
+              <article
                 key={profile.slug}
-                to={`/${profile.slug}`}
-                className="group block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:border-gray-300 transition-all"
+                className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:shadow-lg hover:border-gray-300 transition-all"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div
-                      className={`w-14 h-14 flex-shrink-0 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-xl font-bold shadow-lg`}
-                    >
-                      {initials}
-                    </div>
-                    <div className="min-w-0">
-                      <h2 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                        {profile.displayName}
-                      </h2>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm text-gray-500 truncate">
-                          {profile.role ?? "Professional Portfolio"}
-                        </p>
-                        {expYears && (
-                          <span className="inline-flex items-center justify-center min-w-[2rem] h-5 px-2 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                            {expYears}
-                          </span>
+                <Link to={`/${profile.slug}`} className="block">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div
+                        className={`w-14 h-14 shrink-0 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center text-white text-xl font-bold shadow-lg`}
+                      >
+                        {initials}
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                          {profile.displayName}
+                        </h2>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm text-gray-500 truncate">
+                            {profile.role ?? "Professional Portfolio"}
+                          </p>
+                          {expYears && (
+                            <span className="inline-flex items-center justify-center min-w-8 h-5 px-2 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                              {expYears}
+                            </span>
+                          )}
+                        </div>
+                        {profile.cardSummary && (
+                          <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                            {profile.cardSummary}
+                          </p>
                         )}
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
                 <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
                   <SocialLinks socials={profile.socials} />
-                  <span className="text-gray-400 group-hover:text-blue-600 transition-colors inline-flex">
+                  <Link
+                    to={`/${profile.slug}`}
+                    className="text-gray-400 group-hover:text-blue-600 transition-colors inline-flex"
+                    aria-label={`Open ${profile.displayName} portfolio`}
+                  >
                     →
-                  </span>
+                  </Link>
                 </div>
-              </Link>
+              </article>
             );
           })}
         </div>
@@ -118,6 +128,6 @@ export function HomePage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
