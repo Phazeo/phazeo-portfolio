@@ -81,8 +81,8 @@ See `profiles/sriram/` for a complete example.
 - Place resume PDF at `public/profiles/<slug>/resume.pdf`
 - Place images (e.g. og-image) at `public/profiles/<slug>/`
 - In code and SEO, use `profileAssetUrl` / `profileAssetPath` from
-  `profiles/_shared/assets.ts` so paths stay compatible with the private
-  monorepo’s `/profiles/_public/<slug>/` runtime layout
+  `profiles/_shared/assets.ts` (`profiles/<slug>/<file>`). Old
+  `/profiles/_public/*` URLs 301 to `/profiles/*` via `public/_redirects`.
 - Optional: set `cardSummary` and `skills` in `meta.ts` — the local home page
   shows `cardSummary` on profile cards
 

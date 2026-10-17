@@ -155,14 +155,26 @@ run_commits_mode() {
 
     file_list=$(mktemp)
     commit_tree=$(mktemp -d)
-    git -C "$source_path" diff-tree --no-commit-id --name-only -r --diff-filter=AM "$commit" >"$file_list" || true
+    # Raw modes (100644 / 100755) from the commit tree — materialise blobs and
+    # apply the executable bit so [binary-file] sees 100755 even if a later
+    # commit clears it.
+    git -C "$source_path" diff-tree --no-commit-id -r --diff-filter=AM --raw "$commit" >"$file_list" || true
     if [ -s "$file_list" ]; then
-      while IFS= read -r rel; do
+      while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        # :oldmode newmode oldsha newsha status<TAB>path  (status may be A/M/R…)
+        mode=$(printf '%s\n' "$line" | awk '{print $2}')
+        rel=$(printf '%s\n' "$line" | awk -F'\t' '{print $2}')
         [ -n "$rel" ] || continue
         dir=$(dirname "$rel")
         mkdir -p "$commit_tree/$dir"
         if git -C "$source_path" cat-file -e "${commit}:${rel}" 2>/dev/null; then
           git -C "$source_path" show "${commit}:${rel}" >"$commit_tree/$rel"
+          if [ "$mode" = "100755" ]; then
+            chmod +x "$commit_tree/$rel"
+          else
+            chmod a-x "$commit_tree/$rel" 2>/dev/null || true
+          fi
         fi
       done <"$file_list"
       set +e
