@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Single entry point for leak guards (gitleaks + forbidden files + host allowlist).
 # Never prints secret values: gitleaks --redact; other scanners report rule/file/line only.
-# gitleaks 8.30.1 CLI: `git` (history/staged), `dir` (working tree).
+# gitleaks 8.30.1 CLI: `git` (history/staged/commits), `dir` (working tree).
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
@@ -13,7 +13,7 @@ ROOTS=""
 
 usage() {
   cat <<'EOF'
-Usage: scripts/check-leaks [--staged|--tree|--range <git-range>|--history] [--root <path>]...
+Usage: scripts/check-leaks [--staged|--tree|--range <git-range>|--history|--commits <git-range>] [--root <path>]...
 EOF
 }
 
@@ -27,6 +27,15 @@ while [ "$#" -gt 0 ]; do
       RANGE=${2:-}
       if [ -z "$RANGE" ]; then
         echo "check-leaks: --range requires a git revision range" >&2
+        exit 2
+      fi
+      shift
+      ;;
+    --commits)
+      MODE=commits
+      RANGE=${2:-}
+      if [ -z "$RANGE" ]; then
+        echo "check-leaks: --commits requires a git revision range" >&2
         exit 2
       fi
       shift
@@ -87,20 +96,19 @@ run_gitleaks_on() {
   esac
 }
 
-# For --staged, also limit path-based scanners to staged paths when possible.
 run_path_scanners() {
   target=$1
+  extra=${2:-}
   if [ "$MODE" = staged ] && [ "$target" = "$ROOT" ]; then
     staged_list=$(mktemp)
-    trap 'rm -f "$staged_list"' EXIT
+    staged_tree=$(mktemp -d)
+    # shellcheck disable=SC2064
+    trap "rm -rf '$staged_tree'; rm -f '$staged_list'" EXIT
     git -C "$ROOT" diff --cached --name-only --diff-filter=ACM >"$staged_list" || true
     if [ ! -s "$staged_list" ]; then
       echo "check-leaks: no staged files for path scanners" >&2
       return 0
     fi
-    # Materialize staged blobs into a temp tree so scanners see staged content only.
-    staged_tree=$(mktemp -d)
-    trap 'rm -rf "$staged_tree"; rm -f "$staged_list"' EXIT
     while IFS= read -r rel; do
       [ -n "$rel" ] || continue
       dir=$(dirname "$rel")
@@ -114,10 +122,79 @@ run_path_scanners() {
     return 0
   fi
   echo "check-leaks: forbidden files / image metadata ($target)..." >&2
-  node "$ROOT/scripts/check-forbidden-files.mjs" --root "$target"
+  # shellcheck disable=SC2086
+  node "$ROOT/scripts/check-forbidden-files.mjs" --root "$target" $extra
   echo "check-leaks: host allowlist ($target)..." >&2
-  node "$ROOT/scripts/check-hosts.mjs" --root "$target"
+  # shellcheck disable=SC2086
+  node "$ROOT/scripts/check-hosts.mjs" --root "$target" $extra
 }
+
+run_commits_mode() {
+  source_path=$1
+  echo "check-leaks: per-commit scan ($RANGE)..." >&2
+  # Oldest first so findings cite the introducing commit.
+  commits=$(git -C "$source_path" rev-list --reverse "$RANGE")
+  if [ -z "$commits" ]; then
+    echo "check-leaks: no commits in range $RANGE" >&2
+    return 0
+  fi
+  failed=0
+  for commit in $commits; do
+    short=$(git -C "$source_path" rev-parse --short "$commit")
+    echo "check-leaks: commit $short ..." >&2
+    set +e
+    # -n 1 <commit> works for root commits (no parent) as well as normal ones.
+    "$GITLEAKS" git --no-banner --redact -c "$ROOT/.gitleaks.toml" --exit-code 1 \
+      --log-opts="-n 1 ${commit}" "$source_path"
+    gl_rc=$?
+    set -e
+    if [ "$gl_rc" -ne 0 ]; then
+      echo "check-leaks: gitleaks failed on commit $short" >&2
+      failed=1
+    fi
+
+    file_list=$(mktemp)
+    commit_tree=$(mktemp -d)
+    git -C "$source_path" diff-tree --no-commit-id --name-only -r --diff-filter=AM "$commit" >"$file_list" || true
+    if [ -s "$file_list" ]; then
+      while IFS= read -r rel; do
+        [ -n "$rel" ] || continue
+        dir=$(dirname "$rel")
+        mkdir -p "$commit_tree/$dir"
+        if git -C "$source_path" cat-file -e "${commit}:${rel}" 2>/dev/null; then
+          git -C "$source_path" show "${commit}:${rel}" >"$commit_tree/$rel"
+        fi
+      done <"$file_list"
+      set +e
+      node "$ROOT/scripts/check-forbidden-files.mjs" --root "$commit_tree"
+      ff_rc=$?
+      node "$ROOT/scripts/check-hosts.mjs" --root "$commit_tree"
+      host_rc=$?
+      set -e
+      if [ "$ff_rc" -ne 0 ] || [ "$host_rc" -ne 0 ]; then
+        echo "check-leaks: path scanners failed on commit $short" >&2
+        failed=1
+      fi
+    fi
+    rm -rf "$commit_tree"
+    rm -f "$file_list"
+  done
+  if [ "$failed" -ne 0 ]; then
+    exit 1
+  fi
+}
+
+if [ "$MODE" = commits ]; then
+  if [ -n "$ROOTS" ]; then
+    for r in $ROOTS; do
+      run_commits_mode "$r"
+    done
+  else
+    run_commits_mode "$ROOT"
+  fi
+  echo "check-leaks: OK"
+  exit 0
+fi
 
 if [ -n "$ROOTS" ]; then
   for r in $ROOTS; do
@@ -128,7 +205,11 @@ if [ -n "$ROOTS" ]; then
 else
   echo "check-leaks: gitleaks ($MODE)..." >&2
   run_gitleaks_on "$ROOT"
-  run_path_scanners "$ROOT"
+  # Path scanners always use tracked files at repo root (ignore local husky/_ and node_modules).
+  case "$MODE" in
+    tree|history|range) run_path_scanners "$ROOT" "--tracked" ;;
+    *) run_path_scanners "$ROOT" ;;
+  esac
 fi
 
 echo "check-leaks: OK"

@@ -3,12 +3,12 @@ title = "phazeo-portfolio-profiles leak guard"
 [extend]
 useDefault = true
 
-# Fixture and tool paths are scanned only via scripts/check-leaks --self-test.
+# Fixtures are scanned only via prove/self-test (not production check-leaks).
+# .tools/ is NOT allowlisted — committed tool caches must fail [tool-cache].
 [[allowlists]]
-description = "Leak-guard fixtures and local tool cache — never production content"
+description = "Leak-guard fixtures, dependency trees, and build output"
 paths = [
   '''(^|/)test/leak-fixtures/''',
-  '''(^|/)\.tools/''',
   '''(^|/)node_modules/''',
   '''(^|/)dist/''',
   '''pnpm-lock\.yaml$''',

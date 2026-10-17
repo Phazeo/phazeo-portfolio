@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Prove fixtures and the --staged path fail closed; clean tree/staged pass.
+# Prove fixtures, staged path, and --commits path fail closed; clean cases pass.
 # Reports rule id / file only — never secret values.
 set -eu
 
@@ -17,7 +17,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Config without the fixtures allowlist path so gitleaks can see them.
 grep -v 'test/leak-fixtures' "$ROOT/.gitleaks.toml" >"$TMPCFG"
 
 fail_case() {
@@ -43,8 +42,6 @@ pass_case() {
   echo "OK: $name passed"
 }
 
-# --- Path / config fixtures ---
-
 fail_case "private-ip" \
   "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/private-ip.txt"
 
@@ -63,25 +60,38 @@ pass_case "time-like-not-ipv6" \
 fail_case "ula-ipv6" \
   "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/ula-ipv6.txt"
 
+fail_case "bare-internal-phazeo" \
+  node "$ROOT/scripts/check-hosts.mjs" --include-fixtures --root "$FIX/host-fail-bare"
+
+fail_case "url-admin-phazeo" \
+  node "$ROOT/scripts/check-hosts.mjs" --include-fixtures --root "$FIX/host-fail-url"
+
+pass_case "portfolio-phazeo-host" \
+  node "$ROOT/scripts/check-hosts.mjs" --include-fixtures --root "$FIX/host-pass"
+
+fail_case "tool-cache" \
+  node "$ROOT/scripts/check-forbidden-files.mjs" --include-fixtures --root "$FIX/tool-cache-case"
+
+fail_case "binary-file" \
+  node "$ROOT/scripts/check-forbidden-files.mjs" --include-fixtures --root "$FIX/binary-case"
+
+fail_case "file-too-large" \
+  node "$ROOT/scripts/check-forbidden-files.mjs" --include-fixtures --root "$FIX/large-case"
+
 pass_case "clean-tree" sh "$ROOT/scripts/check-leaks" --tree
 
-# --- Staged path in a throwaway git repo that uses this repo's scripts + config ---
-
+# --- Staged path ---
 echo "=== PROVE STAGED (throwaway repo) ==="
 STAGED_TMP=$(mktemp -d)
 mkdir -p "$STAGED_TMP/scripts" "$STAGED_TMP/.github"
 cp -a "$ROOT/scripts/." "$STAGED_TMP/scripts/"
 cp -a "$ROOT/.gitleaks.toml" "$STAGED_TMP/.gitleaks.toml"
-cp -a "$ROOT/.github/allowed-hosts.txt" "$STAGED_TMP/.github/allowed-hosts.txt"
-# Point ensure-gitleaks / scanners at the throwaway tree (scripts resolve ROOT from their location).
+cp -a "$ROOT/.github/." "$STAGED_TMP/.github/"
 cd "$STAGED_TMP"
 git init -q
-# Use the caller's approved identity (temp repo still triggers global commit-policy hooks).
 git config user.name "$(git -C "$ROOT" config user.name)"
 git config user.email "$(git -C "$ROOT" config user.email)"
-# Isolating hooksPath avoids requiring husky inside the throwaway tree.
 git config core.hooksPath /dev/null
-# Commit scripts+config so git clean does not remove the entry point under test.
 printf '# prove\n' >README.md
 git add README.md scripts .gitleaks.toml .github
 git commit -q -m "init"
@@ -89,7 +99,6 @@ git commit -q -m "init"
 stage_and_expect_fail() {
   name=$1
   shift
-  # reset index to HEAD
   git reset -q --hard HEAD
   git clean -fdq
   "$@"
@@ -114,7 +123,6 @@ stage_and_expect_fail "dotenv" \
 stage_and_expect_fail "exif-image" \
   sh -c "cp '$FIX/metadata-case/public/orientation-exif.jpg' ./photo.jpg && git add photo.jpg"
 
-# Clean staged change must pass
 git reset -q --hard HEAD
 git clean -fdq
 printf 'ok note\n' >note.txt
@@ -122,6 +130,26 @@ git add note.txt
 echo "=== PROVE PASS staged: clean ==="
 sh scripts/check-leaks --staged
 echo "OK: staged clean passed"
+
+# --- --commits: binary added then deleted must still fail ---
+echo "=== PROVE FAIL commits: binary-then-deleted ==="
+git reset -q --hard HEAD
+git clean -fdq
+# POSIX printf: use octal escapes (\\x is not portable).
+printf '\177ELF\002\001\001\000prove-bin\n' >prove.bin
+git add prove.bin
+git commit -q -m "add fake binary"
+git rm -q prove.bin
+git commit -q -m "delete fake binary"
+set +e
+sh scripts/check-leaks --commits HEAD~2..HEAD
+rc=$?
+set -e
+if [ "$rc" -eq 0 ]; then
+  echo "PROVE FAILED: --commits over binary-then-deleted expected non-zero" >&2
+  exit 1
+fi
+echo "OK: commits binary-then-deleted failed as expected (exit $rc)"
 
 cd "$ROOT"
 echo "prove-leak-guard: all cases OK"

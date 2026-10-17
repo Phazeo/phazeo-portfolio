@@ -1,2 +1,36 @@
 #!/usr/bin/env sh
+# Refuse push if any commit being pushed fails scripts/check-leaks --commits.
+set -e
+
+ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+cd "$ROOT"
+
+zero=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha
+do
+  [ -n "${local_sha:-}" ] || continue
+  # Branch deleted on remote — nothing to scan.
+  if [ "$local_sha" = "$zero" ]; then
+    continue
+  fi
+
+  if [ "$remote_sha" = "$zero" ] || [ -z "$remote_sha" ]; then
+    # New branch: every commit not already on origin/main.
+    if git rev-parse --verify origin/main >/dev/null 2>&1; then
+      range="origin/main..${local_sha}"
+    else
+      range="$local_sha"
+    fi
+  else
+    range="${remote_sha}..${local_sha}"
+  fi
+
+  echo "pre-push: check-leaks --commits $range ($local_ref)" >&2
+  if ! sh scripts/check-leaks --commits "$range"; then
+    echo "PUSH BLOCKED: leak guard failed for $range" >&2
+    exit 1
+  fi
+done
+
 pnpm quality

@@ -10,11 +10,12 @@ const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
 const FILES = [
   ".husky/pre-commit",
+  ".husky/pre-push",
   ".github/workflows/leak-guard.yml",
 ];
 
 const FORBIDDEN = [
-  /gitleaks(?!-)/i, // bare gitleaks invocations (allow "gitleaks" only inside comments about pin)
+  /gitleaks(?!-)/i,
   /trufflehog/i,
   /detect-secrets/i,
   /ggshield/i,
@@ -37,14 +38,14 @@ for (const rel of FILES) {
     const line = lines[i] ?? "";
     const trimmed = line.trim();
     if (trimmed.startsWith("#") || trimmed.startsWith("//")) continue;
-    // Allow ensure-gitleaks / gitleaks.pin references in comments only - already skipped.
-    // Disallow direct scanner binaries or alternate actions in active lines.
-    if (/ensure-gitleaks|gitleaks\.pin|check-leaks|install hint|gitleaks binary/i.test(line)) {
+    if (/ensure-gitleaks|gitleaks\.pin|check-leaks|install hint|gitleaks binary|leak guard/i.test(line)) {
       continue;
     }
     for (const re of FORBIDDEN) {
       if (re.test(line)) {
-        console.error(`[wiring] ${rel}:${i + 1}: must not call scanners other than scripts/check-leaks`);
+        console.error(
+          `[wiring] ${rel}:${i + 1}: must not call scanners other than scripts/check-leaks`
+        );
         failed = true;
       }
     }
