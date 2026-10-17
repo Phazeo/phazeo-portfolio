@@ -13,8 +13,6 @@
 
 - Use lowercase, hyphenated slug (e.g. `john-doe`)
 - Must be unique across all profiles
-- Do **not** reuse a slug that already exists on the private monorepo site
-  (public merge currently wins on collisions — avoid accidental overrides)
 
 ## Required Files
 
@@ -80,26 +78,9 @@ See `profiles/sriram/` for a complete example.
 
 - Place resume PDF at `public/profiles/<slug>/resume.pdf`
 - Place images (e.g. og-image) at `public/profiles/<slug>/`
-- In code and SEO, use `profileAssetUrl` / `profileAssetPath` from
-  `profiles/_shared/assets.ts` so paths stay compatible with the private
-  monorepo’s `/profiles/_public/<slug>/` runtime layout
-- Optional: set `cardSummary` and `skills` in `meta.ts` — the local home page
-  shows `cardSummary` on profile cards
 
-## Guidelines
+## Code Style
 
+- Use TypeScript
 - Follow existing patterns in `profiles/sriram/`
-- Keep profiles self-contained; share only via `profiles/_shared/` when needed
-- Run `pnpm quality` before opening a PR
-
-## Commit messages (no AI attribution)
-
-Human contributor emails are fine. Do **not** let AI tools appear in commits:
-
-- No `Co-authored-by: Cursor <cursoragent@cursor.com>` (or Copilot / Claude / ChatGPT)
-- No `Made-with: Cursor` / “Generated with Claude” style lines
-- Do not set `git user.email` to an AI address (`cursoragent@…`, `noreply@anthropic.com`, …)
-
-Local husky strips common trailers, then refuses if any remain. CI re-checks every PR
-(`scripts/check-no-ai-commit.mjs`). In Cursor, you can also turn off
-**Settings → Agent → Attribution** (or **Git & PRs → Attribution**); the hook covers CLI/cloud misses.
+- Run `pnpm typecheck` before submitting

@@ -1,5 +1,4 @@
 import type { ProfileSeo, ProfileTheme } from "../../../types";
-import { profileAssetPath } from "../../_shared/assets";
 
 export const theme: ProfileTheme = {
   cssVariables: {
@@ -19,5 +18,5 @@ export const seo: ProfileSeo = {
   title: "Yokeshwar | Electrical & Electronics Engineering Student",
   description:
     "Yokeshwar - Motivated EEE student with hands-on experience in Electric Vehicles, IoT, and Embedded Systems. Building real-world solutions through innovation.",
-  ogImage: profileAssetPath("yokeshwar", "profile-photo.jpg"),
+  ogImage: "profiles/_public/yokeshwar/profile-photo.jpg",
 };

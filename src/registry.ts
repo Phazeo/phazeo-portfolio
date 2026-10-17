@@ -1,9 +1,10 @@
+import type { ProfileConfig, ProfileRegistry } from "../types";
+import { DEFAULT_THEME, getActiveProfileVersion, getActiveVersion } from "../types";
+
 import { kayalvizhiConfig } from "../profiles/kayalvizhi/meta";
 import { sriramConfig } from "../profiles/sriram/meta";
 import { testerRobotConfig } from "../profiles/tester-robot/meta";
 import { yokeshwarConfig } from "../profiles/yokeshwar/meta";
-import type { ProfileConfig, ProfileRegistry } from "../types";
-import { DEFAULT_THEME, getActiveProfileVersion, getActiveVersion } from "../types";
 
 /**
  * Central registry of all profiles in this repo.
@@ -66,4 +67,4 @@ export function getExperienceYearsDisplay(profile: ProfileConfig): string | unde
   return undefined;
 }
 
-export { DEFAULT_THEME, getActiveProfileVersion, getActiveVersion };
+export { DEFAULT_THEME, getActiveVersion, getActiveProfileVersion };

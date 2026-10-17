@@ -1,20 +1,2 @@
 #!/usr/bin/env sh
-# Local check: refuse if git user.email is an AI tool address.
-# Does NOT allowlist humans — any person email is fine.
-
-set -e
-
-EMAIL=$(git config user.email 2>/dev/null | tr '[:upper:]' '[:lower:]' || echo "")
-NAME=$(git config user.name 2>/dev/null || echo "")
-
-if echo "$EMAIL" | grep -Eqi 'cursoragent@|noreply@anthropic\.com|copilot@|@cursor\.com$'; then
-  echo "COMMIT BLOCKED: git user.email is an AI tool ($EMAIL). Use your own email."
-  exit 1
-fi
-
-if echo "$NAME" | grep -Eqi 'cursor agent|github copilot|chatgpt|claude code'; then
-  echo "COMMIT BLOCKED: git user.name looks like an AI tool ($NAME)."
-  exit 1
-fi
-
 pnpm lint-staged

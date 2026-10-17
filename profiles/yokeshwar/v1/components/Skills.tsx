@@ -48,11 +48,11 @@ export function Skills() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="inline-block mb-4">
-            <div className="w-16 h-16 bg-(--color-primary) rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+            <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center text-3xl shadow-lg">
               ⚡
             </div>
           </div>
-          <h2 className="text-3xl md:text-4xl font-display font-bold bg-linear-to-r from-(--color-primary) to-(--color-accent) bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-4xl font-display font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] bg-clip-text text-transparent">
             Skills & Interests
           </h2>
         </div>
@@ -91,9 +91,9 @@ export function Skills() {
 
         {/* Languages & Interests */}
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-linear-to-r from-(--color-primary)/10 to-(--color-secondary)/10 rounded-xl p-6">
+          <div className="bg-gradient-to-r from-[var(--color-primary)]/10 to-[var(--color-secondary)]/10 rounded-xl p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-(--color-primary) rounded-lg flex items-center justify-center text-xl">
+              <div className="w-10 h-10 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-xl">
                 🌍
               </div>
               <h3 className="font-display font-bold text-gray-900">Languages</h3>
@@ -102,7 +102,7 @@ export function Skills() {
               {languages.map((lang) => (
                 <span
                   key={lang.name}
-                  className="px-4 py-2 bg-white text-gray-700 rounded-lg text-sm font-medium shadow-xs"
+                  className="px-4 py-2 bg-white text-gray-700 rounded-lg text-sm font-medium shadow-sm"
                 >
                   {lang.flag} {lang.name} - {lang.level}
                 </span>
@@ -110,9 +110,9 @@ export function Skills() {
             </div>
           </div>
 
-          <div className="bg-linear-to-r from-(--color-accent)/10 to-(--color-secondary)/10 rounded-xl p-6">
+          <div className="bg-gradient-to-r from-[var(--color-accent)]/10 to-[var(--color-secondary)]/10 rounded-xl p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-(--color-accent) rounded-lg flex items-center justify-center text-xl">
+              <div className="w-10 h-10 bg-[var(--color-accent)] rounded-lg flex items-center justify-center text-xl">
                 ❤️
               </div>
               <h3 className="font-display font-bold text-gray-900">Personal Interests</h3>
@@ -121,7 +121,7 @@ export function Skills() {
               {interests.map((interest) => (
                 <span
                   key={interest}
-                  className="px-4 py-2 bg-white text-gray-700 rounded-lg text-sm font-medium shadow-xs"
+                  className="px-4 py-2 bg-white text-gray-700 rounded-lg text-sm font-medium shadow-sm"
                 >
                   {interest}
                 </span>

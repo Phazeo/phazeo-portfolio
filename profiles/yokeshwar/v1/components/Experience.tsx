@@ -46,11 +46,11 @@ export function Experience() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="inline-block mb-4">
-            <div className="w-16 h-16 bg-(--color-primary) rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+            <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center text-3xl shadow-lg">
               💼
             </div>
           </div>
-          <h2 className="text-3xl md:text-4xl font-display font-bold bg-linear-to-r from-(--color-primary) to-(--color-accent) bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-4xl font-display font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] bg-clip-text text-transparent">
             Industrial Experience
           </h2>
         </div>
@@ -68,7 +68,7 @@ export function Experience() {
               <div className="relative z-10">
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
                   <div
-                    className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-lg shrink-0"
+                    className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-lg flex-shrink-0"
                     style={{ backgroundColor: exp.gradient }}
                   >
                     {exp.icon}

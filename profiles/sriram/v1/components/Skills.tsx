@@ -45,7 +45,7 @@ export function Skills() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="inline-block mb-4">
-            <div className="w-16 h-16 bg-(--color-primary) rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+            <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center text-3xl shadow-lg">
               ⚡
             </div>
           </div>
@@ -60,7 +60,7 @@ export function Skills() {
             >
               <div className="flex items-center gap-3 mb-4">
                 <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow-md shrink-0"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow-md flex-shrink-0"
                   style={{ backgroundColor: category.gradient }}
                 >
                   {category.icon}
@@ -73,7 +73,7 @@ export function Skills() {
                 {category.skills.map((skill) => (
                   <span
                     key={skill}
-                    className="px-3 py-1.5 bg-white rounded-lg text-xs font-medium text-gray-700 border border-gray-200 shadow-xs"
+                    className="px-3 py-1.5 bg-white rounded-lg text-xs font-medium text-gray-700 border border-gray-200 shadow-sm"
                   >
                     {skill}
                   </span>

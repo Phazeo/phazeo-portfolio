@@ -28,30 +28,10 @@ phazeo-portfolio-profiles/
 │   ├── registry.ts     # Imports and registers all profiles
 │   ├── router.tsx
 │   └── pages/
-├── profiles/_shared/      # Shared helpers (asset URLs, navigation shell)
 ├── public/
-│   └── profiles/<slug>/   # Static assets (resume.pdf, images) — see Assets below
+│   └── profiles/<slug>/   # Static assets (resume.pdf, images)
 └── package.json
 ```
-
-## Assets (local vs production)
-
-Store files under `public/profiles/<slug>/` (e.g. `resume.pdf`, photos).
-
-At **production** build time the private monorepo copies those files to
-`apps/portfolio/public/profiles/_public/<slug>/`, so profile code and SEO must
-reference `profiles/_public/<slug>/…`. Use the helpers in
-[`profiles/_shared/assets.ts`](profiles/_shared/assets.ts):
-
-```ts
-import { profileAssetPath, profileAssetUrl } from "../../_shared/assets";
-
-const resume = profileAssetUrl("your-slug", "resume.pdf");
-// seo.ogImage: profileAssetPath("your-slug", "profile-photo.jpg")
-```
-
-This preview app rewrites `/profiles/_public/*` → `/profiles/*` in dev/preview
-and copies into `dist/profiles/_public/` on build so local URLs match production.
 
 ## Adding a New Profile
 
@@ -77,11 +57,9 @@ See `profiles/sriram/` for a complete example.
 
 The private `phazeo-portfolio` repo clones this repo at build time, merges the registry, and deploys. Your changes here are pulled in on the next deploy.
 
-### Auto-deploy after CI on main
+### Auto-deploy on push to main
 
-The `trigger-deploy.yml` workflow runs only after the **CI** workflow succeeds on
-a push to `main` (so a broken main does not poke Cloudflare). It then POSTs to
-the Cloudflare deploy hook so the live site rebuilds with the latest profiles.
+The `trigger-deploy.yml` workflow calls Cloudflare's deploy hook when changes are pushed to `main`, so the live site rebuilds with the latest profiles.
 
 **Setup (one-time):** Add a GitHub secret in this repo:
 

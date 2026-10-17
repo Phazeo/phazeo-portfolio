@@ -4,11 +4,11 @@ export function About() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="inline-block mb-4">
-            <div className="w-16 h-16 bg-(--color-primary) rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+            <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center text-3xl shadow-lg">
               👤
             </div>
           </div>
-          <h2 className="text-3xl md:text-4xl font-display font-bold bg-linear-to-r from-(--color-primary) to-(--color-accent) bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-4xl font-display font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] bg-clip-text text-transparent">
             About Me
           </h2>
         </div>
@@ -16,7 +16,7 @@ export function About() {
         <div className="grid md:grid-cols-2 gap-8">
           <div className="bg-gray-50 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-(--color-primary) rounded-xl flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 bg-[var(--color-primary)] rounded-xl flex items-center justify-center text-2xl">
                 ⚡
               </div>
               <h3 className="text-xl font-display font-bold text-gray-900">Who I Am</h3>
@@ -31,7 +31,7 @@ export function About() {
 
           <div className="bg-gray-50 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-(--color-accent) rounded-xl flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 bg-[var(--color-accent)] rounded-xl flex items-center justify-center text-2xl">
                 🎯
               </div>
               <h3 className="text-xl font-display font-bold text-gray-900">My Goals</h3>
@@ -43,7 +43,7 @@ export function About() {
             </p>
           </div>
 
-          <div className="md:col-span-2 bg-linear-to-r from-(--color-primary)/10 to-(--color-accent)/10 rounded-2xl p-8">
+          <div className="md:col-span-2 bg-gradient-to-r from-[var(--color-primary)]/10 to-[var(--color-accent)]/10 rounded-2xl p-8">
             <h3 className="text-xl font-display font-bold text-gray-900 mb-4">
               Memberships & Activities
             </h3>
@@ -57,7 +57,7 @@ export function About() {
               ].map((item) => (
                 <span
                   key={item}
-                  className="px-4 py-2 bg-white text-(--color-primary) rounded-lg text-sm font-semibold shadow-xs"
+                  className="px-4 py-2 bg-white text-[var(--color-primary)] rounded-lg text-sm font-semibold shadow-sm"
                 >
                   {item}
                 </span>

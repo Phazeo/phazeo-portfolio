@@ -22,15 +22,15 @@ const projects: {
 export function Projects() {
   if (projects.length === 0) {
     return (
-      <section id="projects" className="bg-(--color-background) py-16 md:py-24">
+      <section id="projects" className="bg-[var(--color-background)] py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <div className="inline-block mb-4">
-              <div className="w-16 h-16 bg-(--color-primary) rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+              <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center text-3xl shadow-lg">
                 🚀
               </div>
             </div>
-            <h2 className="text-3xl md:text-4xl font-display font-bold bg-linear-to-r from-(--color-primary) to-(--color-accent) bg-clip-text text-transparent">
+            <h2 className="text-3xl md:text-4xl font-display font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] bg-clip-text text-transparent">
               Projects
             </h2>
           </div>
@@ -43,15 +43,15 @@ export function Projects() {
   }
 
   return (
-    <section id="projects" className="bg-(--color-background) py-16 md:py-24">
+    <section id="projects" className="bg-[var(--color-background)] py-16 md:py-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="inline-block mb-4">
-            <div className="w-16 h-16 bg-(--color-primary) rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+            <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center text-3xl shadow-lg">
               🚀
             </div>
           </div>
-          <h2 className="text-3xl md:text-4xl font-display font-bold bg-linear-to-r from-(--color-primary) to-(--color-accent) bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-4xl font-display font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] bg-clip-text text-transparent">
             Projects
           </h2>
         </div>
@@ -60,17 +60,17 @@ export function Projects() {
           {projects.map((project) => (
             <div
               key={project.id}
-              className="bg-white rounded-2xl p-8 shadow-lg border-2 border-(--color-primary)/20 hover:shadow-xl transition-all"
+              className="bg-white rounded-2xl p-8 shadow-lg border-2 border-[var(--color-primary)]/20 hover:shadow-xl transition-all"
             >
               <div className="flex items-start gap-4 mb-6">
                 <div
-                  className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl shadow-lg shrink-0"
+                  className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl shadow-lg flex-shrink-0"
                   style={{ backgroundColor: project.gradient }}
                 >
                   {project.icon}
                 </div>
                 <div>
-                  <span className="inline-block px-3 py-1 bg-(--color-accent)/10 text-(--color-accent) rounded-full text-xs font-semibold mb-2">
+                  <span className="inline-block px-3 py-1 bg-[var(--color-accent)]/10 text-[var(--color-accent)] rounded-full text-xs font-semibold mb-2">
                     {project.type}
                   </span>
                   <h3 className="text-2xl font-display font-bold text-gray-900">{project.title}</h3>
@@ -81,7 +81,7 @@ export function Projects() {
                 {project.technologies.map((tech) => (
                   <span
                     key={tech}
-                    className="px-3 py-1.5 bg-(--color-primary)/10 text-(--color-primary) rounded-lg text-sm font-medium"
+                    className="px-3 py-1.5 bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-lg text-sm font-medium"
                   >
                     {tech}
                   </span>
