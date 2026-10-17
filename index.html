@@ -3,28 +3,58 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Phazeo Portfolio Profiles - Dev Preview</title>
+
+    <!-- Primary Meta Tags -->
+    <title>Phazeo Portfolio</title>
+    <meta name="title" content="Phazeo Portfolio" />
     <meta
       name="description"
-      content="Local dev server for portfolio profiles. Add and preview profiles before merging to the main site."
+      content="Professional portfolios showcasing talented individuals and their work. Discover data scientists, engineers, and creators."
     />
-    <meta name="title" content="Phazeo Portfolio Profiles - Dev Preview" />
-    <meta property="og:title" content="Phazeo Portfolio Profiles - Dev Preview" />
-    <meta
-      property="og:description"
-      content="Local dev server for portfolio profiles. Add and preview profiles before merging to the main site."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="" />
+    <meta name="author" content="Phazeo" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Favicon -->
     <link
       rel="icon"
       type="image/svg+xml"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📁</text></svg>"
     />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://portfolio.phazeo.com/" />
+    <meta property="og:title" content="Phazeo Portfolio" />
+    <meta
+      property="og:description"
+      content="Professional portfolios showcasing talented individuals and their work. Discover data scientists, engineers, and creators."
+    />
+    <meta property="og:site_name" content="Phazeo" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Theme Color for mobile browsers -->
+    <meta name="theme-color" content="#ffffff" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>
   <body>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("phazeo-portfolio-theme");
+          var dark =
+            stored === "dark" ||
+            (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("dark");
+          else document.documentElement.classList.remove("dark");
+        } catch (_) {
+          /* storage blocked — keep default theme */
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
