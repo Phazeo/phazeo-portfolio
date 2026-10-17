@@ -14,11 +14,7 @@
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "resolveJsonModule": true
   },
   "include": ["src", "profiles", "types", "vite.config.ts"]
 }

@@ -1,4 +1,5 @@
 import type { ProfileSeo, ProfileTheme } from "../../../types";
+import { profileAssetPath } from "../../_shared/assets";
 
 export const theme: ProfileTheme = {
   cssVariables: {
@@ -18,5 +19,5 @@ export const seo: ProfileSeo = {
   title: "Sriram S M | Generative AI Developer | TCS",
   description:
     "Sriram S M - Generative AI Developer with 2 years experience. Agentic AI, RAG, LLMs. Designing end-to-end GenAI solutions at Tata Consultancy Services.",
-  ogImage: "profiles/_public/sriram/profile-photo.jpg",
+  ogImage: profileAssetPath("sriram", "profile-photo.jpg"),
 };
