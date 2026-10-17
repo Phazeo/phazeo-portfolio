@@ -48,6 +48,30 @@ fail_case "private-ip" \
 fail_case "fake-token" \
   "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/fake-token.txt"
 
+fail_case "phone-intl" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-fail/intl.txt"
+
+fail_case "phone-grouped" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-fail/grouped.txt"
+
+pass_case "phone-year-range" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-pass/year-range.txt"
+
+pass_case "phone-version" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-pass/version.txt"
+
+pass_case "phone-long-id" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-pass/long-id.txt"
+
+fail_case "pdf-pii-phone" \
+  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-pii-phone.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"' "$FIX" "$ROOT"
+
+pass_case "pdf-clean" \
+  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-clean.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"' "$FIX" "$ROOT"
+
+fail_case "pdf-metadata" \
+  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-metadata-dirty.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"' "$FIX" "$ROOT"
+
 fail_case "dotenv-file" \
   node "$ROOT/scripts/check-forbidden-files.mjs" --include-fixtures --root "$FIX/dotenv-case"
 

@@ -17,7 +17,7 @@ export interface ProfileSeo {
   title: string;
   description: string;
   /**
-   * Path to OG image relative to public folder (e.g., "profiles/sowmipriya/og-image.png").
+   * Path to OG image relative to public folder (e.g., "profiles/sowmipriya-rajendiran/og-image.png").
    * Used for social sharing on LinkedIn, Discord, X (Twitter), Facebook, etc.
    * If not provided, falls back to site-wide og-image.png.
    */
@@ -81,13 +81,26 @@ export interface ProfileCardSocials {
 /**
  * Profile metadata and version registry.
  */
+export interface ProfileOwner {
+  /** GitHub numeric user id (authoritative). */
+  githubId: number;
+  /** GitHub login at the time of recording (may change; id does not). */
+  githubLogin: string;
+}
+
+export type ProfileAffiliation = "team" | "guest";
+
 export interface ProfileConfig {
-  /** URL slug (e.g., "sowmipriya") */
+  /** URL slug (e.g., "sowmipriya-rajendiran") — full name as written; see CONTRIBUTING. */
   slug: string;
   /** Display name (e.g., "Sowmipriya Rajendiran") */
   displayName: string;
   /** Professional role/title (e.g., "Data Scientist & ML Engineer") */
   role?: string;
+  /** GitHub owner who may change this profile (invite-only). */
+  owner: ProfileOwner;
+  /** Directory grouping on the home page. */
+  affiliation: ProfileAffiliation;
   /**
    * Whether this profile appears in public listings.
    * Unlisted profiles (false) are still accessible via direct URL.

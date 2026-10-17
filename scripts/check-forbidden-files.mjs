@@ -22,8 +22,25 @@ const FORBIDDEN_BASENAME = /^(nginx\.conf|Caddyfile|caddy\.json)$/i;
 const SKIP_DIR_CONTENT = new Set([".git", "test/leak-fixtures"]);
 
 const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif"]);
+const PDF_EXT = ".pdf";
 
 const TOOL_CACHE_PREFIXES = [".tools/", "node_modules/", "dist/"];
+
+// Keep in sync with .gitleaks.toml phazeo-phone-* (Go RE2-safe forms).
+const PHONE_INTL = /\+(?:[\s().-]*\d){8,15}\b/;
+const PHONE_GROUPED =
+  /(?:\(\d{2,4}\)[\s-]*\d{2,4}[\s-]+\d{2,4}(?:[\s-]+\d{2,4})?|\b\d{3}-\d{3}-\d{4}\b)/;
+const DOB_PHRASE = /\b(?:date\s+of\s+birth|d\.?o\.?b\.?|born\s+on)\b/i;
+const POSTCODE_TOKEN = /\b(?:post\s*code|postal\s*code|zip\s*code)\b/i;
+const STREET_TOKEN = /\b(?:street|avenue|road|lane|boulevard|rue|strasse)\b/i;
+
+const PDF_META_KEYS = new Set([
+  "Author",
+  "Creator",
+  "Producer",
+  "CreationDate",
+  "ModDate",
+]);
 
 function parseArgs(argv) {
   const out = { roots: [], includeFixtures: false, reportImages: false, tracked: false };
@@ -298,6 +315,92 @@ function extOf(rel) {
   return m ? `.${m[1].toLowerCase()}` : "";
 }
 
+function commandExists(bin) {
+  try {
+    execFileSync("sh", ["-c", `command -v ${bin}`], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function scanPdfTextForPii(text, norm, findings) {
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineNo = i + 1;
+    if (PHONE_INTL.test(line) || PHONE_GROUPED.test(line)) {
+      findings.push({ rule: "pdf-pii", file: norm, line: lineNo });
+    }
+    if (DOB_PHRASE.test(line)) {
+      findings.push({ rule: "pdf-pii", file: norm, line: lineNo });
+    }
+    if (POSTCODE_TOKEN.test(line) && STREET_TOKEN.test(line)) {
+      findings.push({ rule: "pdf-pii", file: norm, line: lineNo });
+    }
+  }
+}
+
+function scanPdfFile(abs, norm, findings) {
+  if (!commandExists("pdftotext") || !commandExists("pdfinfo")) {
+    findings.push({ rule: "pdf-tooling-missing", file: norm, line: 1 });
+    console.error(
+      "check-forbidden-files: pdftotext/pdfinfo required to scan PDFs (install poppler-utils)."
+    );
+    return;
+  }
+  let text = "";
+  try {
+    text = execFileSync("pdftotext", ["-layout", abs, "-"], {
+      encoding: "utf8",
+      maxBuffer: 16 * 1024 * 1024,
+    });
+  } catch {
+    findings.push({ rule: "pdf-pii", file: norm, line: 1 });
+    return;
+  }
+  scanPdfTextForPii(text, norm, findings);
+
+  let info = "";
+  try {
+    info = execFileSync("pdfinfo", [abs], {
+      encoding: "utf8",
+      maxBuffer: 4 * 1024 * 1024,
+    });
+  } catch {
+    findings.push({ rule: "pdf-metadata", file: norm, line: 1 });
+    return;
+  }
+  let metaHit = false;
+  for (const line of info.split(/\r?\n/)) {
+    const idx = line.indexOf(":");
+    if (idx < 0) continue;
+    const key = line.slice(0, idx).trim();
+    const val = line.slice(idx + 1).trim();
+    if (key === "Metadata Stream" && /^yes$/i.test(val)) {
+      metaHit = true;
+    }
+    if (PDF_META_KEYS.has(key) && val) {
+      metaHit = true;
+    }
+  }
+  // XMP via pdfinfo -meta (when supported); any non-empty XMP dump fails closed.
+  try {
+    const xmp = execFileSync("pdfinfo", ["-meta", abs], {
+      encoding: "utf8",
+      maxBuffer: 4 * 1024 * 1024,
+    });
+    if (xmp && xmp.trim().length > 0) {
+      metaHit = true;
+    }
+  } catch {
+    // -meta unsupported: Info dict keys above are enough.
+  }
+  if (metaHit) {
+    findings.push({ rule: "pdf-metadata", file: norm, line: 1 });
+  }
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const findings = [];
@@ -356,6 +459,10 @@ function main() {
       }
 
       const ext = extOf(norm);
+      if (ext === PDF_EXT) {
+        scanPdfFile(abs, norm, findings);
+        continue;
+      }
       if (!IMAGE_EXT.has(ext)) continue;
       const meta = hasImageMetadata(buf, ext);
       if (args.reportImages) {
