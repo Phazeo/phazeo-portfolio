@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 /**
  * Default-deny hostname scanner for the whole tree (including profiles/).
- * Never prints full URLs that might embed secrets - host + file:line only.
+ * Exact allowlist match by default; "*.example.com" allows that host and subdomains.
+ * Also flags bare *.phazeo.com hostnames (no scheme) that are not exactly listed.
+ * Never prints full URLs — host + file:line only.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const ALLOWLIST_PATH = join(ROOT, ".github", "allowed-hosts.txt");
@@ -15,15 +18,18 @@ const SKIP_DIR = new Set([".git", "node_modules", ".tools", "dist", "test/leak-f
 const TEXT_EXT =
   /\.(md|mdx|txt|ts|tsx|js|jsx|mjs|cjs|json|yml|yaml|toml|html|css|svg|sh|mjs|cjs|env|example|gitignore|npmrc|editorconfig)$/i;
 
-// Bare "//" is omitted: it false-positives on JavaScript regex literals like /\/\//i.test(...).
 const HOST_RE =
   /(?:https?|wss?):\/\/([a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+)/gi;
 
+// Bare hostname ending in .phazeo.com (no scheme).
+const BARE_PHAZEO_RE = /(?<![\w.-])([a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.phazeo\.com)(?![\w.-])/gi;
+
 function parseArgs(argv) {
-  const out = { roots: [], includeFixtures: false };
+  const out = { roots: [], includeFixtures: false, tracked: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--include-fixtures") out.includeFixtures = true;
+    else if (a === "--tracked") out.tracked = true;
     else if (a === "--root" && argv[i + 1]) out.roots.push(resolve(argv[++i]));
     else if (!a.startsWith("-")) out.roots.push(resolve(a));
   }
@@ -33,13 +39,32 @@ function parseArgs(argv) {
 
 function loadAllowlist() {
   const raw = readFileSync(ALLOWLIST_PATH, "utf8");
-  const hosts = new Set();
+  const exact = new Set();
+  const wildcards = [];
   for (const line of raw.split("\n")) {
     const t = line.trim().toLowerCase();
     if (!t || t.startsWith("#")) continue;
-    hosts.add(t);
+    if (t.startsWith("*.")) {
+      const base = t.slice(2);
+      if (base === "phazeo.com" || base.endsWith(".phazeo.com")) {
+        console.error("check-hosts: wildcard for phazeo.com is forbidden");
+        process.exit(2);
+      }
+      wildcards.push(base);
+    } else {
+      exact.add(t);
+    }
   }
-  return hosts;
+  return { exact, wildcards };
+}
+
+function hostAllowed(host, allow) {
+  const h = host.toLowerCase();
+  if (allow.exact.has(h)) return true;
+  for (const base of allow.wildcards) {
+    if (h === base || h.endsWith(`.${base}`)) return true;
+  }
+  return false;
 }
 
 function shouldSkipDir(rel) {
@@ -70,13 +95,46 @@ function* walk(dir, base, includeFixtures) {
   }
 }
 
-function hostAllowed(host, allow) {
-  const h = host.toLowerCase();
-  if (allow.has(h)) return true;
-  for (const a of allow) {
-    if (h === a || h.endsWith(`.${a}`)) return true;
+function trackedFiles(root) {
+  try {
+    const out = execFileSync("git", ["-C", root, "ls-files", "-z"], {
+      encoding: "buffer",
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    return out
+      .toString("utf8")
+      .split("\0")
+      .filter(Boolean)
+      .map((rel) => ({ abs: join(root, rel), rel }));
+  } catch {
+    return null;
   }
-  return false;
+}
+
+function scanText(rel, text, allow, findings) {
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    HOST_RE.lastIndex = 0;
+    let m;
+    while ((m = HOST_RE.exec(line)) !== null) {
+      const host = m[1];
+      if (!host) continue;
+      if (hostAllowed(host, allow)) continue;
+      findings.push({ rule: "disallowed-host", file: rel, line: i + 1, host });
+    }
+    BARE_PHAZEO_RE.lastIndex = 0;
+    while ((m = BARE_PHAZEO_RE.exec(line)) !== null) {
+      const host = m[1];
+      if (!host) continue;
+      // Skip if this occurrence is part of a URL already covered above.
+      const idx = m.index ?? 0;
+      const before = line.slice(Math.max(0, idx - 8), idx).toLowerCase();
+      if (/https?:\/\/$/i.test(before) || /wss?:\/\/$/i.test(before)) continue;
+      if (hostAllowed(host, allow)) continue;
+      findings.push({ rule: "disallowed-bare-phazeo-host", file: rel, line: i + 1, host });
+    }
+  }
 }
 
 function main() {
@@ -89,7 +147,16 @@ function main() {
   const findings = [];
 
   for (const root of args.roots) {
-    for (const { abs, rel } of walk(root, root, args.includeFixtures)) {
+    const files = args.tracked ? trackedFiles(root) : null;
+    const iterable = files ?? walk(root, root, args.includeFixtures);
+    for (const { abs, rel } of iterable) {
+      const norm = rel.split(sep).join("/");
+      if (
+        !args.includeFixtures &&
+        (norm === "test/leak-fixtures" || norm.startsWith("test/leak-fixtures/"))
+      ) {
+        continue;
+      }
       const base = rel.split(sep).pop() ?? "";
       if (!(TEXT_EXT.test(base) || base === "Dockerfile" || !base.includes("."))) {
         if (!TEXT_EXT.test(rel)) continue;
@@ -101,18 +168,7 @@ function main() {
         continue;
       }
       if (text.includes("\0")) continue;
-      const lines = text.split(/\r?\n/);
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i] ?? "";
-        HOST_RE.lastIndex = 0;
-        let m;
-        while ((m = HOST_RE.exec(line)) !== null) {
-          const host = m[1];
-          if (!host) continue;
-          if (hostAllowed(host, allow)) continue;
-          findings.push({ rule: "disallowed-host", file: rel, line: i + 1, host });
-        }
-      }
+      scanText(rel.split(sep).join("/"), text, allow, findings);
     }
   }
 

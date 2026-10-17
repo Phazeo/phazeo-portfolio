@@ -1,12 +1,14 @@
 #!/usr/bin/env sh
 # Download and verify the pinned gitleaks binary. Prints the absolute path on success.
+# Installs outside the repo (XDG cache) so a local tool cache never looks like a committed .tools/.
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 # shellcheck disable=SC1091
 . "$ROOT/scripts/gitleaks.pin"
 
-TOOLS="$ROOT/.tools/gitleaks"
+CACHE_ROOT="${XDG_CACHE_HOME:-${HOME}/.cache}/phazeo-gitleaks/${VERSION}"
+TOOLS="$CACHE_ROOT"
 BIN="$TOOLS/gitleaks"
 MARKER="$TOOLS/.pin"
 EXTRACT=tar
