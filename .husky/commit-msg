@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Refuse the commit if AI attribution remains after prepare-commit-msg strip.
+# Human user emails as author are fine — this only checks the message body.
+
+node scripts/check-no-ai-commit.mjs "$1"

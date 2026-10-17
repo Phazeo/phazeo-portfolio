@@ -1,14 +1,38 @@
 name: Trigger portfolio deploy
 
+# Only fire after CI succeeds on main (avoids deploying broken public code).
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
+
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   trigger:
     name: Trigger Cloudflare deploy
     runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
     steps:
       - name: Trigger deploy
+        env:
+          DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
         run: |
-          curl -X POST -d "" "${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}"
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "CLOUDFLARE_DEPLOY_HOOK secret is not set"
+            exit 1
+          fi
+          http_code=$(curl -sS -o /tmp/deploy-hook-response.txt -w "%{http_code}" -X POST -d "" "$DEPLOY_HOOK")
+          echo "Deploy hook HTTP status: $http_code"
+          cat /tmp/deploy-hook-response.txt || true
+          echo
+          case "$http_code" in
+            2??) exit 0 ;;
+            *) exit 1 ;;
+          esac

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -7,16 +7,20 @@
     "defaultBranch": "main"
   },
   "files": {
-    "include": [
-      "src/**/*.ts",
-      "src/**/*.tsx",
-      "profiles/**/*.ts",
-      "profiles/**/*.tsx",
-      "types/**/*.ts"
-    ],
-    "ignore": ["**/node_modules/**", "**/dist/**", "**/*.min.js", "**/*.d.ts", "reference/**"]
+    "includes": [
+      "**/src/**/*.ts",
+      "**/src/**/*.tsx",
+      "**/profiles/**/*.ts",
+      "**/profiles/**/*.tsx",
+      "**/types/**/*.ts",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/*.min.js",
+      "!**/*.d.ts",
+      "!**/reference"
+    ]
   },
-  "organizeImports": { "enabled": true },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -36,12 +40,11 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "complexity": {
         "noBannedTypes": "error",
         "noForEach": "off",
         "noExtraBooleanCast": "error",
-        "noMultipleSpacesInRegularExpressionLiterals": "error",
         "noUselessCatch": "error",
         "noUselessConstructor": "error",
         "noUselessFragments": "error",
@@ -53,9 +56,11 @@
         "noUselessThisAlias": "error",
         "noUselessTypeConstraint": "error",
         "noVoid": "error",
-        "noWith": "error",
         "useLiteralKeys": "error",
-        "useOptionalChain": "error"
+        "useOptionalChain": "error",
+        "noAdjacentSpacesInRegex": "error",
+        "noArguments": "error",
+        "noCommaOperator": "error"
       },
       "correctness": {
         "noConstAssign": "error",
@@ -67,7 +72,6 @@
         "noInnerDeclarations": "error",
         "noInvalidConstructorSuper": "error",
         "noInvalidUseBeforeDeclaration": "error",
-        "noNewSymbol": "error",
         "noNonoctalDecimalEscape": "error",
         "noPrecisionLoss": "error",
         "noSelfAssign": "error",
@@ -80,20 +84,20 @@
         "noUnsafeOptionalChaining": "error",
         "noUnusedImports": "error",
         "noUnusedVariables": "error",
-        "useArrayLiterals": "error",
         "useExhaustiveDependencies": "warn",
         "useHookAtTopLevel": "error",
         "useIsNan": "error",
         "useValidForDirection": "error",
-        "useYield": "error"
+        "useYield": "error",
+        "noInvalidBuiltinInstantiation": "error",
+        "useValidTypeof": "error"
       },
       "security": {
         "noDangerouslySetInnerHtml": "warn",
-        "noGlobalEval": "error"
+        "noGlobalEval": "error",
+        "noBlankTarget": "error"
       },
       "style": {
-        "noArguments": "error",
-        "noCommaOperator": "error",
         "noImplicitBoolean": "off",
         "noInferrableTypes": "error",
         "noNamespace": "error",
@@ -102,7 +106,6 @@
         "noParameterAssign": "error",
         "noRestrictedGlobals": "off",
         "noUselessElse": "error",
-        "noVar": "error",
         "useBlockStatements": "error",
         "useCollapsedElseIf": "error",
         "useConst": "error",
@@ -113,9 +116,13 @@
         "useNamingConvention": "off",
         "useNumberNamespace": "error",
         "useSelfClosingElements": "error",
-        "useShorthandArrayType": "error",
         "useSingleVarDeclarator": "error",
-        "useTemplate": "error"
+        "useTemplate": "error",
+        "useArrayLiterals": "error",
+        "useConsistentArrayType": {
+          "level": "error",
+          "options": { "syntax": "shorthand" }
+        }
       },
       "suspicious": {
         "noArrayIndexKey": "error",
@@ -127,7 +134,6 @@
         "noCompareNegZero": "error",
         "noConfusingLabels": "error",
         "noConfusingVoidType": "error",
-        "noConsoleLog": "warn",
         "noControlCharactersInRegex": "error",
         "noDebugger": "error",
         "noDoubleEquals": "error",
@@ -155,13 +161,14 @@
         "useAwait": "off",
         "useDefaultSwitchClauseLast": "error",
         "useGetterReturn": "error",
-        "useValidTypeof": "error"
+        "noWith": "error",
+        "noVar": "error",
+        "noConsole": { "level": "warn", "options": { "allow": ["log"] } }
       },
       "a11y": {
         "noAccessKey": "error",
         "noAriaUnsupportedElements": "error",
         "noAutofocus": "warn",
-        "noBlankTarget": "error",
         "noDistractingElements": "error",
         "noHeaderScope": "error",
         "noInteractiveElementToNoninteractiveRole": "error",
@@ -191,7 +198,12 @@
   },
   "overrides": [
     {
-      "include": ["*.config.ts", "*.config.js", "vite.config.ts", "tailwind.config.ts"],
+      "includes": [
+        "**/*.config.ts",
+        "**/*.config.js",
+        "**/vite.config.ts",
+        "**/tailwind.config.ts"
+      ],
       "linter": {
         "rules": {
           "style": { "noDefaultExport": "off" }
