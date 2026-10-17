@@ -38,12 +38,12 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     keywords: ["where", "location", "based", "live", "city", "country", "paris", "france"],
     answer:
-      "Sowmipriya is based in Paris, France. You can reach her at priyasowmi94@gmail.com or +33 7 55 16 78 96. Scroll to the Contact section for more details.",
+      "Sowmipriya is based in Paris, France. You can reach her at priyasowmi94@gmail.com or . Scroll to the Contact section for more details.",
   },
   {
     keywords: ["contact", "email", "phone", "reach", "get in touch", "hire", "linkedin"],
     answer:
-      "Get in touch: Email priyasowmi94@gmail.com, Phone +33 7 55 16 78 96. She's open to opportunities in AI, ML, and data science-LLM applications, NLP systems, or data-driven products.",
+      "Get in touch: Email priyasowmi94@gmail.com She's open to opportunities in AI, ML, and data science-LLM applications, NLP systems, or data-driven products.",
   },
   // Experience
   {

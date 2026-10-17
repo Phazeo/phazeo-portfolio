@@ -1,0 +1,7 @@
+# Former public addresses that must not be reused as profile slugs.
+dinesh
+sowmipriya
+sriram
+kayalvizhi
+yokeshwar
+tester-robot

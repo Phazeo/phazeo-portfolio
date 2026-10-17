@@ -1,0 +1,3 @@
+# "<githubId> <login>" — invite-only profile owners (numeric ID is authoritative).
+56721895 dinesh-ad
+13678035 sowmipriya

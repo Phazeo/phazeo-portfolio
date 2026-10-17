@@ -2,6 +2,8 @@
 
 Public repository for portfolio profiles. External developers can add and edit profiles here without needing access to the private monorepo.
 
+Before publishing personal content, read [PROFILE-TERMS.md](./PROFILE-TERMS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## Quick Start
 
 ```bash
@@ -60,7 +62,7 @@ Legacy `/profiles/_public/*` links 301 to `/profiles/*` via `public/_redirects`.
 
 The `componentLoader` pattern enables lazy loading so each profile is loaded on demand when visited.
 
-See `profiles/sriram/` for a complete example.
+See `profiles/sriram-sm/` for a complete example.
 
 ## Types
 
