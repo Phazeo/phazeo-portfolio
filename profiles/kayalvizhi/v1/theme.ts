@@ -1,5 +1,4 @@
 import type { ProfileSeo, ProfileTheme } from "../../../types";
-import { profileAssetPath } from "../../_shared/assets";
 
 export const theme: ProfileTheme = {
   cssVariables: {
@@ -19,5 +18,5 @@ export const seo: ProfileSeo = {
   title: "Kayalvizhi S M | AI-Enabled Application Engineer | Healthcare",
   description:
     "Kayalvizhi S M - AI-Enabled Application Engineer with 3+ years in healthcare. Production support, ServiceNow, Splunk. Building GenAI & RAG expertise. PL-300, AZ-900 certified.",
-  ogImage: profileAssetPath("kayalvizhi", "profile-photo.jpg"),
+  // No profile-photo.jpg in public/profiles/kayalvizhi/ — ogImage omitted.
 };
