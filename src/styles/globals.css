@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source "../../profiles/**/*.{js,ts,jsx,tsx}";
 @source "../../index.html";
+@source "../**/*.{js,ts,jsx,tsx}";
 
 @theme {
   --font-display: var(--font-heading), Inter, sans-serif;
@@ -78,5 +81,15 @@
   h5,
   h6 {
     font-family: var(--font-heading);
+  }
+}
+
+/* Animated gradient border sweep (activates on card hover) */
+@keyframes gradient-border-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
