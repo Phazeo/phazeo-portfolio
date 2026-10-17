@@ -34,13 +34,10 @@ phazeo-portfolio-profiles/
 └── package.json
 ```
 
-## Assets (local vs production)
+## Assets
 
-Store files under `public/profiles/<slug>/` (e.g. `resume.pdf`, photos).
-
-At **production** build time the private monorepo copies those files to
-`apps/portfolio/public/profiles/_public/<slug>/`, so profile code and SEO must
-reference `profiles/_public/<slug>/…`. Use the helpers in
+Store files under `public/profiles/<slug>/` (e.g. `resume.pdf`, photos). This
+repo serves them at `/profiles/<slug>/…`. Use the helpers in
 [`profiles/_shared/assets.ts`](profiles/_shared/assets.ts):
 
 ```ts
@@ -50,17 +47,16 @@ const resume = profileAssetUrl("your-slug", "resume.pdf");
 // seo.ogImage: profileAssetPath("your-slug", "profile-photo.jpg")
 ```
 
-This preview app rewrites `/profiles/_public/*` → `/profiles/*` in dev/preview
-and copies into `dist/profiles/_public/` on build so local URLs match production.
+Legacy `/profiles/_public/*` links 301 to `/profiles/*` via `public/_redirects`.
 
 ## Adding a New Profile
 
-1. Create `profiles/<slug>/meta.ts` with `ProfileConfig`
+1. Create `profiles/<slug>/meta.ts` with `ProfileConfig` (folder name must equal `meta.slug`)
 2. Create `profiles/<slug>/v1/theme.ts` with theme and SEO
 3. Create `profiles/<slug>/v1/ProfilePage.tsx` with your portfolio component (default export)
 4. Create `profiles/<slug>/v1/index.tsx` exporting `profileVersion` with `componentLoader: () => import("./ProfilePage")`, `theme`, and `seo`
 5. Add components in `profiles/<slug>/v1/components/`
-6. Import and register in `src/registry.ts`
+6. Registry auto-discovers `profiles/*/meta.ts` — run `pnpm check:registry` / `pnpm build`
 
 The `componentLoader` pattern enables lazy loading so each profile is loaded on demand when visited.
 

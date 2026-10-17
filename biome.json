@@ -209,6 +209,20 @@
           "style": { "noDefaultExport": "off" }
         }
       }
+    },
+    {
+      "includes": [
+        "**/profiles/dinesh/v1/ui/card-3d.tsx",
+        "**/profiles/dinesh/v1/ui/spotlight-card.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noStaticElementInteractions": "off",
+            "useKeyWithMouseEvents": "off"
+          }
+        }
+      }
     }
   ]
 }
