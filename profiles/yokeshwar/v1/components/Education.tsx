@@ -46,15 +46,15 @@ const certifications = [
 
 export function Education() {
   return (
-    <section id="education" className="bg-[var(--color-background)] py-16 md:py-24">
+    <section id="education" className="bg-(--color-background) py-16 md:py-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="inline-block mb-4">
-            <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+            <div className="w-16 h-16 bg-(--color-primary) rounded-2xl flex items-center justify-center text-3xl shadow-lg">
               🎓
             </div>
           </div>
-          <h2 className="text-3xl md:text-4xl font-display font-bold bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-4xl font-display font-bold bg-linear-to-r from-(--color-primary) to-(--color-accent) bg-clip-text text-transparent">
             Education
           </h2>
         </div>
@@ -66,13 +66,13 @@ export function Education() {
               className="bg-white rounded-xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 relative overflow-hidden"
             >
               {edu.current && (
-                <div className="absolute top-4 right-4 px-3 py-1 bg-[var(--color-primary)] text-white text-xs font-semibold rounded-full">
+                <div className="absolute top-4 right-4 px-3 py-1 bg-(--color-primary) text-white text-xs font-semibold rounded-full">
                   Current
                 </div>
               )}
               <div className="flex items-start gap-4">
                 <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-lg flex-shrink-0"
+                  className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-lg shrink-0"
                   style={{ backgroundColor: edu.gradient }}
                 >
                   {edu.icon}
@@ -127,12 +127,12 @@ export function Education() {
               key={cert.id}
               className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 flex items-center gap-4"
             >
-              <div className="w-12 h-12 bg-[var(--color-accent)]/20 rounded-xl flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 bg-(--color-accent)/20 rounded-xl flex items-center justify-center text-2xl">
                 {cert.icon}
               </div>
               <div>
                 <h4 className="font-display font-bold text-gray-900">{cert.title}</h4>
-                <p className="text-[var(--color-primary)] text-sm font-medium">{cert.issuer}</p>
+                <p className="text-(--color-primary) text-sm font-medium">{cert.issuer}</p>
               </div>
             </div>
           ))}

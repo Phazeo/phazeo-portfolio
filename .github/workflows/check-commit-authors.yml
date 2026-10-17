@@ -1,0 +1,44 @@
+# No-AI commit guard — blocks AI emails / Co-authored-by / Made-with trailers.
+# Human contributor emails are allowed. No allowlist.
+# Local convenience: husky prepare-commit-msg (strip) + commit-msg (refuse).
+name: No AI commit attribution
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  check-no-ai:
+    name: No AI in commit messages or authors
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Check commit messages and AI author emails
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          RANGE="origin/${BASE_REF}..${HEAD_SHA}"
+          echo "Checking range: $RANGE"
+          if [ -z "$(git log "$RANGE" --format='%H' 2>/dev/null)" ]; then
+            echo "No commits in range; skipping."
+            exit 0
+          fi
+          node scripts/check-no-ai-commit.mjs --range "$RANGE"
+          node scripts/check-no-ai-commit.mjs --authors "$RANGE"
+          echo "OK — no AI attribution or AI author emails."
