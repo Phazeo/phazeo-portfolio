@@ -1,30 +1,79 @@
-import { kayalvizhiConfig } from "../profiles/kayalvizhi/meta";
-import { sriramConfig } from "../profiles/sriram/meta";
-import { testerRobotConfig } from "../profiles/tester-robot/meta";
-import { yokeshwarConfig } from "../profiles/yokeshwar/meta";
 import type { ProfileConfig, ProfileRegistry } from "../types";
 import { DEFAULT_THEME, getActiveProfileVersion, getActiveVersion } from "../types";
 
-/**
- * Central registry of all profiles in this repo.
- * To add a new profile:
- * 1. Create folder: profiles/<slug>/
- * 2. Create meta.ts with ProfileConfig
- * 3. Import and add to this registry
- */
-export const profileRegistry: ProfileRegistry = {
-  kayalvizhi: kayalvizhiConfig,
-  sriram: sriramConfig,
-  "tester-robot": testerRobotConfig,
-  yokeshwar: yokeshwarConfig,
+const SLUG_PATTERN = /^[a-z][a-z0-9-]{1,38}$/;
+
+type MetaModule = {
+  default?: ProfileConfig;
+  [exportName: string]: ProfileConfig | undefined;
 };
+
+/**
+ * Auto-discover profiles from profiles/&lt;slug&gt;/meta.ts (skip folders starting with "_").
+ * Build fails if folder name does not equal meta.slug, slug is invalid, or a slug is duplicated.
+ */
+const metaModules = import.meta.glob("../profiles/*/meta.ts", { eager: true }) as Record<
+  string,
+  MetaModule
+>;
+
+function folderNameFromGlobPath(path: string): string {
+  const match = path.match(/\/profiles\/([^/]+)\/meta\.ts$/);
+  if (!match?.[1]) {
+    throw new Error(`registry: cannot parse profile folder from path: ${path}`);
+  }
+  return match[1];
+}
+
+function resolveConfig(mod: MetaModule, folder: string): ProfileConfig {
+  if (mod.default && typeof mod.default === "object" && "slug" in mod.default) {
+    return mod.default;
+  }
+  for (const value of Object.values(mod)) {
+    if (value && typeof value === "object" && "slug" in value && "versions" in value) {
+      return value;
+    }
+  }
+  throw new Error(`registry: profiles/${folder}/meta.ts must export a ProfileConfig`);
+}
+
+function buildRegistry(): ProfileRegistry {
+  const registry: ProfileRegistry = {};
+  const seenSlugs = new Map<string, string>();
+
+  for (const [path, mod] of Object.entries(metaModules)) {
+    const folder = folderNameFromGlobPath(path);
+    if (folder.startsWith("_")) {
+      continue;
+    }
+    const config = resolveConfig(mod, folder);
+    if (folder !== config.slug) {
+      throw new Error(
+        `registry: folder "${folder}" must equal meta.slug "${config.slug}" (${path})`
+      );
+    }
+    if (!SLUG_PATTERN.test(config.slug)) {
+      throw new Error(`registry: slug "${config.slug}" must match ${SLUG_PATTERN} (${path})`);
+    }
+    const prior = seenSlugs.get(config.slug);
+    if (prior) {
+      throw new Error(`registry: duplicate slug "${config.slug}" in ${prior} and ${path}`);
+    }
+    seenSlugs.set(config.slug, path);
+    registry[config.slug] = config;
+  }
+
+  return registry;
+}
+
+export const profileRegistry: ProfileRegistry = buildRegistry();
 
 export function getProfile(slug: string): ProfileConfig | undefined {
   return profileRegistry[slug];
 }
 
 export function isValidSlug(slug: string): boolean {
-  return slug in profileRegistry;
+  return Object.hasOwn(profileRegistry, slug);
 }
 
 export function getAllSlugs(): string[] {

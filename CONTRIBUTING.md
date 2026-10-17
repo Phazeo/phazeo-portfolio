@@ -5,7 +5,7 @@
 1. **Fork** this repository
 2. **Create** your profile folder: `profiles/<your-slug>/`
 3. **Add** `meta.ts`, `v1/theme.ts`, `v1/ProfilePage.tsx`, `v1/index.tsx`, and components
-4. **Register** in `src/registry.ts`
+4. **Ensure** the folder name equals `meta.slug` (registry auto-discovers `profiles/*/meta.ts`)
 5. **Test** locally with `pnpm dev`
 6. **Open a PR** with your changes
 

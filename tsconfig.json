@@ -11,9 +11,20 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "forceConsistentCasingInFileNames": true,
+
     "resolveJsonModule": true
   },
   "include": ["src", "profiles", "types", "vite.config.ts"]
