@@ -1,7 +1,9 @@
 import { type ComponentType, lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
+
 import type { ProfileComponentLoader, ProfileTheme } from "../../types";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import { LoadingFallback } from "../components/LoadingFallback";
 import { DEFAULT_THEME, getActiveProfileVersion, getProfile, isValidSlug } from "../registry";
 
 import { NotFoundPage } from "./NotFoundPage";
@@ -74,27 +76,28 @@ function loadFont(fontUrl: string): () => void {
   };
 }
 
-function ensureMeta(selector: string, create: () => HTMLMetaElement): HTMLMetaElement {
-  const existing = document.querySelector(selector);
-  if (existing instanceof HTMLMetaElement) {
-    return existing;
-  }
-  const meta = create();
-  document.head.appendChild(meta);
-  return meta;
-}
-
 function applySeo(title: string, description: string, ogImage?: string): () => void {
   const originalTitle = document.title;
-  const originalValues: Map<Element, string> = new Map();
+  const originalValues = new Map<HTMLMetaElement, string | null>();
+  const created = new Set<HTMLMetaElement>();
+
   const updateMeta = (
     selector: string,
     attribute: string,
     value: string,
     create: () => HTMLMetaElement
   ) => {
-    const element = ensureMeta(selector, create);
-    originalValues.set(element, element.getAttribute(attribute) ?? "");
+    const existing = document.querySelector(selector);
+    let element: HTMLMetaElement;
+    if (existing instanceof HTMLMetaElement) {
+      element = existing;
+      originalValues.set(element, element.getAttribute(attribute));
+    } else {
+      element = create();
+      document.head.appendChild(element);
+      created.add(element);
+      originalValues.set(element, null);
+    }
     element.setAttribute(attribute, value);
   };
 
@@ -128,20 +131,22 @@ function applySeo(title: string, description: string, ogImage?: string): () => v
       return meta;
     });
   }
+
   return () => {
     document.title = originalTitle;
     for (const [element, originalValue] of originalValues) {
-      element.setAttribute("content", originalValue);
+      if (created.has(element)) {
+        // Remove tags we created — do not leave empty meta behind.
+        element.remove();
+        continue;
+      }
+      if (originalValue === null) {
+        element.removeAttribute("content");
+      } else {
+        element.setAttribute("content", originalValue);
+      }
     }
   };
-}
-
-function LoadingFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-(--color-background)">
-      <div className="animate-pulse text-gray-500">Loading...</div>
-    </div>
-  );
 }
 
 export function PortfolioPage() {
@@ -211,7 +216,7 @@ export function PortfolioPage() {
   }
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary resetKeys={[slug]} onReset={() => window.location.reload()}>
       <Suspense fallback={<LoadingFallback />}>
         {LazyComponent ? <LazyComponent /> : Component ? <Component /> : null}
       </Suspense>
