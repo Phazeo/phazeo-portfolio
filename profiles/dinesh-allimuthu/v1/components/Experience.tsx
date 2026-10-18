@@ -6,8 +6,21 @@ import { profileAssetUrl } from "../../../_shared/assets";
 /* Logo: local self-hosted file → initials badge (no external hosts)  */
 /* ------------------------------------------------------------------ */
 
+const LOGO_URLS: Record<string, string> = {
+  "omnicom.png": profileAssetUrl("dinesh-allimuthu", "logos/omnicom.png"),
+  "kinesso.png": profileAssetUrl("dinesh-allimuthu", "logos/kinesso.png"),
+  "afd.jpg": profileAssetUrl("dinesh-allimuthu", "logos/afd.jpg"),
+  "bnp.png": profileAssetUrl("dinesh-allimuthu", "logos/bnp.png"),
+  "paypal.png": profileAssetUrl("dinesh-allimuthu", "logos/paypal.png"),
+  "tcs.png": profileAssetUrl("dinesh-allimuthu", "logos/tcs.png"),
+};
+
 function logoPath(file: string): string {
-  return profileAssetUrl("dinesh-allimuthu", `logos/${file}`);
+  const url = LOGO_URLS[file];
+  if (!url) {
+    throw new Error(`registry: unknown logo file for dinesh-allimuthu: ${file}`);
+  }
+  return url;
 }
 
 function CompanyLogo({
