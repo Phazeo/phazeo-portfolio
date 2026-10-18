@@ -109,4 +109,31 @@ check(
   "non-profile-path"
 );
 
+// non-owner deletes a file in someone else's profile -> fail
+check(
+  "non-owner-deletes-other-profile-file",
+  {
+    authorId: 13678035,
+    authorLogin: "sowmipriya",
+    changedPaths: ["profiles/dinesh-allimuthu/v1/Hero.tsx"],
+  },
+  false,
+  "not-profile-owner"
+);
+
+// non-owner renames a file out of someone else's profile (delete + add) -> fail
+check(
+  "non-owner-renames-out-of-other-profile",
+  {
+    authorId: 13678035,
+    authorLogin: "sowmipriya",
+    changedPaths: [
+      "profiles/dinesh-allimuthu/v1/notes.txt",
+      "tmp/notes.txt",
+    ],
+  },
+  false,
+  "not-profile-owner"
+);
+
 console.log("test-profile-ownership: all cases OK");
