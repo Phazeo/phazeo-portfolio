@@ -120,6 +120,7 @@ Never commit:
 - **Internal architecture details** that would help an attacker (non-public hostnames, endpoints, or deploy secrets).
 - **Image metadata** - JPEG/PNG/WebP/GIF anywhere must not carry EXIF or XMP (including orientation-only EXIF). Strip metadata before adding images.
 - **Forbidden filenames** - `.env*`, `*.pem` / `*.key` / `*.p12` / `*.pfx`, `id_rsa*` / `id_ed25519*`, `*.tfstate*`, `*.sqlite*` / `*.db` / `*.dump`, `docker-compose*.yml`, nginx/caddy configs, `*.kdbx`.
+- **Em dashes and en dashes** outside `profiles/` and `public/profiles/` - use a normal hyphen, a colon, or rewrite. Profile content trees are exempt so people can keep their own wording.
 
 Run the single entry point before you push (also runs on husky pre-commit for staged changes, and in CI):
 

@@ -22,6 +22,8 @@ jobs:
       - name: Checkout
         # actions/checkout@v7.0.1 (tag v7.0.1 → this commit; published 2026-07-20)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
         # pnpm/action-setup@v6.1.0 (tag v6.1.0^{} → this commit; published 2026-09-05)
