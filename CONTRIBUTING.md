@@ -105,7 +105,7 @@ Never commit:
 - **Unreviewed hosts/URLs** — every hostname anywhere (including `profiles/`) must appear in `.github/allowed-hosts.txt` as an **exact** entry (or `*.example.com` for deliberate subdomain allowlists — never `*.phazeo.com`). Bare `*.phazeo.com` hostnames are also gated. Do not add unreviewed API or infrastructure hosts without review.
 - **Tool caches / binaries / oversized files** — never commit `.tools/`, `node_modules/`, or `dist/`; never commit ELF/Mach-O/PE/zip/tar/gzip (or +x) binaries outside `.github/allowed-binaries.txt`; never commit files over 2 MB outside `.github/allowed-large-files.txt`.
 - **Credentials** — connection strings, password/token/api_key literals, `Authorization` headers, private key blocks, cloud tokens.
-- **Internal architecture details** that would help an attacker (private hostnames, VPN endpoints, runner IPs, deploy secrets).
+- **Internal architecture details** that would help an attacker (non-public hostnames, endpoints, or deploy secrets).
 - **Image metadata** — JPEG/PNG/WebP/GIF anywhere must not carry EXIF or XMP (including orientation-only EXIF). Strip metadata before adding images.
 - **Forbidden filenames** — `.env*`, `*.pem` / `*.key` / `*.p12` / `*.pfx`, `id_rsa*` / `id_ed25519*`, `*.tfstate*`, `*.sqlite*` / `*.db` / `*.dump`, `docker-compose*.yml`, nginx/caddy configs, `*.kdbx`.
 

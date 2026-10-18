@@ -7,9 +7,18 @@
  * Usage: node scripts/prove-csp.mjs [--port 4173]
  * Expects dist/ already built with _headers and _redirects.
  */
-import { spawn } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -34,6 +43,10 @@ const EXPECTED_HEADING_FONT = {
 };
 
 function findChromium() {
+  const fromEnv = process.env.CHROME_PATH || process.env.CHROMIUM_PATH;
+  if (fromEnv && existsSync(fromEnv)) {
+    return fromEnv;
+  }
   const cache = join(process.env.HOME ?? "", ".cache/ms-playwright");
   if (existsSync(cache)) {
     for (const dir of readdirSync(cache)) {
@@ -47,10 +60,50 @@ function findChromium() {
       }
     }
   }
-  for (const c of ["/usr/bin/google-chrome", "/usr/bin/chromium"]) {
+  for (const c of [
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+  ]) {
     if (existsSync(c)) return c;
   }
   return null;
+}
+
+/** Prove write-headers rejects inline on* handlers (temp dist only). */
+function proveWriteHeadersRejectsHandlers() {
+  const tmp = mkdtempSync(join(tmpdir(), "phazeo-write-headers-"));
+  try {
+    mkdirSync(join(tmp, "dist"), { recursive: true });
+    mkdirSync(join(tmp, "scripts"), { recursive: true });
+    writeFileSync(
+      join(tmp, "dist/index.html"),
+      '<!doctype html><html><body><div onpointerdown="x()">x</div></body></html>\n',
+      "utf8"
+    );
+    writeFileSync(
+      join(tmp, "scripts/write-headers.mjs"),
+      readFileSync(join(ROOT, "scripts/write-headers.mjs"), "utf8"),
+      "utf8"
+    );
+    const result = spawnSync(process.execPath, ["scripts/write-headers.mjs"], {
+      cwd: tmp,
+      encoding: "utf8",
+    });
+    if (result.status === 0) {
+      console.error("prove-csp: write-headers should fail on onpointerdown=");
+      process.exit(1);
+    }
+    const err = `${result.stderr ?? ""}${result.stdout ?? ""}`;
+    if (!/inline event handler/i.test(err)) {
+      console.error("prove-csp: write-headers failure message missing handler hint");
+      process.exit(1);
+    }
+    console.log("prove-csp: write-headers rejects onpointerdown= OK");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 }
 
 async function getFreePort() {
@@ -136,10 +189,12 @@ async function evaluate(send, expression) {
 }
 
 async function main() {
+  proveWriteHeadersRejectsHandlers();
+
   const chromePath = findChromium();
   if (!chromePath) {
     console.error(
-      "prove-csp: no Chromium found (Playwright not in package.json; no ms-playwright/google-chrome). STOP — do not add Playwright without approval."
+      "prove-csp: no Chromium found. Set CHROME_PATH to a usable Chrome/Chromium binary. STOP — do not add Playwright or download browsers without approval."
     );
     process.exit(2);
   }

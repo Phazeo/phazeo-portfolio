@@ -1,6 +1,6 @@
 # Phazeo Portfolio Profiles
 
-Public repository for portfolio profiles. External developers can add and edit profiles here without needing access to the private monorepo.
+Public repository for portfolio profiles. External developers can add and edit profiles here.
 
 Before publishing personal content, read [PROFILE-TERMS.md](./PROFILE-TERMS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md).
 
@@ -71,9 +71,7 @@ See `profiles/sriram-sm/` for a complete example.
 - `ProfileTheme` – CSS variables (self-hosted fonts via `@fontsource-variable`)
 - `ProfileSeo` – title, description, ogImage
 
-## Integration with Main Site
-
-The private `phazeo-portfolio` repo clones this repo at build time, merges the registry, and deploys. Your changes here are pulled in on the next deploy.
+## Deployment
 
 Deployment is handled by the maintainers.
 

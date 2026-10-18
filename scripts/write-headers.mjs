@@ -13,8 +13,8 @@ const DIST = join(ROOT, "dist");
 const INDEX = join(DIST, "index.html");
 const HEADERS_PATH = join(DIST, "_headers");
 
-const INLINE_HANDLER =
-  /\s(on(?:abort|blur|cancel|canplay|canplaythrough|change|click|close|contextmenu|copy|cuechange|cut|dblclick|drag|dragend|dragenter|dragleave|dragover|dragstart|drop|durationchange|emptied|ended|error|focus|formdata|input|invalid|keydown|keypress|keyup|load|loadeddata|loadedmetadata|loadstart|mousedown|mouseenter|mouseleave|mousemove|mouseout|mouseover|mouseup|paste|pause|play|playing|progress|ratechange|reset|resize|scroll|securitypolicyviolation|seeked|seeking|select|slotchange|stalled|submit|suspend|timeupdate|toggle|volumechange|waiting|wheel))\s*=/i;
+/** Any inline event-handler attribute: on* = … inside a tag. */
+const INLINE_HANDLER = /<[^>]+\son[a-z]+\s*=/i;
 
 const STYLE_BLOCK = /<style\b[^>]*>/i;
 const STYLE_ATTR = /\sstyle\s*=/i;
@@ -60,9 +60,6 @@ function buildCsp(html) {
   }
 
   const inline = extractInlineScripts(html);
-  if (inline.length === 0) {
-    // SPA may still have zero; allow script-src 'self' only.
-  }
   const hashes = [];
   for (const body of inline) {
     if (body.length === 0) {
