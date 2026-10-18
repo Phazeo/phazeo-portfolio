@@ -68,26 +68,14 @@ See `profiles/sriram-sm/` for a complete example.
 
 - `ProfileConfig` – metadata (slug, displayName, role, skills, socials, versions)
 - `ProfileVersion` – `{ componentLoader, theme, seo }` (componentLoader enables per-profile code splitting)
-- `ProfileTheme` – CSS variables, optional font URL
+- `ProfileTheme` – CSS variables (self-hosted fonts via `@fontsource-variable`)
 - `ProfileSeo` – title, description, ogImage
 
 ## Integration with Main Site
 
 The private `phazeo-portfolio` repo clones this repo at build time, merges the registry, and deploys. Your changes here are pulled in on the next deploy.
 
-### Auto-deploy after CI on main
-
-The `trigger-deploy.yml` workflow runs only after the **CI** workflow succeeds on
-a push to `main` (so a broken main does not poke Cloudflare). It then POSTs to
-the Cloudflare deploy hook so the live site rebuilds with the latest profiles.
-
-**Setup (one-time):** Add a GitHub secret in this repo:
-
-- **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
-- Name: `CLOUDFLARE_DEPLOY_HOOK`
-- Value: the deploy hook URL from Cloudflare Pages (Pages → project → Settings → Deploy hooks)
-
-Do not commit the URL. Keep it as a secret.
+Deployment is handled by the maintainers.
 
 ## License
 
