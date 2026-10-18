@@ -35,4 +35,4 @@ Git history may still contain older copies. Request a removal if you need conten
 
 ## Requesting removal
 
-Open a GitHub issue on this repository, or use the contact method shown on the live portfolio site. Do not put a personal email address in this file.
+Open a GitHub issue that contains NO personal details: only the profile address and the words "removal request". The repository owner will follow up privately.
