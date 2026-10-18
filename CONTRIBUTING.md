@@ -1,6 +1,18 @@
 # Contributing to Phazeo Portfolio Profiles
 
-## Adding Your Profile
+## Guest profile in 5 steps
+
+Guests must be **invited by the repository owner** first (approved GitHub account). Then:
+
+1. **Fork** this repository
+2. **Copy** [`docs/guest-profile.example.json`](./docs/guest-profile.example.json) to `profiles/<your-slug>/profile.json`
+3. **Fill it in** — point `$schema` at `../../schemas/profile.schema.json` for editor autocomplete; keep every URL on `https://`
+4. **Optionally add** `public/profiles/<your-slug>/photo.jpg` (strip image metadata first) and `public/profiles/<your-slug>/resume.pdf` (no phone numbers — the PR will be blocked if scanners find them)
+5. **Open a PR** from your approved account
+
+Use either a React profile (`meta.ts` + `v1/…`) **or** a data-first `profile.json`, never both in the same slug folder.
+
+## Adding a React profile (team)
 
 1. **Fork** this repository
 2. **Create** your profile folder: `profiles/<your-slug>/`

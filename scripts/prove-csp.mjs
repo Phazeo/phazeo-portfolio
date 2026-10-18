@@ -14,6 +14,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -25,6 +26,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const DIST = join(ROOT, "dist");
+const DIST_PROD_BACKUP = join(ROOT, ".tmp-dist-prod-csp");
 
 const PROFILE_SLUGS = [
   "dinesh-allimuthu",
@@ -427,6 +429,102 @@ async function main() {
     });
   }
 
+  // Production dist must not include the guest CSP example slug/name.
+  {
+    const hit = distContainsMarker(DIST, ["alex-morgan", "Alex Morgan"]);
+    const ok = !hit;
+    if (!ok) failed = true;
+    rows.push({
+      route: "prod-dist (no guest example)",
+      status: ok ? "ok" : "FAIL",
+      violations: 0,
+      errors: ok ? 0 : 1,
+      heading: hit ? `found:${hit}` : "clean",
+      fontFamily: null,
+    });
+  }
+
+  // Stop production server before rebuilding with the test-only example.
+  serve.kill("SIGKILL");
+  await sleep(300);
+
+  // Test-only build with docs example injected as /alex-morgan
+  rmSync(DIST_PROD_BACKUP, { recursive: true, force: true });
+  renameSync(DIST, DIST_PROD_BACKUP);
+  const guestBuild = spawnSync(
+    "pnpm",
+    ["exec", "vite", "build"],
+    {
+      cwd: ROOT,
+      env: { ...process.env, VITE_GUEST_CSP_EXAMPLE: "1" },
+      encoding: "utf8",
+    }
+  );
+  if (guestBuild.status !== 0) {
+    restoreProdDist();
+    console.error(guestBuild.stdout);
+    console.error(guestBuild.stderr);
+    console.error("prove-csp: guest example vite build failed");
+    process.exit(1);
+  }
+  const headers = spawnSync(process.execPath, [join(ROOT, "scripts/write-headers.mjs")], {
+    cwd: ROOT,
+    encoding: "utf8",
+  });
+  if (headers.status !== 0) {
+    restoreProdDist();
+    console.error(headers.stderr || headers.stdout);
+    console.error("prove-csp: write-headers failed for guest example build");
+    process.exit(1);
+  }
+
+  const serve2 = spawn(process.execPath, [join(ROOT, "scripts/serve-dist.mjs"), "--port", String(servePort)], {
+    cwd: ROOT,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  await new Promise((res, rej) => {
+    const t = setTimeout(() => rej(new Error("serve-dist (guest) timeout")), 15000);
+    serve2.stdout.on("data", (buf) => {
+      if (String(buf).includes("LISTEN")) {
+        clearTimeout(t);
+        res();
+      }
+    });
+    serve2.stderr.on("data", (buf) => process.stderr.write(buf));
+    serve2.on("exit", (code) => {
+      clearTimeout(t);
+      rej(new Error(`serve-dist (guest) exited ${code}`));
+    });
+  });
+
+  await resetCollectors();
+  {
+    const r = await loadRoute("/alex-morgan", { waitMs: 2000 });
+    const expected = "Outfit Variable";
+    const fontOk = typeof r.fontFamily === "string" && r.fontFamily.includes(expected);
+    const violations = r.violations?.length ?? 0;
+    const errors = r.errors?.length ?? 0;
+    const ok =
+      violations === 0 &&
+      errors === 0 &&
+      typeof r.h1 === "string" &&
+      r.h1.includes("Alex Morgan") &&
+      fontOk;
+    if (!ok) failed = true;
+    rows.push({
+      route: "/alex-morgan (guest example, test build)",
+      status: ok ? "ok" : "FAIL",
+      violations,
+      errors,
+      heading: r.h1,
+      fontFamily: r.fontFamily,
+      expectedFont: expected,
+    });
+  }
+
+  serve2.kill("SIGKILL");
+  restoreProdDist();
+
   console.log(JSON.stringify({ chromePath, rows }, null, 2));
   for (const row of rows) {
     console.log(
@@ -446,13 +544,58 @@ async function main() {
 
   browser.close();
   chrome.kill("SIGKILL");
-  serve.kill("SIGKILL");
 
   if (failed) {
     console.error("prove-csp: FAILED");
     process.exit(1);
   }
   console.log("prove-csp: OK");
+}
+
+function restoreProdDist() {
+  rmSync(DIST, { recursive: true, force: true });
+  if (existsSync(DIST_PROD_BACKUP)) {
+    renameSync(DIST_PROD_BACKUP, DIST);
+  }
+}
+
+/**
+ * @param {string} dir
+ * @param {string[]} markers
+ * @returns {string | null}
+ */
+function distContainsMarker(dir, markers) {
+  if (!existsSync(dir)) return "missing-dist";
+  /** @type {string[]} */
+  const stack = [dir];
+  while (stack.length) {
+    const cur = stack.pop();
+    if (!cur) break;
+    let entries;
+    try {
+      entries = readdirSync(cur, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const ent of entries) {
+      const abs = join(cur, ent.name);
+      if (ent.isDirectory()) {
+        stack.push(abs);
+        continue;
+      }
+      if (!/\.(js|css|html|json|txt|map)$/i.test(ent.name)) continue;
+      let text = "";
+      try {
+        text = readFileSync(abs, "utf8");
+      } catch {
+        continue;
+      }
+      for (const m of markers) {
+        if (text.includes(m)) return m;
+      }
+    }
+  }
+  return null;
 }
 
 main().catch((err) => {
