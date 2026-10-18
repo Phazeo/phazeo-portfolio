@@ -3,7 +3,7 @@
  * Default-deny hostname scanner for the whole tree (including profiles/).
  * Exact allowlist match by default; "*.example.com" allows that host and subdomains.
  * Also flags bare *.phazeo.com hostnames (no scheme) that are not exactly listed.
- * Never prints full URLs — host + file:line only.
+ * Never prints full URLs - host + file:line only.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";

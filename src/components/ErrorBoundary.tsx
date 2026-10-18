@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   override componentDidUpdate(prevProps: ErrorBoundaryProps): void {
     if (this.state.hasError && resetKeysChanged(prevProps.resetKeys, this.props.resetKeys)) {
-      // Clear error state only — do not reload the page.
+      // Clear error state only - do not reload the page.
       this.setState({ hasError: false, error: null });
     }
   }

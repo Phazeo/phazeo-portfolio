@@ -1,4 +1,4 @@
-# Reserved path segments — never valid as profile slugs.
+# Reserved path segments - never valid as profile slugs.
 admin
 api
 assets

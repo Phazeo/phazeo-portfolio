@@ -119,6 +119,8 @@ run_path_scanners() {
     node "$ROOT/scripts/check-forbidden-files.mjs" --root "$staged_tree"
     echo "check-leaks: host allowlist (staged)..." >&2
     node "$ROOT/scripts/check-hosts.mjs" --root "$staged_tree"
+    echo "check-leaks: public boundary (staged)..." >&2
+    node "$ROOT/scripts/check-public-boundary.mjs" --root "$staged_tree"
     return 0
   fi
   echo "check-leaks: forbidden files / image metadata ($target)..." >&2
@@ -127,6 +129,12 @@ run_path_scanners() {
   echo "check-leaks: host allowlist ($target)..." >&2
   # shellcheck disable=SC2086
   node "$ROOT/scripts/check-hosts.mjs" --root "$target" $extra
+  echo "check-leaks: public boundary ($target)..." >&2
+  if [ "$target" = "$ROOT" ]; then
+    node "$ROOT/scripts/check-public-boundary.mjs" --tree
+  else
+    node "$ROOT/scripts/check-public-boundary.mjs" --root "$target"
+  fi
 }
 
 run_commits_mode() {
@@ -155,7 +163,7 @@ run_commits_mode() {
 
     file_list=$(mktemp)
     commit_tree=$(mktemp -d)
-    # Raw modes (100644 / 100755) from the commit tree — materialise blobs and
+    # Raw modes (100644 / 100755) from the commit tree - materialise blobs and
     # apply the executable bit so [binary-file] sees 100755 even if a later
     # commit clears it.
     git -C "$source_path" diff-tree --no-commit-id -r --diff-filter=AM --raw "$commit" >"$file_list" || true

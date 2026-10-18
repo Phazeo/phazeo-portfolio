@@ -6,8 +6,8 @@ Guests must be **invited by the repository owner** first (approved GitHub accoun
 
 1. **Fork** this repository
 2. **Copy** [`docs/guest-profile.example.json`](./docs/guest-profile.example.json) to `profiles/<your-slug>/profile.json`
-3. **Fill it in** — point `$schema` at `../../schemas/profile.schema.json` for editor autocomplete; keep every URL on `https://`
-4. **Optionally add** `public/profiles/<your-slug>/photo.jpg` (strip image metadata first) and `public/profiles/<your-slug>/resume.pdf` (no phone numbers — the PR will be blocked if scanners find them)
+3. **Fill it in** - point `$schema` at `../../schemas/profile.schema.json` for editor autocomplete; keep every URL on `https://`
+4. **Optionally add** `public/profiles/<your-slug>/photo.jpg` (strip image metadata first) and `public/profiles/<your-slug>/resume.pdf` (no phone numbers - the PR will be blocked if scanners find them)
 5. **Open a PR** from your approved account
 
 Use either a React profile (`meta.ts` + `v1/…`) **or** a data-first `profile.json`, never both in the same slug folder.
@@ -98,7 +98,7 @@ See `profiles/sriram-sm/` for a complete example.
 - In code and SEO, use `profileAssetUrl` / `profileAssetPath` from
   `profiles/_shared/assets.ts` (`profiles/<slug>/<file>`). Old
   `/profiles/_public/*` URLs 301 to `/profiles/*` via `public/_redirects`.
-- Optional: set `cardSummary` and `skills` in `meta.ts` — the local home page
+- Optional: set `cardSummary` and `skills` in `meta.ts` - the local home page
   shows `cardSummary` on profile cards
 
 ## Guidelines
@@ -113,13 +113,13 @@ This repository is **public**. Treat every commit as visible forever.
 
 Never commit:
 
-- **Internal IPs** — private ranges (`10/8`, `172.16/12`, `192.168/16`, `fc00::/7`) or other non-documentation literals. Loopback, `0.0.0.0`, and RFC 5737 / RFC 3849 documentation ranges are the only IP literals the gate allows.
-- **Unreviewed hosts/URLs** — every hostname anywhere (including `profiles/`) must appear in `.github/allowed-hosts.txt` as an **exact** entry (or `*.example.com` for deliberate subdomain allowlists — never `*.phazeo.com`). Bare `*.phazeo.com` hostnames are also gated. Do not add unreviewed API or infrastructure hosts without review.
-- **Tool caches / binaries / oversized files** — never commit `.tools/`, `node_modules/`, or `dist/`; never commit ELF/Mach-O/PE/zip/tar/gzip (or +x) binaries outside `.github/allowed-binaries.txt`; never commit files over 2 MB outside `.github/allowed-large-files.txt`.
-- **Credentials** — connection strings, password/token/api_key literals, `Authorization` headers, private key blocks, cloud tokens.
+- **Internal IPs** - private ranges (`10/8`, `172.16/12`, `192.168/16`, `fc00::/7`) or other non-documentation literals. Loopback, `0.0.0.0`, and RFC 5737 / RFC 3849 documentation ranges are the only IP literals the gate allows.
+- **Unreviewed hosts/URLs** - every hostname anywhere (including `profiles/`) must appear in `.github/allowed-hosts.txt` as an **exact** entry (or `*.example.com` for deliberate subdomain allowlists - never `*.phazeo.com`). Bare `*.phazeo.com` hostnames are also gated. Do not add unreviewed API or infrastructure hosts without review.
+- **Tool caches / binaries / oversized files** - never commit `.tools/`, `node_modules/`, or `dist/`; never commit ELF/Mach-O/PE/zip/tar/gzip (or +x) binaries outside `.github/allowed-binaries.txt`; never commit files over 2 MB outside `.github/allowed-large-files.txt`.
+- **Credentials** - connection strings, password/token/api_key literals, `Authorization` headers, private key blocks, cloud tokens.
 - **Internal architecture details** that would help an attacker (non-public hostnames, endpoints, or deploy secrets).
-- **Image metadata** — JPEG/PNG/WebP/GIF anywhere must not carry EXIF or XMP (including orientation-only EXIF). Strip metadata before adding images.
-- **Forbidden filenames** — `.env*`, `*.pem` / `*.key` / `*.p12` / `*.pfx`, `id_rsa*` / `id_ed25519*`, `*.tfstate*`, `*.sqlite*` / `*.db` / `*.dump`, `docker-compose*.yml`, nginx/caddy configs, `*.kdbx`.
+- **Image metadata** - JPEG/PNG/WebP/GIF anywhere must not carry EXIF or XMP (including orientation-only EXIF). Strip metadata before adding images.
+- **Forbidden filenames** - `.env*`, `*.pem` / `*.key` / `*.p12` / `*.pfx`, `id_rsa*` / `id_ed25519*`, `*.tfstate*`, `*.sqlite*` / `*.db` / `*.dump`, `docker-compose*.yml`, nginx/caddy configs, `*.kdbx`.
 
 Run the single entry point before you push (also runs on husky pre-commit for staged changes, and in CI):
 

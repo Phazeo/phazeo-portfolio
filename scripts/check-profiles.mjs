@@ -60,21 +60,21 @@ function formatAjvError(err, file) {
   if (err.keyword === "additionalProperties") {
     const prop = params.additionalProperty;
     if (typeof prop === "string" && FORBIDDEN_KEYS.has(prop)) {
-      return `${file}: ${path} — ${FORBIDDEN_FIELD_MSG}`;
+      return `${file}: ${path} - ${FORBIDDEN_FIELD_MSG}`;
     }
-    return `${file}: ${path} — unknown field "${prop}" is not allowed`;
+    return `${file}: ${path} - unknown field "${prop}" is not allowed`;
   }
   if (err.keyword === "format" && params.format === "email") {
-    return `${file}: ${path} — must be a valid email address`;
+    return `${file}: ${path} - must be a valid email address`;
   }
   if (err.keyword === "pattern" && /https/.test(String(err.schema || ""))) {
-    return `${file}: ${path} — URL must start with https://`;
+    return `${file}: ${path} - URL must start with https://`;
   }
   if (err.keyword === "pattern" && /0-9/.test(String(err.schema || ""))) {
-    return `${file}: ${path} — date must be YYYY, YYYY-MM, or YYYY-MM-DD`;
+    return `${file}: ${path} - date must be YYYY, YYYY-MM, or YYYY-MM-DD`;
   }
   const msg = err.message || "invalid value";
-  return `${file}: ${path} — ${msg}`;
+  return `${file}: ${path} - ${msg}`;
 }
 
 /**
@@ -87,7 +87,7 @@ function collectPhoneHits(value, path, out, file) {
   if (typeof value === "string") {
     if (textMatchesAnyPhone(value)) {
       out.push(
-        `${file}: ${path} — ${FORBIDDEN_FIELD_MSG}`
+        `${file}: ${path} - ${FORBIDDEN_FIELD_MSG}`
       );
     }
     return;
@@ -99,7 +99,7 @@ function collectPhoneHits(value, path, out, file) {
   if (value && typeof value === "object") {
     for (const [k, v] of Object.entries(value)) {
       if (FORBIDDEN_KEYS.has(k)) {
-        out.push(`${file}: ${path}/${k} — ${FORBIDDEN_FIELD_MSG}`);
+        out.push(`${file}: ${path}/${k} - ${FORBIDDEN_FIELD_MSG}`);
       }
       collectPhoneHits(v, `${path}/${k}`, out, file);
     }
@@ -306,7 +306,7 @@ function main() {
 
     if (hasMeta && hasJson) {
       errors.push(
-        `check-profiles: profiles/${slug}/ has both meta.ts and profile.json — use exactly one`
+        `check-profiles: profiles/${slug}/ has both meta.ts and profile.json - use exactly one`
       );
       continue;
     }

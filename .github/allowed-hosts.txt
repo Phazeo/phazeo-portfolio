@@ -1,4 +1,4 @@
-# Reviewed allowlist — exact host match only.
+# Reviewed allowlist - exact host match only.
 # Subdomains are allowed ONLY for entries written as "*.example.com".
 # Never use a wildcard for phazeo.com (no "*.phazeo.com").
 # One host per line. Adding a host requires review.

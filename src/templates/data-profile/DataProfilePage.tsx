@@ -165,7 +165,7 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
                     <span className="text-gray-400 dark:text-zinc-500">
                       {" "}
                       · {job.startDate}
-                      {job.endDate ? ` – ${job.endDate}` : " – Present"}
+                      {job.endDate ? ` - ${job.endDate}` : " - Present"}
                     </span>
                   </p>
                   {job.summary ? (
@@ -225,7 +225,7 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
                   <p className="text-gray-600 dark:text-zinc-400">
                     {[ed.studyType, ed.area].filter(Boolean).join(" · ")}
                     {ed.startDate || ed.endDate
-                      ? ` · ${ed.startDate ?? "?"}${ed.endDate ? ` – ${ed.endDate}` : ""}`
+                      ? ` · ${ed.startDate ?? "?"}${ed.endDate ? ` - ${ed.endDate}` : ""}`
                       : ""}
                   </p>
                 </li>
@@ -244,7 +244,7 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
                   {skill.keywords && skill.keywords.length > 0 ? (
                     <span className="text-gray-600 dark:text-zinc-400">
                       {" "}
-                      — {skill.keywords.join(", ")}
+                      - {skill.keywords.join(", ")}
                     </span>
                   ) : null}
                 </li>
@@ -268,7 +268,7 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
                   </span>
                   <span className="text-gray-600 dark:text-zinc-400">
                     {[cert.issuer, cert.date].filter(Boolean).length > 0
-                      ? ` — ${[cert.issuer, cert.date].filter(Boolean).join(" · ")}`
+                      ? ` - ${[cert.issuer, cert.date].filter(Boolean).join(" · ")}`
                       : ""}
                   </span>
                 </li>
@@ -285,7 +285,7 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
                 <li key={`${i}-${lang.language}`} className="text-gray-700 dark:text-zinc-300">
                   <span className="font-medium">{lang.language}</span>
                   {lang.fluency ? (
-                    <span className="text-gray-500 dark:text-zinc-500"> — {lang.fluency}</span>
+                    <span className="text-gray-500 dark:text-zinc-500"> - {lang.fluency}</span>
                   ) : null}
                 </li>
               ))}

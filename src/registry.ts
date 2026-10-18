@@ -31,7 +31,7 @@ type GuestCspInjector = {
   injectGuestCspExample: (registry: ProfileRegistry, seenSlugs: Map<string, string>) => void;
 };
 
-/** Test-only module — omitted from production via dead-code elimination. */
+/** Test-only module - omitted from production via dead-code elimination. */
 const guestCspModules =
   import.meta.env.VITE_GUEST_CSP_EXAMPLE === "1"
     ? (import.meta.glob("./registry-guest-csp.ts", { eager: true }) as Record<
@@ -100,7 +100,7 @@ function buildRegistry(): ProfileRegistry {
     }
     if (reactFolders.has(folder)) {
       throw new Error(
-        `registry: profiles/${folder}/ has both meta.ts and profile.json — use exactly one`
+        `registry: profiles/${folder}/ has both meta.ts and profile.json - use exactly one`
       );
     }
     const config = configFromDataProfile(folder, data, path);

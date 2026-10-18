@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Lossless strip of image metadata (no new deps).
- * JPEG: drop APPn (0xE0–0xEF) and COM (0xFE) segments; keep SOF/SOS/DHT/DQT/etc.
+ * JPEG: drop APPn (0xE0-0xEF) and COM (0xFE) segments; keep SOF/SOS/DHT/DQT/etc.
  * PNG: drop eXIf, tEXt, zTXt, iTXt chunks.
  * Usage: node scripts/strip-image-metadata.mjs <file> [<file>...]
  * Writes in place. Prints path + before/after byte sizes.

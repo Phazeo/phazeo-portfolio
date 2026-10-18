@@ -1,4 +1,4 @@
-# Invite-only profile ownership — decision function has no network; uses PR event ids only.
+# Invite-only profile ownership - decision function has no network; uses PR event ids only.
 name: Profile ownership
 
 on:

@@ -1,0 +1,50 @@
+# Public/private boundary watch - issues and review comments (fail only; never mutate).
+name: Public boundary watch
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  pull_request_review_comment:
+    types: [created, edited]
+
+concurrency:
+  group: public-boundary-watch-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  public-boundary-watch:
+    name: public-boundary-watch
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout default branch
+        # actions/checkout@v7.0.1 (tag v7.0.1 → this commit; published 2026-07-20)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        # actions/setup-node@v7.0.0 (tag v7.0.0 → this commit; published 2026-07-14)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Check issue or comment text
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = "issues" ]; then
+            node scripts/check-public-boundary.mjs --text-env ISSUE_TITLE
+            node scripts/check-public-boundary.mjs --text-env ISSUE_BODY
+          else
+            node scripts/check-public-boundary.mjs --text-env COMMENT_BODY
+          fi

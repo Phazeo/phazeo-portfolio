@@ -11,7 +11,7 @@ Excluded from production scans. Do not copy into real paths.
 | `metadata-case/.../orientation-exif.jpg` | fail (`image-metadata`) |
 | `time-like.txt` | pass (not IPv6) |
 | `ula-ipv6.txt` | fail (ULA IPv6) |
-| `host-fail-bare/` | fail (`disallowed-bare-phazeo-host`) |
+| `host-fail-bare/` | fail (`disallowed-host`) |
 | `host-fail-url/` | fail (`disallowed-host`) |
 | `host-pass/` | pass |
 | `tool-cache-case/.tools/...` | fail (`tool-cache`) |

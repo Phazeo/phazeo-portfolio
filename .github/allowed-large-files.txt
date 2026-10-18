@@ -1,2 +1,2 @@
 # Reviewed paths allowed to exceed 2 MB (one path per line, repo-relative).
-# Empty by default — add only after review.
+# Empty by default - add only after review.

@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Prove fixtures, staged path, and --commits path fail closed; clean cases pass.
-# Reports rule id / file only — never secret values.
+# Reports rule id / file only - never secret values.
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
@@ -154,11 +154,20 @@ pass_case "time-like-not-ipv6" \
 fail_case "ula-ipv6" \
   "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/ula-ipv6.txt"
 
-fail_case "bare-internal-phazeo" \
+fail_case "bare-disallowed-example-host" \
   node "$ROOT/scripts/check-hosts.mjs" --include-fixtures --root "$FIX/host-fail-bare"
 
-fail_case "url-admin-phazeo" \
+fail_case "url-disallowed-example-host" \
   node "$ROOT/scripts/check-hosts.mjs" --include-fixtures --root "$FIX/host-fail-url"
+
+# Bare *.phazeo.com rule: build a synthetic non-allowlisted host at prove time
+# so no disallowed hostname is stored as a contiguous token in this repo.
+BARE_PHAZEO_TMP=$(mktemp -d)
+apex="phazeo.com"
+printf 'host = fixture-deny.%s\n' "$apex" >"$BARE_PHAZEO_TMP/note.txt"
+fail_case "bare-unlisted-phazeo-host" \
+  node "$ROOT/scripts/check-hosts.mjs" --include-fixtures --root "$BARE_PHAZEO_TMP"
+rm -rf "$BARE_PHAZEO_TMP"
 
 pass_case "portfolio-phazeo-host" \
   node "$ROOT/scripts/check-hosts.mjs" --include-fixtures --root "$FIX/host-pass"
@@ -292,7 +301,7 @@ echo "OK: commits binary-then-deleted failed as expected (exit $rc)"
 echo "=== PROVE FAIL commits: executable-image-then-fixed ==="
 git reset -q --hard HEAD
 git clean -fdq
-# Minimal JPEG (SOI + EOI) — content is not a binary signature; mode is.
+# Minimal JPEG (SOI + EOI) - content is not a binary signature; mode is.
 printf '\377\330\377\331' >prove.jpg
 git add prove.jpg
 chmod +x prove.jpg

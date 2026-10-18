@@ -2,7 +2,7 @@
 /**
  * CI entry: verify PR author may change the listed paths.
  * Env: PR_AUTHOR_ID, PR_AUTHOR_LOGIN, CHANGED_FILES (newline-separated).
- * Env: BASE_SHA — required when GITHUB_ACTIONS=true; base owners are authoritative.
+ * Env: BASE_SHA - required when GITHUB_ACTIONS=true; base owners are authoritative.
  * Never prints PII beyond GitHub login/id already in the event.
  */
 import { readFileSync, readdirSync, existsSync } from "node:fs";

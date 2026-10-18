@@ -196,7 +196,7 @@ async function main() {
   const chromePath = findChromium();
   if (!chromePath) {
     console.error(
-      "prove-csp: no Chromium found. Set CHROME_PATH to a usable Chrome/Chromium binary. STOP — do not add Playwright or download browsers without approval."
+      "prove-csp: no Chromium found. Set CHROME_PATH to a usable Chrome/Chromium binary. STOP - do not add Playwright or download browsers without approval."
     );
     process.exit(2);
   }

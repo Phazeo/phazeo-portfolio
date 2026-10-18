@@ -20,8 +20,9 @@
     "check:headers": "node scripts/write-headers.mjs --check",
     "test:ownership": "node scripts/test-profile-ownership.mjs",
     "test:profiles": "node scripts/test-check-profiles.mjs",
+    "test:public-boundary": "node scripts/test-public-boundary.mjs",
     "prove:csp": "node scripts/prove-csp.mjs",
-    "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm test:ownership && pnpm test:profiles",
+    "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm test:ownership && pnpm test:profiles && pnpm test:public-boundary",
     "prepare": "husky"
   },
   "lint-staged": {

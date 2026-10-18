@@ -11,7 +11,7 @@ const exampleModules = import.meta.glob("../docs/guest-profile.example.json", {
   import: "default",
 }) as Record<string, DataProfileJson>;
 
-/** Fictional demo slug — assembled so a bare search for the joined form is intentional. */
+/** Fictional demo slug - assembled so a bare search for the joined form is intentional. */
 const DEMO_SLUG = ["alex", "morgan"].join("-");
 
 export function injectGuestCspExample(

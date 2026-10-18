@@ -45,7 +45,7 @@ function validateTemp(data, name) {
   }
 }
 
-// Example must pass (schema + phone scan; skip assets/hosts — docs has no public files).
+// Example must pass (schema + phone scan; skip assets/hosts - docs has no public files).
 {
   const errors = validateTemp(loadExample(), "example");
   assert.equal(errors.length, 0, `example should pass, got:\n${errors.join("\n")}`);
@@ -129,8 +129,7 @@ function validateTemp(data, name) {
       skipAssets: true,
       skipHosts: false,
     });
-    // Host scan uses ROOT allowlist via check-hosts --root tmp which copies allowlist —
-    // example.com must be allowlisted.
+    // Host scan uses ROOT allowlist via check-hosts --root tmp which copies allowlist - // example.com must be allowlisted.
     assert.equal(errors.length, 0, errors.join("\n"));
     console.log("OK: example-hosts-pass");
   } finally {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Write (or --check) dist/_headers with a hashed CSP for Cloudflare Pages.
- * Hashes are computed from dist/index.html — never hard-coded.
+ * Write (or --check) dist/_headers with a hashed CSP for the static host.
+ * Hashes are computed from dist/index.html - never hard-coded.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -50,12 +50,12 @@ function buildCsp(html) {
   }
   if (STYLE_BLOCK.test(html)) {
     fail(
-      "inline <style> block found in dist/index.html — refuse 'unsafe-inline'; STOP and report"
+      "inline <style> block found in dist/index.html - refuse 'unsafe-inline'; STOP and report"
     );
   }
   if (STYLE_ATTR.test(html)) {
     fail(
-      "style= attribute found in dist/index.html — refuse 'unsafe-inline'; STOP and report"
+      "style= attribute found in dist/index.html - refuse 'unsafe-inline'; STOP and report"
     );
   }
 
@@ -105,7 +105,7 @@ function buildHeadersFile(html) {
 function main() {
   const check = process.argv.includes("--check");
   if (!existsSync(INDEX)) {
-    fail("dist/index.html missing — run pnpm build first");
+    fail("dist/index.html missing - run pnpm build first");
   }
   const html = readFileSync(INDEX, "utf8");
   const expected = buildHeadersFile(html);

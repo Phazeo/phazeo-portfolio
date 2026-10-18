@@ -17,7 +17,7 @@ if (!outDir) {
   process.exit(2);
 }
 
-/** Digits and fragments — concatenated at runtime; never a complete phone literal here. */
+/** Digits and fragments - concatenated at runtime; never a complete phone literal here. */
 const D = {
   a: "98",
   b: "76",
@@ -98,7 +98,7 @@ write(
 );
 // 15-digit numeric ID starting with 9
 write("phone-pass/long-id.txt", `id ${"9"}${"0".repeat(14)}\n`);
-// 11-digit starting with 1; last 10 start with 6–9 (mobile body)
+// 11-digit starting with 1; last 10 start with 6-9 (mobile body)
 write("phone-pass/eleven-leading-1.txt", `n ${"1"}${m}\n`);
 // 12-digit not starting with 91 or 0
 write("phone-pass/twelve-digit.txt", `n ${"2"}${"3".repeat(11)}\n`);

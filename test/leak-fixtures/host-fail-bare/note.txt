@@ -1,1 +1,1 @@
-host = internal.phazeo.com
+url = https://not-allowed.example.com/bare

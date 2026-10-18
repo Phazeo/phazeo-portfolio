@@ -89,7 +89,7 @@ export interface ProfileOwner {
 export type ProfileAffiliation = "team" | "guest";
 
 export interface ProfileConfig {
-  /** URL slug (e.g., "sowmipriya-rajendiran") — full name as written; see CONTRIBUTING. */
+  /** URL slug (e.g., "sowmipriya-rajendiran") - full name as written; see CONTRIBUTING. */
   slug: string;
   /** Display name (e.g., "Sowmipriya Rajendiran") */
   displayName: string;
