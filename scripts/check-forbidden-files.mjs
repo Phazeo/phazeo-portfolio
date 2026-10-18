@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Forbidden filenames, image EXIF/XMP, tool-cache paths, binaries, and oversized files.
- * Pure Node. Never prints secret or EXIF values — rule id + file:line only.
+ * Pure Node. Never prints secret or EXIF values - rule id + file:line only.
  */
 import { existsSync, lstatSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
@@ -19,7 +19,7 @@ const FORBIDDEN_NAME =
 
 const FORBIDDEN_BASENAME = /^(nginx\.conf|Caddyfile|caddy\.json)$/i;
 
-// Do not skip .tools/node_modules/dist — those paths must raise [tool-cache].
+// Do not skip .tools/node_modules/dist - those paths must raise [tool-cache].
 const SKIP_DIR_CONTENT = new Set([".git", "test/leak-fixtures"]);
 
 const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif"]);

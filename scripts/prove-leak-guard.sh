@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Prove fixtures, staged path, and --commits path fail closed; clean cases pass.
-# Reports rule id / file only — never secret values.
+# Reports rule id / file only - never secret values.
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
@@ -301,7 +301,7 @@ echo "OK: commits binary-then-deleted failed as expected (exit $rc)"
 echo "=== PROVE FAIL commits: executable-image-then-fixed ==="
 git reset -q --hard HEAD
 git clean -fdq
-# Minimal JPEG (SOI + EOI) — content is not a binary signature; mode is.
+# Minimal JPEG (SOI + EOI) - content is not a binary signature; mode is.
 printf '\377\330\377\331' >prove.jpg
 git add prove.jpg
 chmod +x prove.jpg

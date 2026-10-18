@@ -1,29 +1,23 @@
 #!/usr/bin/env node
 /**
  * Public/private boundary scanner for the portfolio repo.
- * Fails on section-sign rule refs (§ + digit) and on tokens whose SHA-256
- * (lower-cased) appears in .github/boundary-denylist.sha256 (hashes only).
- * Never prints matched plaintext — rule, file/source, and hash prefix only.
+ * Fails on:
+ * - section-sign rule refs (section sign + digit)
+ * - tokens whose SHA-256 (lower-cased) is in .github/boundary-denylist.sha256
+ * - em dash (U+2014) or en dash (U+2013), except under profiles/** and public/profiles/**
+ * Never prints matched plaintext - rule, source, and hash prefix only.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const DENYLIST_PATH = join(ROOT, ".github", "boundary-denylist.sha256");
 
-const SKIP_DIR = new Set([
-  ".git",
-  "node_modules",
-  ".tools",
-  "dist",
-  "test/leak-fixtures",
-]);
-
-const TREE_EXT = /\.(md|mdx|json|ts|tsx)$/i;
-
 const SECTION_RE = /§\d/;
+const LONG_DASH_RE = /[\u2013\u2014]/;
 
 function parseArgs(argv) {
   const out = {
@@ -31,12 +25,18 @@ function parseArgs(argv) {
     text: null,
     source: "stdin",
     tree: false,
+    tracked: false,
     denylist: DENYLIST_PATH,
+    allowLongDash: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "--tree") out.tree = true;
+    if (a === "--tree") {
+      out.tree = true;
+      out.tracked = true;
+    } else if (a === "--tracked") out.tracked = true;
     else if (a === "--denylist" && argv[i + 1]) out.denylist = resolve(argv[++i]);
+    else if (a === "--allow-long-dash") out.allowLongDash = true;
     else if (a === "--text" && argv[i + 1] != null) {
       out.text = argv[++i];
       out.source = "arg";
@@ -44,10 +44,14 @@ function parseArgs(argv) {
       const key = argv[++i];
       out.text = process.env[key] ?? "";
       out.source = `env:${key}`;
+    } else if (a === "--text-file" && argv[i + 1]) {
+      const path = resolve(argv[++i]);
+      out.text = readFileSync(path, "utf8");
+      out.source = path;
     } else if (a === "--root" && argv[i + 1]) out.roots.push(resolve(argv[++i]));
     else if (!a.startsWith("-")) out.roots.push(resolve(a));
   }
-  if (out.roots.length === 0 && out.tree) out.roots.push(ROOT);
+  if (out.roots.length === 0 && (out.tree || out.tracked)) out.roots.push(ROOT);
   return out;
 }
 
@@ -89,7 +93,6 @@ function tokensFrom(text) {
       const ch = tok[i];
       if (ch === "-" || ch === ".") seps.push(ch);
     }
-    // contiguous joined sub-sequences across separators
     for (let i = 0; i < parts.length; i++) {
       let acc = parts[i];
       out.add(acc);
@@ -102,9 +105,29 @@ function tokensFrom(text) {
   return out;
 }
 
-function scanText(source, text, denylist, findings) {
+function isProfilePath(norm) {
+  return (
+    norm === "profiles" ||
+    norm.startsWith("profiles/") ||
+    norm === "public/profiles" ||
+    norm.startsWith("public/profiles/")
+  );
+}
+
+function shouldSkipPath(norm) {
+  if (norm === "pnpm-lock.yaml") return true;
+  if (norm === ".github/boundary-denylist.sha256") return true;
+  if (norm === "test/leak-fixtures" || norm.startsWith("test/leak-fixtures/")) return true;
+  return false;
+}
+
+function scanText(source, text, denylist, findings, opts = {}) {
+  const checkLongDash = opts.checkLongDash !== false;
   if (SECTION_RE.test(text)) {
     findings.push({ rule: "section-ref", source });
+  }
+  if (checkLongDash && LONG_DASH_RE.test(text)) {
+    findings.push({ rule: "long-dash", source });
   }
   for (const tok of tokensFrom(text)) {
     const digest = sha256Lower(tok);
@@ -118,15 +141,7 @@ function scanText(source, text, denylist, findings) {
   }
 }
 
-function shouldSkipDir(rel) {
-  const norm = rel.split(sep).join("/");
-  for (const skip of SKIP_DIR) {
-    if (norm === skip || norm.startsWith(`${skip}/`)) return true;
-  }
-  return false;
-}
-
-function* walk(dir, base) {
+function* walkFiles(dir, base) {
   let entries;
   try {
     entries = readdirSync(dir, { withFileTypes: true });
@@ -137,43 +152,55 @@ function* walk(dir, base) {
     const abs = join(dir, ent.name);
     const rel = relative(base, abs);
     if (ent.isDirectory()) {
-      if (shouldSkipDir(rel)) continue;
-      if (rel.split(sep)[0] === "node_modules" || rel.startsWith(".git")) continue;
-      yield* walk(abs, base);
+      const top = rel.split(sep)[0];
+      if (top === "node_modules" || top === ".git" || top === ".tools" || top === "dist") {
+        continue;
+      }
+      yield* walkFiles(abs, base);
     } else if (ent.isFile()) {
       yield { abs, rel };
     }
   }
 }
 
-function scanTree(root, denylist, findings) {
-  const docsDir = join(root, "docs");
-  if (existsSync(docsDir) && statSync(docsDir).isDirectory()) {
-    for (const { abs, rel } of walk(docsDir, root)) {
-      const norm = rel.split(sep).join("/");
-      let text;
-      try {
-        text = readFileSync(abs, "utf8");
-      } catch {
-        continue;
-      }
-      if (text.includes("\0")) continue;
-      scanText(norm, text, denylist, findings);
-    }
+function trackedFiles(root) {
+  try {
+    const out = execFileSync("git", ["-C", root, "ls-files", "-z"], {
+      encoding: "buffer",
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    return out
+      .toString("utf8")
+      .split("\0")
+      .filter(Boolean)
+      .map((rel) => ({ abs: join(root, rel), rel }));
+  } catch {
+    return null;
   }
-  for (const { abs, rel } of walk(root, root)) {
+}
+
+function scanRoot(root, denylist, findings, useTracked) {
+  const files = useTracked ? trackedFiles(root) : null;
+  const iterable = files ?? walkFiles(root, root);
+  for (const { abs, rel } of iterable) {
     const norm = rel.split(sep).join("/");
-    const base = norm.split("/").pop() ?? "";
-    if (!TREE_EXT.test(base)) continue;
-    if (norm.startsWith("docs/")) continue; // already scanned
-    let text;
+    if (shouldSkipPath(norm)) continue;
+    let data;
     try {
-      text = readFileSync(abs, "utf8");
+      data = readFileSync(abs);
     } catch {
       continue;
     }
-    if (text.includes("\0")) continue;
-    scanText(norm, text, denylist, findings);
+    if (data.includes(0)) continue;
+    let text;
+    try {
+      text = data.toString("utf8");
+    } catch {
+      continue;
+    }
+    scanText(norm, text, denylist, findings, {
+      checkLongDash: !isProfilePath(norm),
+    });
   }
 }
 
@@ -183,29 +210,34 @@ function main() {
   const findings = [];
 
   if (args.text != null) {
-    scanText(args.source, args.text, denylist, findings);
+    scanText(args.source, args.text, denylist, findings, {
+      checkLongDash: !args.allowLongDash,
+    });
   }
 
-  if (args.tree || args.roots.length > 0) {
+  if (args.tree || args.tracked || args.roots.length > 0) {
     const roots = args.roots.length > 0 ? args.roots : [ROOT];
+    const useTracked = args.tracked && roots.length === 1 && roots[0] === ROOT;
     for (const root of roots) {
-      scanTree(root, denylist, findings);
+      // Staged/temp trees: walk files present. Repo tip: git ls-files.
+      const tracked = useTracked || (args.tracked && root === ROOT);
+      scanRoot(root, denylist, findings, tracked);
     }
   }
 
-  if (args.text == null && !args.tree && args.roots.length === 0) {
+  if (args.text == null && !args.tree && !args.tracked && args.roots.length === 0) {
     console.error(
-      "check-public-boundary: pass --tree and/or --text-env <VAR> / --text <string>"
+      "check-public-boundary: pass --tree and/or --text-env <VAR> / --text-file <path> / --text <string>"
     );
     process.exit(2);
   }
 
   if (findings.length > 0) {
     for (const f of findings) {
-      if (f.rule === "section-ref") {
-        console.error(`[section-ref] ${f.source}`);
+      if (f.rule === "denylist-token") {
+        console.error(`[denylist-token] ${f.source} hash=${f.hashPrefix}...`);
       } else {
-        console.error(`[denylist-token] ${f.source} hash=${f.hashPrefix}…`);
+        console.error(`[${f.rule}] ${f.source}`);
       }
     }
     process.exit(1);

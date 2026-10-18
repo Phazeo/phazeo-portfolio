@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Tiny static server for dist/ that applies Cloudflare-style _headers and _redirects.
+ * Tiny static server for dist/ that applies CDN-style _headers and _redirects.
  * No dependencies. Used by prove-csp.mjs.
  *
  * Usage: node scripts/serve-dist.mjs [--port 4173]
@@ -85,7 +85,7 @@ function applyHeaderRules(pathname, rules) {
 }
 
 /**
- * Cloudflare Pages _redirects subset: `from to status` with optional :splat.
+ * the static host _redirects subset: `from to status` with optional :splat.
  */
 function parseRedirects(text) {
   /** @type {Array<{ from: string, to: string, status: number }>} */
@@ -134,7 +134,7 @@ function safeJoin(root, urlPath) {
 function main() {
   const { port } = parseArgs(process.argv);
   if (!existsSync(DIST)) {
-    console.error("serve-dist: dist/ missing — run pnpm build first");
+    console.error("serve-dist: dist/ missing - run pnpm build first");
     process.exit(1);
   }
 

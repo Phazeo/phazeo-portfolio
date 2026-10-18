@@ -1,2 +1,2 @@
-# Fixture only — obviously fake token literal for leak-guard proof.
+# Fixture only - obviously fake token literal for leak-guard proof.
 api_key = "ghp_leakguard_fixture_not_a_real_token_000000"

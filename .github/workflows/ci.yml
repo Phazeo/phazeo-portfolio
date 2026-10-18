@@ -54,7 +54,7 @@ jobs:
         run: |
           if [ ! -x "$CHROME_PATH" ]; then
             echo "STOP: runner has no usable Chrome at CHROME_PATH=$CHROME_PATH"
-            echo "Do not add a browser download or new dependency — report to maintainers."
+            echo "Do not add a browser download or new dependency - report to maintainers."
             exit 1
           fi
           pnpm prove:csp

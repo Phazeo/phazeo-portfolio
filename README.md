@@ -11,7 +11,7 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:5173 to preview profiles locally. Profiles use the `componentLoader` pattern for lazy loading—each profile is loaded on demand when visited.
+Open http://localhost:5173 to preview profiles locally. Profiles use the `componentLoader` pattern for lazy loading - each profile is loaded on demand when visited.
 
 ## Structure
 
@@ -32,7 +32,7 @@ phazeo-portfolio-profiles/
 │   └── pages/
 ├── profiles/_shared/      # Shared helpers (asset URLs, navigation shell)
 ├── public/
-│   └── profiles/<slug>/   # Static assets (resume.pdf, images) — see Assets below
+│   └── profiles/<slug>/   # Static assets (resume.pdf, images) - see Assets below
 └── package.json
 ```
 
@@ -58,7 +58,7 @@ Legacy `/profiles/_public/*` links 301 to `/profiles/*` via `public/_redirects`.
 3. Create `profiles/<slug>/v1/ProfilePage.tsx` with your portfolio component (default export)
 4. Create `profiles/<slug>/v1/index.tsx` exporting `profileVersion` with `componentLoader: () => import("./ProfilePage")`, `theme`, and `seo`
 5. Add components in `profiles/<slug>/v1/components/`
-6. Registry auto-discovers `profiles/*/meta.ts` — run `pnpm check:registry` / `pnpm build`
+6. Registry auto-discovers `profiles/*/meta.ts` - run `pnpm check:registry` / `pnpm build`
 
 The `componentLoader` pattern enables lazy loading so each profile is loaded on demand when visited.
 
@@ -66,10 +66,10 @@ See `profiles/sriram-sm/` for a complete example.
 
 ## Types
 
-- `ProfileConfig` – metadata (slug, displayName, role, skills, socials, versions)
-- `ProfileVersion` – `{ componentLoader, theme, seo }` (componentLoader enables per-profile code splitting)
-- `ProfileTheme` – CSS variables (self-hosted fonts via `@fontsource-variable`)
-- `ProfileSeo` – title, description, ogImage
+- `ProfileConfig` - metadata (slug, displayName, role, skills, socials, versions)
+- `ProfileVersion` - `{ componentLoader, theme, seo }` (componentLoader enables per-profile code splitting)
+- `ProfileTheme` - CSS variables (self-hosted fonts via `@fontsource-variable`)
+- `ProfileSeo` - title, description, ogImage
 
 ## Deployment
 

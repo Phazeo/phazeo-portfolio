@@ -1,4 +1,4 @@
-# Leak guard — single entry point scripts/check-leaks on every PR and push.
+# Leak guard - single entry point scripts/check-leaks on every PR and push.
 name: Leak guard
 
 on:

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Load src/registry.ts via Vite SSR so registry validation fails the build
- * (not only at runtime in the browser). Uses vite already in the tree — no new deps.
+ * (not only at runtime in the browser). Uses vite already in the tree - no new deps.
  *
  * Fail closed when a profile references a missing local asset, or calls
  * profileAssetUrl / profileAssetPath with a non-literal slug or an

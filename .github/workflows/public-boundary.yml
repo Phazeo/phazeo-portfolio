@@ -1,8 +1,9 @@
-# Public/private boundary — PR title and body only (working tree covered by Leak guard).
+# Public/private boundary - PR title, body, and commit messages.
 name: Public boundary
 
 on:
   pull_request:
+    types: [opened, edited, synchronize, reopened]
 
 concurrency:
   group: public-boundary-${{ github.workflow }}-${{ github.ref }}
@@ -21,6 +22,7 @@ jobs:
         # actions/checkout@v7.0.1 (tag v7.0.1 → this commit; published 2026-07-20)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Setup Node.js
@@ -30,10 +32,15 @@ jobs:
           node-version: "24"
           package-manager-cache: false
 
-      - name: Check PR title and body
+      - name: Check PR title, body, and commit messages
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           node scripts/check-public-boundary.mjs --text-env PR_TITLE
           node scripts/check-public-boundary.mjs --text-env PR_BODY
+          mkdir -p "$RUNNER_TEMP/boundary"
+          git log --format=%B "${BASE_SHA}..${HEAD_SHA}" >"$RUNNER_TEMP/boundary/commit-messages.txt"
+          node scripts/check-public-boundary.mjs --text-file "$RUNNER_TEMP/boundary/commit-messages.txt"

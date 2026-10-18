@@ -33,7 +33,7 @@ function IconShell({
   );
 }
 
-/** Simple Icons — LinkedIn (CC0 1.0) */
+/** Simple Icons - LinkedIn (CC0 1.0) */
 export function LinkedInIcon(props: IconProps) {
   return (
     <IconShell {...props}>
@@ -42,7 +42,7 @@ export function LinkedInIcon(props: IconProps) {
   );
 }
 
-/** Simple Icons — GitHub (CC0 1.0) */
+/** Simple Icons - GitHub (CC0 1.0) */
 export function GitHubIcon(props: IconProps) {
   return (
     <IconShell {...props}>
@@ -51,7 +51,7 @@ export function GitHubIcon(props: IconProps) {
   );
 }
 
-/** Simple Icons — X (CC0 1.0) */
+/** Simple Icons - X (CC0 1.0) */
 export function XIcon(props: IconProps) {
   return (
     <IconShell {...props}>
@@ -60,7 +60,7 @@ export function XIcon(props: IconProps) {
   );
 }
 
-/** Generic globe for Website — not a brand mark. */
+/** Generic globe for Website - not a brand mark. */
 export function WebsiteIcon(props: IconProps) {
   return (
     <IconShell {...props}>

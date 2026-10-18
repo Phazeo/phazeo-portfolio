@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Block AI attribution in commits — not human emails.
+ * Block AI attribution in commits - not human emails.
  *
  * Community pattern (2026): Cursor/Claude/Copilot inject Co-authored-by /
  * Made-with / Generated-with trailers and sometimes use tool emails

@@ -1,4 +1,4 @@
-# No-AI commit guard — blocks AI emails / Co-authored-by / Made-with trailers.
+# No-AI commit guard - blocks AI emails / Co-authored-by / Made-with trailers.
 # Human contributor emails are allowed. No allowlist.
 # Local convenience: husky prepare-commit-msg (strip) + commit-msg (refuse).
 name: No AI commit attribution
@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
-          # This job only runs node scripts — no install. Defaults may enable
+          # This job only runs node scripts - no install. Defaults may enable
           # package-manager-cache from package.json and fail without pnpm.
           package-manager-cache: false
 
@@ -46,4 +46,4 @@ jobs:
           fi
           node scripts/check-no-ai-commit.mjs --range "$RANGE"
           node scripts/check-no-ai-commit.mjs --authors "$RANGE"
-          echo "OK — no AI attribution or AI author emails."
+          echo "OK - no AI attribution or AI author emails."
