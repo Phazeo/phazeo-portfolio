@@ -6,6 +6,8 @@ Please report security issues through GitHub private vulnerability reporting on 
 
 Do not open a public issue for security reports. Do not discuss unfixed vulnerabilities in public pull requests or discussions.
 
+Dependency updates are reviewed and applied by the maintainers.
+
 ## Scope
 
 In scope:
