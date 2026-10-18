@@ -17,3 +17,6 @@ Excluded from production scans. Do not copy into real paths.
 | `tool-cache-case/.tools/...` | fail (`tool-cache`) |
 | `binary-case/fake.elf` | fail (`binary-file`) |
 | `large-case/big.bin` | fail (`file-too-large`) |
+
+Phone and PDF-PII phone fixtures are generated at test time by
+`scripts/make-leak-fixtures.mjs` (see `scripts/prove-leak-guard.sh`).

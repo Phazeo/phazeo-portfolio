@@ -9,15 +9,22 @@ GITLEAKS=$(sh "$ROOT/scripts/ensure-gitleaks.sh")
 FIX="$ROOT/test/leak-fixtures"
 TMPCFG=$(mktemp)
 STAGED_TMP=""
+GEN_FIX=""
 cleanup() {
   rm -f "$TMPCFG"
   if [ -n "$STAGED_TMP" ] && [ -d "$STAGED_TMP" ]; then
     rm -rf "$STAGED_TMP"
   fi
+  if [ -n "$GEN_FIX" ] && [ -d "$GEN_FIX" ]; then
+    rm -rf "$GEN_FIX"
+  fi
 }
 trap cleanup EXIT
 
 grep -v 'test/leak-fixtures' "$ROOT/.gitleaks.toml" >"$TMPCFG"
+
+GEN_FIX=$(mktemp -d)
+node "$ROOT/scripts/make-leak-fixtures.mjs" "$GEN_FIX" >/dev/null
 
 fail_case() {
   name=$1
@@ -49,28 +56,52 @@ fail_case "fake-token" \
   "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/fake-token.txt"
 
 fail_case "phone-intl" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-fail/intl.txt"
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/intl.txt"
 
 fail_case "phone-grouped" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-fail/grouped.txt"
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/grouped.txt"
 
-pass_case "phone-year-range" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-pass/year-range.txt"
+fail_case "phone-in-mobile-plain" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/in-mobile-plain.txt"
+
+fail_case "phone-in-mobile-55" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/in-mobile-55.txt"
+
+fail_case "phone-in-mobile-334" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/in-mobile-334.txt"
+
+fail_case "phone-in-mobile-prefix91" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/in-mobile-prefix91.txt"
+
+fail_case "phone-in-landline" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/in-landline.txt"
+
+pass_case "phone-hex-sha" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/hex-sha.txt"
+
+pass_case "phone-epoch-ms" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/epoch-ms.txt"
 
 pass_case "phone-version" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-pass/version.txt"
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/version.txt"
 
-pass_case "phone-long-id" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$FIX/phone-pass/long-id.txt"
+pass_case "phone-integrity" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/integrity.txt"
 
-fail_case "pdf-pii-phone" \
-  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-pii-phone.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"' "$FIX" "$ROOT"
+pass_case "phone-leading-1to5" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/leading-1to5.txt"
+
+fail_case "pdf-pii-phone-plain" \
+  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-pii-phone-plain.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"; rc=$?; rm -rf "$d"; exit $rc' "$GEN_FIX" "$ROOT"
+
+fail_case "pdf-pii-phone-flate" \
+  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-pii-phone-flate.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"; rc=$?; rm -rf "$d"; exit $rc' "$GEN_FIX" "$ROOT"
 
 pass_case "pdf-clean" \
-  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-clean.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"' "$FIX" "$ROOT"
+  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-clean.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"; rc=$?; rm -rf "$d"; exit $rc' "$FIX" "$ROOT"
 
 fail_case "pdf-metadata" \
-  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-metadata-dirty.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"' "$FIX" "$ROOT"
+  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-metadata-dirty.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"; rc=$?; rm -rf "$d"; exit $rc' "$FIX" "$ROOT"
 
 fail_case "dotenv-file" \
   node "$ROOT/scripts/check-forbidden-files.mjs" --include-fixtures --root "$FIX/dotenv-case"
@@ -147,6 +178,24 @@ stage_and_expect_fail "dotenv" \
 stage_and_expect_fail "exif-image" \
   sh -c "cp '$FIX/metadata-case/public/orientation-exif.jpg' ./photo.jpg && git add photo.jpg"
 
+# Staged rename of a blocked file must fail (--no-renames exposes the added side).
+git reset -q --hard HEAD
+git clean -fdq
+printf '\177ELF\002\001\001\000prove-bin\n' >blocked.bin
+git add blocked.bin
+git commit -q -m "add blocked binary"
+git mv blocked.bin renamed.bin
+echo "=== PROVE FAIL staged: rename-blocked-binary ==="
+set +e
+sh scripts/check-leaks --staged
+rc=$?
+set -e
+if [ "$rc" -eq 0 ]; then
+  echo "PROVE FAILED: staged rename-blocked-binary expected non-zero" >&2
+  exit 1
+fi
+echo "OK: staged rename-blocked-binary failed as expected (exit $rc)"
+
 git reset -q --hard HEAD
 git clean -fdq
 printf 'ok note\n' >note.txt
@@ -198,7 +247,7 @@ if [ "$rc" -eq 0 ]; then
 fi
 echo "OK: commits executable-image-then-fixed failed as expected (exit $rc)"
 
-# --- push path: unreachable BEFORE must fall back to --history (never skip) ---
+# --- push path: unreachable BEFORE must fall back to --history AND per-commit ---
 echo "=== PROVE PASS push: unreachable-before-falls-back-to-history ==="
 HEAD_NOW=$(git -C "$ROOT" rev-parse HEAD)
 FAKE_BEFORE=00000000000000000000000000000000000000aa
@@ -214,11 +263,48 @@ printf '%s\n' "$push_out" | grep -q 'check-leaks: gitleaks (history)' || {
   echo "PROVE FAILED: expected full history scan for unreachable before" >&2
   exit 1
 }
+printf '%s\n' "$push_out" | grep -q 'fallback per-commit scan' || {
+  echo "PROVE FAILED: expected fallback per-commit scan for unreachable before" >&2
+  exit 1
+}
+printf '%s\n' "$push_out" | grep -q 'check-leaks: per-commit scan' || {
+  echo "PROVE FAILED: expected per-commit scan invocation for unreachable before" >&2
+  exit 1
+}
 if [ "$push_rc" -ne 0 ]; then
   echo "PROVE FAILED: unreachable-before fallback scan exited $push_rc" >&2
   exit 1
 fi
-echo "OK: unreachable-before fell back to history (exit $push_rc)"
+echo "OK: unreachable-before fell back to history+commits (exit $push_rc)"
+
+# --- push fallback must fail when a new branch adds then removes a blocked binary ---
+echo "=== PROVE FAIL push: fallback-binary-then-deleted ==="
+git reset -q --hard HEAD
+git clean -fdq
+printf '\177ELF\002\001\001\000prove-bin\n' >branch.bin
+git add branch.bin
+git commit -q -m "add blocked binary on branch"
+git rm -q branch.bin
+git commit -q -m "remove blocked binary"
+TIP=$(git rev-parse HEAD)
+FAKE_BEFORE2=00000000000000000000000000000000000000bb
+set +e
+push_out2=$(sh scripts/check-leaks-on-push.sh "$FAKE_BEFORE2" "$TIP" 2>&1)
+push_rc2=$?
+set -e
+printf '%s\n' "$push_out2" | grep -q 'falling back to full history scan' || {
+  echo "PROVE FAILED: expected fallback message for binary-then-deleted" >&2
+  exit 1
+}
+printf '%s\n' "$push_out2" | grep -q 'fallback per-commit scan' || {
+  echo "PROVE FAILED: expected per-commit fallback for binary-then-deleted" >&2
+  exit 1
+}
+if [ "$push_rc2" -eq 0 ]; then
+  echo "PROVE FAILED: fallback over binary-then-deleted expected non-zero" >&2
+  exit 1
+fi
+echo "OK: fallback binary-then-deleted failed as expected (exit $push_rc2)"
 
 cd "$ROOT"
 echo "prove-leak-guard: all cases OK"

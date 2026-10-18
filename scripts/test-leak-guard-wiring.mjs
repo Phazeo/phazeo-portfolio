@@ -71,6 +71,8 @@ const onPush = readFileSync(join(ROOT, "scripts/check-leaks-on-push.sh"), "utf8"
 const fallbackNeedles = [
   /falling back to full history scan/,
   /--history/,
+  /fallback per-commit scan/,
+  /origin\/main\.\./,
   /before not present in clone/,
   /before is not an ancestor of HEAD/,
   /before missing or all-zeros/,
@@ -78,6 +80,29 @@ const fallbackNeedles = [
 for (const re of fallbackNeedles) {
   if (!re.test(onPush)) {
     console.error(`[wiring] check-leaks-on-push.sh: missing fail-closed fallback (${re})`);
+    failed = true;
+  }
+}
+
+// Phone regexes in .gitleaks.toml must equal scripts/phone-patterns.mjs.
+const { PHONE_PATTERN_SOURCES } = await import("./phone-patterns.mjs");
+const gitleaksToml = readFileSync(join(ROOT, ".gitleaks.toml"), "utf8");
+for (const [id, source] of Object.entries(PHONE_PATTERN_SOURCES)) {
+  const block = gitleaksToml.split(`id = "${id}"`)[1];
+  if (!block) {
+    console.error(`[wiring] .gitleaks.toml: missing rule id ${id}`);
+    failed = true;
+    continue;
+  }
+  const m = block.match(/regex\s*=\s*'''([\s\S]*?)'''/);
+  if (!m) {
+    console.error(`[wiring] .gitleaks.toml: missing regex for ${id}`);
+    failed = true;
+    continue;
+  }
+  const tomlRegex = m[1];
+  if (tomlRegex !== source) {
+    console.error(`[wiring] .gitleaks.toml regex != phone-patterns.mjs for ${id}`);
     failed = true;
   }
 }

@@ -7,6 +7,7 @@ import { existsSync, lstatSync, readFileSync, readdirSync, statSync } from "node
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { textMatchesAnyPhone } from "./phone-patterns.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -26,10 +27,6 @@ const PDF_EXT = ".pdf";
 
 const TOOL_CACHE_PREFIXES = [".tools/", "node_modules/", "dist/"];
 
-// Keep in sync with .gitleaks.toml phazeo-phone-* (Go RE2-safe forms).
-const PHONE_INTL = /\+(?:[\s().-]*\d){8,15}\b/;
-const PHONE_GROUPED =
-  /(?:\(\d{2,4}\)[\s-]*\d{2,4}[\s-]+\d{2,4}(?:[\s-]+\d{2,4})?|\b\d{3}-\d{3}-\d{4}\b)/;
 const DOB_PHRASE = /\b(?:date\s+of\s+birth|d\.?o\.?b\.?|born\s+on)\b/i;
 const POSTCODE_TOKEN = /\b(?:post\s*code|postal\s*code|zip\s*code)\b/i;
 const STREET_TOKEN = /\b(?:street|avenue|road|lane|boulevard|rue|strasse)\b/i;
@@ -329,7 +326,7 @@ function scanPdfTextForPii(text, norm, findings) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lineNo = i + 1;
-    if (PHONE_INTL.test(line) || PHONE_GROUPED.test(line)) {
+    if (textMatchesAnyPhone(line)) {
       findings.push({ rule: "pdf-pii", file: norm, line: lineNo });
     }
     if (DOB_PHRASE.test(line)) {
