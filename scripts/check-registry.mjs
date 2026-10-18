@@ -6,6 +6,9 @@
  * Fail closed when a profile references a missing local asset, or calls
  * profileAssetUrl / profileAssetPath with a non-literal slug or an
  * unresolvable / non-literal path argument.
+ *
+ * Data-first profiles (profiles/<slug>/profile.json) are loaded by src/registry.ts;
+ * mutual exclusion with meta.ts is enforced by scripts/check-profiles.mjs.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
