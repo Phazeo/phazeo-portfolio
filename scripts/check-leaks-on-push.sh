@@ -1,9 +1,7 @@
 #!/usr/bin/env sh
-# Push-event leak scan: use BEFORE..HEAD when safe; otherwise fail closed to --history.
+# Push-event leak scan: use BEFORE..HEAD when safe; otherwise fail closed to --history
+# plus a per-commit scan. Never skip the scan.
 # Usage: sh scripts/check-leaks-on-push.sh <before_sha> <head_sha>
-#
-# Fail closed: if before is all-zeros, missing, empty, or not an ancestor of HEAD,
-# run scripts/check-leaks --history. Never skip the scan.
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
@@ -17,15 +15,43 @@ if [ -z "$HEAD_SHA" ]; then
   exit 2
 fi
 
-fallback_history() {
+# Fail closed: always run history AND a per-commit scan; any non-zero fails the job.
+fallback_scans() {
   reason=$1
+  failed=0
   echo "check-leaks-on-push: falling back to full history scan ($reason)" >&2
+  set +e
   sh "$ROOT/scripts/check-leaks" --history
-  exit $?
+  hist_rc=$?
+  set -e
+  if [ "$hist_rc" -ne 0 ]; then
+    failed=1
+  fi
+
+  set +e
+  if git rev-parse --verify origin/main >/dev/null 2>&1 \
+    && [ "${GITHUB_REF_NAME:-}" != "main" ]; then
+    echo "check-leaks-on-push: fallback per-commit scan origin/main..${HEAD_SHA}" >&2
+    sh "$ROOT/scripts/check-leaks" --commits "origin/main..${HEAD_SHA}"
+    commits_rc=$?
+  else
+    echo "check-leaks-on-push: fallback per-commit scan (all commits reachable from HEAD)" >&2
+    sh "$ROOT/scripts/check-leaks" --commits "${HEAD_SHA}"
+    commits_rc=$?
+  fi
+  set -e
+  if [ "$commits_rc" -ne 0 ]; then
+    failed=1
+  fi
+
+  if [ "$failed" -ne 0 ]; then
+    exit 1
+  fi
 }
 
 if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-  fallback_history "before missing or all-zeros"
+  fallback_scans "before missing or all-zeros"
+  exit 0
 fi
 
 set +e
@@ -33,7 +59,8 @@ git cat-file -e "${BEFORE}^{commit}" 2>/dev/null
 present=$?
 set -e
 if [ "$present" -ne 0 ]; then
-  fallback_history "before not present in clone"
+  fallback_scans "before not present in clone"
+  exit 0
 fi
 
 set +e
@@ -41,7 +68,8 @@ git merge-base --is-ancestor "$BEFORE" "$HEAD_SHA" 2>/dev/null
 ancestor=$?
 set -e
 if [ "$ancestor" -ne 0 ]; then
-  fallback_history "before is not an ancestor of HEAD"
+  fallback_scans "before is not an ancestor of HEAD"
+  exit 0
 fi
 
 echo "check-leaks-on-push: scanning commits ${BEFORE}..${HEAD_SHA}" >&2
