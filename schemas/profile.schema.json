@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phazeo.com/schemas/profile.schema.json",
+  "title": "Phazeo guest profile",
+  "description": "Data-first guest portfolio profile. No phone, location, address, or postalCode fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "basics"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "affiliation", "theme"],
+      "properties": {
+        "owner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["githubId", "githubLogin"],
+          "properties": {
+            "githubId": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "githubLogin": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 39,
+              "pattern": "^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$"
+            }
+          }
+        },
+        "affiliation": {
+          "type": "string",
+          "enum": ["team", "guest"]
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["slate", "ocean", "editorial", "tech"]
+        }
+      }
+    },
+    "basics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "label", "summary"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*\\.(jpg|jpeg|png|webp|gif)$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 500,
+          "pattern": "^https://"
+        },
+        "profiles": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["network", "username", "url"],
+            "properties": {
+              "network": { "type": "string", "minLength": 1, "maxLength": 40 },
+              "username": { "type": "string", "minLength": 1, "maxLength": 80 },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 500,
+                "pattern": "^https://"
+              }
+            }
+          }
+        }
+      }
+    },
+    "work": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "position", "startDate"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "position": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "startDate": { "$ref": "#/$defs/date" },
+          "endDate": { "$ref": "#/$defs/date" },
+          "summary": { "type": "string", "maxLength": 2000 },
+          "highlights": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+          }
+        }
+      }
+    },
+    "education": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["institution"],
+        "properties": {
+          "institution": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "area": { "type": "string", "maxLength": 120 },
+          "studyType": { "type": "string", "maxLength": 80 },
+          "startDate": { "$ref": "#/$defs/date" },
+          "endDate": { "$ref": "#/$defs/date" }
+        }
+      }
+    },
+    "projects": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "description": { "type": "string", "maxLength": 2000 },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "pattern": "^https://"
+          },
+          "highlights": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "keywords": {
+            "type": "array",
+            "maxItems": 30,
+            "items": { "type": "string", "minLength": 1, "maxLength": 60 }
+          }
+        }
+      }
+    },
+    "certificates": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "issuer": { "type": "string", "maxLength": 120 },
+          "date": { "$ref": "#/$defs/date" },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "pattern": "^https://"
+          }
+        }
+      }
+    },
+    "languages": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["language"],
+        "properties": {
+          "language": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "fluency": { "type": "string", "maxLength": 60 }
+        }
+      }
+    },
+    "resume": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file"],
+      "properties": {
+        "file": {
+          "type": "string",
+          "const": "resume.pdf"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "date": {
+      "type": "string",
+      "maxLength": 10,
+      "pattern": "^([0-9]{4}|[0-9]{4}-[0-9]{2}|[0-9]{4}-[0-9]{2}-[0-9]{2})$"
+    }
+  }
+}
