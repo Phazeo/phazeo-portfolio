@@ -198,5 +198,27 @@ if [ "$rc" -eq 0 ]; then
 fi
 echo "OK: commits executable-image-then-fixed failed as expected (exit $rc)"
 
+# --- push path: unreachable BEFORE must fall back to --history (never skip) ---
+echo "=== PROVE PASS push: unreachable-before-falls-back-to-history ==="
+HEAD_NOW=$(git -C "$ROOT" rev-parse HEAD)
+FAKE_BEFORE=00000000000000000000000000000000000000aa
+set +e
+push_out=$(sh "$ROOT/scripts/check-leaks-on-push.sh" "$FAKE_BEFORE" "$HEAD_NOW" 2>&1)
+push_rc=$?
+set -e
+printf '%s\n' "$push_out" | grep -q 'falling back to full history scan' || {
+  echo "PROVE FAILED: expected fallback message for unreachable before" >&2
+  exit 1
+}
+printf '%s\n' "$push_out" | grep -q 'check-leaks: gitleaks (history)' || {
+  echo "PROVE FAILED: expected full history scan for unreachable before" >&2
+  exit 1
+}
+if [ "$push_rc" -ne 0 ]; then
+  echo "PROVE FAILED: unreachable-before fallback scan exited $push_rc" >&2
+  exit 1
+fi
+echo "OK: unreachable-before fell back to history (exit $push_rc)"
+
 cd "$ROOT"
 echo "prove-leak-guard: all cases OK"

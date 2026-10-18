@@ -12,6 +12,7 @@ const FILES = [
   ".husky/pre-commit",
   ".husky/pre-push",
   ".github/workflows/leak-guard.yml",
+  "scripts/check-leaks-on-push.sh",
 ];
 
 const FORBIDDEN = [
@@ -38,7 +39,11 @@ for (const rel of FILES) {
     const line = lines[i] ?? "";
     const trimmed = line.trim();
     if (trimmed.startsWith("#") || trimmed.startsWith("//")) continue;
-    if (/ensure-gitleaks|gitleaks\.pin|check-leaks|install hint|gitleaks binary|leak guard/i.test(line)) {
+    if (
+      /ensure-gitleaks|gitleaks\.pin|check-leaks|install hint|gitleaks binary|leak guard/i.test(
+        line
+      )
+    ) {
       continue;
     }
     for (const re of FORBIDDEN) {
@@ -49,6 +54,31 @@ for (const rel of FILES) {
         failed = true;
       }
     }
+  }
+}
+
+const workflow = readFileSync(join(ROOT, ".github/workflows/leak-guard.yml"), "utf8");
+if (!/fetch-depth:\s*0/.test(workflow)) {
+  console.error("[wiring] leak-guard.yml: checkout must use fetch-depth: 0");
+  failed = true;
+}
+if (!/scripts\/check-leaks-on-push\.sh/.test(workflow)) {
+  console.error("[wiring] leak-guard.yml: push path must call scripts/check-leaks-on-push.sh");
+  failed = true;
+}
+
+const onPush = readFileSync(join(ROOT, "scripts/check-leaks-on-push.sh"), "utf8");
+const fallbackNeedles = [
+  /falling back to full history scan/,
+  /--history/,
+  /before not present in clone/,
+  /before is not an ancestor of HEAD/,
+  /before missing or all-zeros/,
+];
+for (const re of fallbackNeedles) {
+  if (!re.test(onPush)) {
+    console.error(`[wiring] check-leaks-on-push.sh: missing fail-closed fallback (${re})`);
+    failed = true;
   }
 }
 
