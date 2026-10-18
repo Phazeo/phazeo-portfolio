@@ -8,7 +8,6 @@ import { DEFAULT_THEME, getActiveProfileVersion, getProfile, isValidSlug } from 
 
 import { NotFoundPage } from "./NotFoundPage";
 
-const ALLOWED_FONT_HOSTS = new Set(["fonts.googleapis.com", "fonts.gstatic.com"]);
 const lazyComponentCache = new Map<string, ComponentType>();
 
 function getLazyProfileComponent(
@@ -24,18 +23,6 @@ function getLazyProfileComponent(
   return LazyComponent;
 }
 
-function isAllowedFontUrl(fontUrl: string): boolean {
-  try {
-    const url = new URL(fontUrl);
-    if (url.protocol !== "https:") {
-      return false;
-    }
-    return ALLOWED_FONT_HOSTS.has(url.hostname);
-  } catch {
-    return false;
-  }
-}
-
 function applyTheme(theme: ProfileTheme): () => void {
   const root = document.documentElement;
   const appliedVariables: string[] = [];
@@ -46,32 +33,6 @@ function applyTheme(theme: ProfileTheme): () => void {
   return () => {
     for (const key of appliedVariables) {
       root.style.removeProperty(key);
-    }
-  };
-}
-
-function loadFont(fontUrl: string): () => void {
-  if (!isAllowedFontUrl(fontUrl)) {
-    return function noop() {
-      /* Untrusted font URL rejected */
-    };
-  }
-
-  const linkId = `profile-font-${fontUrl.replace(/[^a-z0-9]/gi, "-")}`;
-  if (document.getElementById(linkId)) {
-    return function noop() {
-      /* Font already loaded, nothing to clean up */
-    };
-  }
-  const link = document.createElement("link");
-  link.id = linkId;
-  link.rel = "stylesheet";
-  link.href = fontUrl;
-  document.head.appendChild(link);
-  return () => {
-    const element = document.getElementById(linkId);
-    if (element) {
-      document.head.removeChild(element);
     }
   };
 }
@@ -136,7 +97,6 @@ function applySeo(title: string, description: string, ogImage?: string): () => v
     document.title = originalTitle;
     for (const [element, originalValue] of originalValues) {
       if (created.has(element)) {
-        // Remove tags we created — do not leave empty meta behind.
         element.remove();
         continue;
       }
@@ -180,12 +140,8 @@ export function PortfolioPage() {
         ...DEFAULT_THEME.cssVariables,
         ...theme.cssVariables,
       },
-      fontUrl: theme.fontUrl,
     };
     cleanups.push(applyTheme(mergedTheme));
-    if (mergedTheme.fontUrl) {
-      cleanups.push(loadFont(mergedTheme.fontUrl));
-    }
     if (seo) {
       cleanups.push(applySeo(seo.title, seo.description, seo.ogImage));
     }

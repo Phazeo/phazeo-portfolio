@@ -9,11 +9,9 @@ export const theme: ProfileTheme = {
     "--color-accent": "#0891B2",
     "--color-background": "#FFFFFF",
     "--color-text": "#0F172A",
-    "--font-heading": "'Space Grotesk', sans-serif",
-    "--font-body": "'Inter', sans-serif",
+    "--font-heading": "'Space Grotesk Variable', sans-serif",
+    "--font-body": "'Inter Variable', sans-serif",
   },
-  fontUrl:
-    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
 };
 
 export const seo: ProfileSeo = {

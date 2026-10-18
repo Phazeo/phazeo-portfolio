@@ -7,11 +7,9 @@ export const theme: ProfileTheme = {
     "--color-secondary": "#A6F1E0",
     "--color-accent": "#F7CFD8",
     "--color-background": "#F4F8D3",
-    "--font-heading": "'Playfair Display', serif",
-    "--font-body": "'Inter', system-ui, sans-serif",
+    "--font-heading": "'Playfair Display Variable', serif",
+    "--font-body": "'Inter Variable', system-ui, sans-serif",
   },
-  fontUrl:
-    "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap",
 };
 
 export const seo: ProfileSeo = {
