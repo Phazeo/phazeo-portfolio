@@ -119,6 +119,8 @@ run_path_scanners() {
     node "$ROOT/scripts/check-forbidden-files.mjs" --root "$staged_tree"
     echo "check-leaks: host allowlist (staged)..." >&2
     node "$ROOT/scripts/check-hosts.mjs" --root "$staged_tree"
+    echo "check-leaks: public boundary (staged)..." >&2
+    node "$ROOT/scripts/check-public-boundary.mjs" --root "$staged_tree"
     return 0
   fi
   echo "check-leaks: forbidden files / image metadata ($target)..." >&2
@@ -127,6 +129,9 @@ run_path_scanners() {
   echo "check-leaks: host allowlist ($target)..." >&2
   # shellcheck disable=SC2086
   node "$ROOT/scripts/check-hosts.mjs" --root "$target" $extra
+  echo "check-leaks: public boundary ($target)..." >&2
+  # shellcheck disable=SC2086
+  node "$ROOT/scripts/check-public-boundary.mjs" --root "$target"
 }
 
 run_commits_mode() {

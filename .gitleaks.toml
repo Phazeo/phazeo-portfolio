@@ -12,6 +12,8 @@ paths = [
   '''(^|/)node_modules/''',
   '''(^|/)dist/''',
   '''pnpm-lock\.yaml$''',
+  # Opaque SHA-256 digests only — hex runs can false-positive phone rules.
+  '''(^|/)\.github/boundary-denylist\.sha256$''',
 ]
 
 # --- IPv4: default-deny; only loopback, unspecified, RFC 5737 docs ranges ---

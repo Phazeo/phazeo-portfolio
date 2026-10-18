@@ -40,6 +40,9 @@ jobs:
       - name: Wiring test (only scripts/check-leaks)
         run: node scripts/test-leak-guard-wiring.mjs
 
+      - name: Public boundary unit tests
+        run: node scripts/test-public-boundary.mjs
+
       - name: Scan PR commits
         if: github.event_name == 'pull_request'
         env:
