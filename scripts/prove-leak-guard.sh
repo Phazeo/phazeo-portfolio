@@ -269,6 +269,7 @@ sh scripts/check-leaks --staged
 echo "OK: staged clean passed"
 # --- --commits: binary added then deleted must still fail ---
 echo "=== PROVE FAIL commits: binary-then-deleted ==="
+COMMITS_BASE=$(git rev-parse HEAD)
 git reset -q --hard HEAD
 git clean -fdq
 # POSIX printf: use octal escapes (\\x is not portable).
@@ -309,6 +310,10 @@ if [ "$rc" -eq 0 ]; then
   exit 1
 fi
 echo "OK: commits executable-image-then-fixed failed as expected (exit $rc)"
+
+# Drop throwaway prove commits before push-fallback (must not pollute origin/main..HEAD).
+git reset -q --hard "$COMMITS_BASE"
+git clean -fdq
 
 # --- push path: unreachable BEFORE must fall back to --history AND per-commit ---
 echo "=== PROVE PASS push: unreachable-before-falls-back-to-history ==="
@@ -368,6 +373,10 @@ if [ "$push_rc2" -eq 0 ]; then
   exit 1
 fi
 echo "OK: fallback binary-then-deleted failed as expected (exit $push_rc2)"
+
+# Restore branch tip (throwaway prove commits must not remain).
+git reset -q --hard "$COMMITS_BASE"
+git clean -fdq
 
 cd "$ROOT"
 echo "prove-leak-guard: all cases OK"
