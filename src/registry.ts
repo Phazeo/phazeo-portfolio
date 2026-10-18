@@ -1,11 +1,10 @@
-import reservedSlugsText from "../.github/reserved-slugs.txt?raw";
-import retiredSlugsText from "../.github/retired-slugs.txt?raw";
 import type { ProfileConfig, ProfileRegistry } from "../types";
 import { DEFAULT_THEME, getActiveProfileVersion, getActiveVersion } from "../types";
+import { assertValidSlug, SLUG_MAX_LEN, SLUG_PATTERN } from "./registry-slug";
+import { configFromDataProfile } from "./templates/data-profile/toProfileConfig";
+import type { DataProfileJson } from "./templates/data-profile/types";
 
-/** At least two hyphen-separated parts; max 40 chars. */
-export const SLUG_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)+$/;
-export const SLUG_MAX_LEN = 40;
+export { assertValidSlug, configFromDataProfile, SLUG_MAX_LEN, SLUG_PATTERN };
 
 type MetaModule = {
   default?: ProfileConfig;
@@ -13,31 +12,37 @@ type MetaModule = {
 };
 
 /**
- * Auto-discover profiles from profiles/&lt;slug&gt;/meta.ts (skip folders starting with "_").
- * Build fails if folder name does not equal meta.slug, slug is invalid, or a slug is duplicated.
+ * Auto-discover React profiles from profiles/<slug>/meta.ts (skip folders starting with "_").
  */
 const metaModules = import.meta.glob("../profiles/*/meta.ts", { eager: true }) as Record<
   string,
   MetaModule
 >;
 
-function parseSlugList(text: string): Set<string> {
-  const set = new Set<string>();
-  for (const line of text.split("\n")) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) {
-      continue;
-    }
-    set.add(t);
-  }
-  return set;
-}
+/**
+ * Auto-discover data-first profiles from profiles/<slug>/profile.json.
+ */
+const jsonModules = import.meta.glob("../profiles/*/profile.json", {
+  eager: true,
+  import: "default",
+}) as Record<string, DataProfileJson>;
 
-const RETIRED_SLUGS = parseSlugList(retiredSlugsText);
-const RESERVED_SLUGS = parseSlugList(reservedSlugsText);
+type GuestCspInjector = {
+  injectGuestCspExample: (registry: ProfileRegistry, seenSlugs: Map<string, string>) => void;
+};
 
-function folderNameFromGlobPath(path: string): string {
-  const match = path.match(/\/profiles\/([^/]+)\/meta\.ts$/);
+/** Test-only module — omitted from production via dead-code elimination. */
+const guestCspModules =
+  import.meta.env.VITE_GUEST_CSP_EXAMPLE === "1"
+    ? (import.meta.glob("./registry-guest-csp.ts", { eager: true }) as Record<
+        string,
+        GuestCspInjector
+      >)
+    : {};
+
+function folderNameFromGlobPath(path: string, fileName: string): string {
+  const re = new RegExp(`/profiles/([^/]+)/${fileName.replace(".", "\\.")}$`);
+  const match = path.match(re);
   if (!match?.[1]) {
     throw new Error(`registry: cannot parse profile folder from path: ${path}`);
   }
@@ -56,36 +61,17 @@ function resolveConfig(mod: MetaModule, folder: string): ProfileConfig {
   throw new Error(`registry: profiles/${folder}/meta.ts must export a ProfileConfig`);
 }
 
-export function assertValidSlug(slug: string, pathHint = slug): void {
-  if (slug.length > SLUG_MAX_LEN) {
-    throw new Error(`registry: slug "${slug}" exceeds ${SLUG_MAX_LEN} characters (${pathHint})`);
-  }
-  if (RETIRED_SLUGS.has(slug)) {
-    throw new Error(`registry: slug "${slug}" is retired (${pathHint})`);
-  }
-  if (RESERVED_SLUGS.has(slug)) {
-    throw new Error(`registry: slug "${slug}" is reserved (${pathHint})`);
-  }
-  const parts = slug.split("-");
-  if (parts.length < 2) {
-    throw new Error(
-      `registry: slug "${slug}" must have at least two hyphen-separated parts (${pathHint})`
-    );
-  }
-  if (!SLUG_PATTERN.test(slug)) {
-    throw new Error(`registry: slug "${slug}" must match ${SLUG_PATTERN} (${pathHint})`);
-  }
-}
-
 function buildRegistry(): ProfileRegistry {
   const registry: ProfileRegistry = {};
   const seenSlugs = new Map<string, string>();
+  const reactFolders = new Set<string>();
 
   for (const [path, mod] of Object.entries(metaModules)) {
-    const folder = folderNameFromGlobPath(path);
+    const folder = folderNameFromGlobPath(path, "meta.ts");
     if (folder.startsWith("_")) {
       continue;
     }
+    reactFolders.add(folder);
     const config = resolveConfig(mod, folder);
     if (folder !== config.slug) {
       throw new Error(
@@ -105,6 +91,29 @@ function buildRegistry(): ProfileRegistry {
     }
     seenSlugs.set(config.slug, path);
     registry[config.slug] = config;
+  }
+
+  for (const [path, data] of Object.entries(jsonModules)) {
+    const folder = folderNameFromGlobPath(path, "profile.json");
+    if (folder.startsWith("_")) {
+      continue;
+    }
+    if (reactFolders.has(folder)) {
+      throw new Error(
+        `registry: profiles/${folder}/ has both meta.ts and profile.json — use exactly one`
+      );
+    }
+    const config = configFromDataProfile(folder, data, path);
+    const prior = seenSlugs.get(config.slug);
+    if (prior) {
+      throw new Error(`registry: duplicate slug "${config.slug}" in ${prior} and ${path}`);
+    }
+    seenSlugs.set(config.slug, path);
+    registry[config.slug] = config;
+  }
+
+  for (const mod of Object.values(guestCspModules)) {
+    mod.injectGuestCspExample(registry, seenSlugs);
   }
 
   return registry;

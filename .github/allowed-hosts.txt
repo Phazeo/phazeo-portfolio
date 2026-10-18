@@ -9,3 +9,8 @@ linkedin.com
 www.linkedin.com
 biomejs.dev
 www.w3.org
+json-schema.org
+example.com
+www.example.com
+example.org
+www.example.org

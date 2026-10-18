@@ -28,3 +28,4 @@ pnpm-debug.log*
 
 # Local tool cache (pinned gitleaks binary)
 .tools/
+.tmp-dist-prod-csp/

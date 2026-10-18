@@ -6,7 +6,7 @@
   "packageManager": "pnpm@12.9.1",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && node scripts/check-registry.mjs && vite build && node scripts/write-headers.mjs",
+    "build": "tsc -b && node scripts/check-registry.mjs && node scripts/check-profiles.mjs && vite build && node scripts/write-headers.mjs",
     "preview": "vite preview",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
@@ -16,10 +16,12 @@
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "check:registry": "node scripts/check-registry.mjs",
+    "check:profiles": "node scripts/check-profiles.mjs",
     "check:headers": "node scripts/write-headers.mjs --check",
     "test:ownership": "node scripts/test-profile-ownership.mjs",
+    "test:profiles": "node scripts/test-check-profiles.mjs",
     "prove:csp": "node scripts/prove-csp.mjs",
-    "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm test:ownership",
+    "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm test:ownership && pnpm test:profiles",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -51,6 +53,8 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
     "husky": "9.1.7",
     "lint-staged": "17.6.0",
     "tailwindcss": "4.3.3",

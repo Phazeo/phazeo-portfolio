@@ -6,6 +6,8 @@ These terms apply to everyone who publishes a profile in this repository.
 
 Everything you put in this repository is public: source, assets, commit history, forks, and mirrors. Assume it can be copied and indexed forever. Do not put anything here that must stay private.
 
+By opening a profile PR you confirm that **everything on your profile may be published** and that you are responsible for its accuracy and for having the right to publish it (including photos and resume PDFs).
+
 ## Never include
 
 - Phone numbers
@@ -21,7 +23,7 @@ Email addresses and professional social links may appear when you choose to publ
 
 ## Invite-only
 
-Profiles are invite-only. An approved GitHub account owns each slug (`owner` in `meta.ts`). Pull requests that change a profile must come from that owner (or the repository owner / CI bot), and still need the repository owner’s approval to merge.
+Profiles are invite-only. An approved GitHub account owns each slug (`owner` in `meta.ts`, or `meta.owner` in `profile.json` for data-first guests). Pull requests that change a profile must come from that owner (or the repository owner / CI bot), and still need the repository owner’s approval to merge.
 
 ## Leaving
 
