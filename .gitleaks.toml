@@ -84,14 +84,14 @@ id = "phazeo-phone-grouped"
 description = "Phone-like digit grouping with separators (10+ digits)"
 regex = '''(?:\(\d{2,4}\)[\s-]*\d{2,4}[\s-]+\d{2,4}(?:[\s-]+\d{2,4})?|\b\d{3}-\d{3}-\d{4}\b)'''
 
-# Indian mobile: 10 digits starting 6–9; optional +91 / 91 / 0; optional 5-5 or 3-3-4 split.
+# Indian mobile: digit boundaries; 10 digits starting 6–9; optional +91 / 91 / 0; optional 5-5 or 3-3-4 split.
 [[rules]]
 id = "phazeo-phone-in-mobile"
 description = "Indian mobile number (10 digits starting 6–9, optional +91/91/0 and 5-5 or 3-3-4 split)"
-regex = '''(?:\+91[\s.-]?|91[\s.-]?|0)?(?:[6-9]\d{9}|[6-9]\d{4}[\s.-]\d{5}|[6-9]\d{2}[\s.-]\d{3}[\s.-]\d{4})\b'''
+regex = '''(?:^|\D)(?:\+91[\s.-]?|91[\s.-]?|0)?(?:[6-9]\d{9}|[6-9]\d{4}[\s.-]\d{5}|[6-9]\d{2}[\s.-]\d{3}[\s.-]\d{4})(?:\D|$)'''
 
-# Indian landline: 0 + 2–4 digit area code + space/dash + 6–8 subscriber digits.
+# Indian landline: digit boundaries; 0 + 2–4 digit area code + space/dash + 6–8 subscriber digits.
 [[rules]]
 id = "phazeo-phone-in-landline"
 description = "Indian landline (0 + area code + separator + 6–8 digits)"
-regex = '''0\d{2,4}[\s-]\d{6,8}\b'''
+regex = '''(?:^|\D)0\d{2,4}[\s-]\d{6,8}(?:\D|$)'''
