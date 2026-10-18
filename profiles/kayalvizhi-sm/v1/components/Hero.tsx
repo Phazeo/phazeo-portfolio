@@ -1,7 +1,3 @@
-import { profileAssetUrl } from "../../../_shared/assets";
-
-const RESUME_PDF = profileAssetUrl("kayalvizhi-sm", "resume.pdf");
-
 export function Hero() {
   return (
     <section
@@ -46,14 +42,6 @@ export function Hero() {
                 className="px-8 py-4 bg-(--color-primary) text-white rounded-xl hover:bg-(--color-primary-hover) transition-all duration-300 font-display font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 Get in Touch
-              </a>
-              <a
-                href={RESUME_PDF}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-8 py-4 border-2 border-(--color-primary) text-(--color-primary) rounded-xl hover:bg-(--color-primary) hover:text-white transition-all duration-300 font-display font-semibold"
-              >
-                Download Resume
               </a>
             </div>
           </div>

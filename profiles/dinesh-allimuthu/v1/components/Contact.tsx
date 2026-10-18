@@ -1,11 +1,7 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 
-import { profileAssetUrl } from "../../../_shared/assets";
 import { LampContainer } from "../ui/lamp";
-
-// PDF not shipped in this PR; link resolves once owner-approved resume lands.
-const RESUME_PDF = profileAssetUrl("dinesh-allimuthu", "resume.pdf");
 
 const CONTACT_EMAIL = "dineshallimuthupro@outlook.com";
 
@@ -255,17 +251,6 @@ export function Contact() {
                 </button>
               </div>
             )}
-          </div>
-
-          <div className="text-center">
-            <a
-              href={RESUME_PDF}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-(--color-primary) text-white rounded-xl hover:bg-(--color-primary-hover) transition-all font-display font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-            >
-              Download Resume (PDF)
-            </a>
           </div>
         </div>
       </div>
