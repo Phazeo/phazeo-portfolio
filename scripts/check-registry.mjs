@@ -3,9 +3,9 @@
  * Load src/registry.ts via Vite SSR so registry validation fails the build
  * (not only at runtime in the browser). Uses vite already in the tree — no new deps.
  *
- * Also fail closed when a profile references a local asset under
- * public/profiles/<slug>/… that is missing on disk, or uses an unresolved
- * template path in profileAssetUrl / profileAssetPath.
+ * Fail closed when a profile references a missing local asset, or calls
+ * profileAssetUrl / profileAssetPath with a non-literal slug or an
+ * unresolvable / non-literal path argument.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -15,14 +15,15 @@ const ROOT = new URL("..", import.meta.url).pathname;
 const PROFILES_DIR = join(ROOT, "profiles");
 const PUBLIC_PROFILES = join(ROOT, "public", "profiles");
 
-/** Literal second arg: profileAssetUrl("slug", "file") */
-const ASSET_LITERAL_RE =
-  /profileAsset(?:Url|Path)\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']\s*\)/g;
-/** Any call whose second argument is a template literal (may contain ${). */
-const ASSET_TEMPLATE_CALL_RE =
-  /profileAsset(?:Url|Path)\(\s*["']([^"']+)["']\s*,\s*`([^`]*)`\s*\)/g;
+/** Every call site (definition sites filtered separately). */
+const ASSET_CALL_SITE_RE = /profileAsset(?:Url|Path)\s*\(/g;
+/** Literal: profileAssetUrl("slug", "file") */
+const ASSET_LITERAL_PREFIX =
+  /^profileAsset(?:Url|Path)\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']\s*\)/;
+/** Template path: profileAssetUrl("slug", `…`) */
+const ASSET_TEMPLATE_PREFIX =
+  /^profileAsset(?:Url|Path)\(\s*["']([^"']+)["']\s*,\s*`([^`]*)`\s*\)/;
 const LOCAL_PATH_RE = /["'`](\/profiles\/([a-z0-9-]+)\/([^"'`]+))["'`]/g;
-/** Simple ${ident} interpolations inside a template. */
 const INTERP_RE = /\$\{([^}]*)\}/g;
 const STRING_PROP_RE = (ident) =>
   new RegExp(String.raw`\b${ident}\s*:\s*["']([^"']+)["']`, "g");
@@ -54,8 +55,15 @@ function lineAt(text, index) {
 }
 
 /**
- * Resolve template path values from string-literal property assignments
- * for each simple ${ident} in the template. Returns null if unresolvable.
+ * @param {string} text
+ * @param {number} index
+ */
+function isFunctionDeclaration(text, index) {
+  const before = text.slice(Math.max(0, index - 32), index);
+  return /(?:export\s+)?function\s*$/.test(before);
+}
+
+/**
  * @param {string} template
  * @param {string} fileText
  * @returns {string[] | null}
@@ -79,7 +87,6 @@ function resolveTemplatePaths(template, fileText) {
     optionsPerInterp.push([...new Set(vals)]);
   }
 
-  // Cartesian product of interpolation options → concrete paths.
   /** @type {string[]} */
   let paths = [template];
   for (let i = 0; i < interps.length; i++) {
@@ -121,27 +128,62 @@ function collectAssetErrors() {
     const text = readFileSync(abs, "utf8");
     const from = relative(ROOT, abs);
 
-    for (const m of text.matchAll(ASSET_LITERAL_RE)) {
-      requireFile(m[1], m[2]);
+    /** @type {number[]} */
+    const callSites = [];
+    for (const m of text.matchAll(ASSET_CALL_SITE_RE)) {
+      const idx = m.index ?? 0;
+      if (isFunctionDeclaration(text, idx)) continue;
+      callSites.push(idx);
     }
 
-    for (const m of text.matchAll(ASSET_TEMPLATE_CALL_RE)) {
-      const slug = m[1];
-      const template = m[2];
-      const line = lineAt(text, m.index ?? 0);
-      if (!template.includes("${")) {
-        requireFile(slug, template);
+    /** @type {Set<number>} */
+    const accounted = new Set();
+
+    for (const idx of callSites) {
+      const rest = text.slice(idx);
+      const line = lineAt(text, idx);
+      const lit = rest.match(ASSET_LITERAL_PREFIX);
+      if (lit) {
+        accounted.add(idx);
+        requireFile(lit[1], lit[2]);
         continue;
       }
-      const resolved = resolveTemplatePaths(template, text);
-      if (!resolved) {
-        errors.push(
-          `registry: unresolvable profile asset template for slug "${slug}" in ${from}:${line}`
-        );
+      const tmpl = rest.match(ASSET_TEMPLATE_PREFIX);
+      if (tmpl) {
+        accounted.add(idx);
+        const slug = tmpl[1];
+        const template = tmpl[2];
+        if (!template.includes("${")) {
+          requireFile(slug, template);
+          continue;
+        }
+        const resolved = resolveTemplatePaths(template, text);
+        if (!resolved) {
+          errors.push(
+            `registry: unresolvable profile asset template for slug "${slug}" in ${from}:${line}`
+          );
+          continue;
+        }
+        for (const file of resolved) {
+          requireFile(slug, file);
+        }
         continue;
       }
-      for (const file of resolved) {
-        requireFile(slug, file);
+
+      // Unaccounted: variable slug/path, function-call arg, etc.
+      const slugGuess = rest.match(
+        /^profileAsset(?:Url|Path)\(\s*["']([^"']+)["']/
+      );
+      const slugPart = slugGuess ? `slug "${slugGuess[1]}"` : "slug unknown";
+      errors.push(
+        `registry: non-literal profile asset call (${slugPart}) in ${from}:${line}`
+      );
+    }
+
+    for (const idx of callSites) {
+      if (!accounted.has(idx)) {
+        // Already reported above as non-literal; keep a single error per site.
+        continue;
       }
     }
 

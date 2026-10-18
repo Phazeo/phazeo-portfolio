@@ -15,12 +15,8 @@ const LOGO_URLS: Record<string, string> = {
   "tcs.png": profileAssetUrl("dinesh-allimuthu", "logos/tcs.png"),
 };
 
-function logoPath(file: string): string {
-  const url = LOGO_URLS[file];
-  if (!url) {
-    throw new Error(`registry: unknown logo file for dinesh-allimuthu: ${file}`);
-  }
-  return url;
+function logoPath(file: string): string | undefined {
+  return LOGO_URLS[file];
 }
 
 function CompanyLogo({
@@ -32,8 +28,9 @@ function CompanyLogo({
   initials: string;
   color: string;
 }) {
-  const [failed, setFailed] = useState(!localLogo);
-  if (failed || !localLogo) {
+  const src = localLogo ? logoPath(localLogo) : undefined;
+  const [failed, setFailed] = useState(!src);
+  if (failed || !src) {
     return (
       <span className="fi text-lg font-bold" style={{ color }} aria-hidden="true">
         {initials}
@@ -42,7 +39,7 @@ function CompanyLogo({
   }
   return (
     <img
-      src={logoPath(localLogo)}
+      src={src}
       alt=""
       className="w-full h-full object-contain p-1"
       onError={() => setFailed(true)}
