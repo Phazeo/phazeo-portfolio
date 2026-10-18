@@ -14,7 +14,7 @@ By opening a profile PR you confirm that **everything on your profile may be pub
 - Home or postal addresses
 - Dates of birth (or equivalent phrases)
 
-Email addresses and professional social links may appear when you choose to publish them. Prefer contact forms or “request a call” flows over listing a phone number.
+Email addresses and professional social links may appear when you choose to publish them. Prefer contact forms or "request a call" flows over listing a phone number.
 
 ## Content ownership and licence
 
@@ -23,11 +23,15 @@ Email addresses and professional social links may appear when you choose to publ
 
 ## Invite-only
 
-Profiles are invite-only. An approved GitHub account owns each slug (`owner` in `meta.ts`, or `meta.owner` in `profile.json` for data-first guests). Pull requests that change a profile must come from that owner (or the repository owner / CI bot), and still need the repository owner’s approval to merge.
+Profiles are invite-only. An approved GitHub account owns each slug (`owner` in `meta.ts`, or `meta.owner` in `profile.json` for data-first guests). Pull requests that change a profile must come from that owner (or the repository owner / CI bot), and still need the repository owner's approval to merge.
 
 ## Leaving
 
-On your last day with the team, your profile is set **unlisted** (direct URL may still work). After **30 days** it is removed from the tree unless you ask to stay as alumni. Git history will still contain older copies; request a removal if you need content taken down from the default branch.
+- On the person's last day with the team, the profile is **unlisted** (the direct URL may still work).
+- **30 days** later it is removed from the tree, unless the repository owner agrees to keep it as alumni.
+- Old addresses **redirect permanently** to the current location (or away from a removed profile) so bookmarks keep a stable path.
+
+Git history may still contain older copies. Request a removal if you need content taken down from the default branch.
 
 ## Requesting removal
 
