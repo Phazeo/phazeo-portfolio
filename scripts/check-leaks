@@ -104,7 +104,7 @@ run_path_scanners() {
     staged_tree=$(mktemp -d)
     # shellcheck disable=SC2064
     trap "rm -rf '$staged_tree'; rm -f '$staged_list'" EXIT
-    git -C "$ROOT" diff --cached --name-only --diff-filter=ACM >"$staged_list" || true
+    git -C "$ROOT" diff --cached --name-only --no-renames --diff-filter=ACM >"$staged_list"
     if [ ! -s "$staged_list" ]; then
       echo "check-leaks: no staged files for path scanners" >&2
       return 0
