@@ -52,26 +52,6 @@ jobs:
         env:
           BEFORE: ${{ github.event.before }}
           HEAD_SHA: ${{ github.sha }}
-        run: |
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            # New branch: if stacked on the batch tip, scan like a PR into that tip
-            # (new phone/PDF rules must not re-fail already-merged batch history).
-            if git rev-parse --verify origin/batch/merge-private-into-public >/dev/null 2>&1 \
-              && git merge-base --is-ancestor origin/batch/merge-private-into-public "${HEAD_SHA}" 2>/dev/null; then
-              sh scripts/check-leaks --commits "origin/batch/merge-private-into-public..${HEAD_SHA}"
-            else
-              # Otherwise: gitleaks over full history; path scanners only over
-              # commits not already on origin/main.
-              sh scripts/check-leaks --history
-              if git rev-parse --verify origin/main >/dev/null 2>&1; then
-                sh scripts/check-leaks --commits "origin/main..${HEAD_SHA}"
-              else
-                sh scripts/check-leaks --commits "${HEAD_SHA}"
-              fi
-            fi
-          else
-            sh scripts/check-leaks --commits "${BEFORE}..${HEAD_SHA}"
-          fi
-
+        run: sh scripts/check-leaks-on-push.sh "$BEFORE" "$HEAD_SHA"
       - name: Scan full working tree
         run: sh scripts/check-leaks --tree
