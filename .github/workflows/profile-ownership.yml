@@ -51,5 +51,6 @@ jobs:
         env:
           PR_AUTHOR_ID: ${{ github.event.pull_request.user.id }}
           PR_AUTHOR_LOGIN: ${{ github.event.pull_request.user.login }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHANGED_FILES: ${{ steps.changes.outputs.files }}
         run: node scripts/check-profile-ownership.mjs

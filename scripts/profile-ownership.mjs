@@ -10,6 +10,7 @@
  *   authorLogin: string,
  *   changedPaths: string[],
  *   ownersBySlug: Record<string, Owner>,
+ *   baseOwnersBySlug?: Record<string, Owner>,
  *   approvedOwners: Map<number, string>,
  *   exceptionIds: Set<number>,
  * }} DecisionInput
@@ -24,6 +25,7 @@ export function decideProfileOwnership(input) {
     authorId,
     changedPaths,
     ownersBySlug,
+    baseOwnersBySlug,
     approvedOwners,
     exceptionIds,
   } = input;
@@ -44,11 +46,18 @@ export function decideProfileOwnership(input) {
       if (slug.startsWith("_")) {
         return { ok: false, reason: "shared-profile-path" };
       }
-      const owner = ownersBySlug[slug];
+      // Prefer base-branch owner for existing slugs so stealing meta.owner fails closed.
+      const baseOwner = baseOwnersBySlug?.[slug];
+      const headOwner = ownersBySlug[slug];
+      const owner = baseOwner ?? headOwner;
       if (!owner) {
         return { ok: false, reason: "unknown-profile-slug" };
       }
       if (owner.githubId !== authorId) {
+        return { ok: false, reason: "not-profile-owner" };
+      }
+      // New data profile: head meta.owner must match the PR author.
+      if (!baseOwner && headOwner && headOwner.githubId !== authorId) {
         return { ok: false, reason: "not-profile-owner" };
       }
       continue;
@@ -59,7 +68,6 @@ export function decideProfileOwnership(input) {
       norm.startsWith("profiles/") ||
       norm.startsWith("public/profiles/")
     ) {
-      // top-level under profiles without trailing file handled above
       continue;
     }
     return { ok: false, reason: "non-profile-path" };
@@ -85,4 +93,33 @@ export function parseApprovedOwners(text) {
     map.set(id, login);
   }
   return map;
+}
+
+/**
+ * Parse owner from meta.ts source text.
+ * @param {string} text
+ * @returns {Owner | null}
+ */
+export function parseOwnerFromMetaTs(text) {
+  const idMatch = text.match(/githubId:\s*(\d+)/);
+  const loginMatch = text.match(/githubLogin:\s*"([^"]+)"/);
+  if (!idMatch || !loginMatch) return null;
+  return { githubId: Number(idMatch[1]), githubLogin: loginMatch[1] };
+}
+
+/**
+ * Parse owner from profile.json source text.
+ * @param {string} text
+ * @returns {Owner | null}
+ */
+export function parseOwnerFromProfileJson(text) {
+  try {
+    const data = JSON.parse(text);
+    const id = data?.meta?.owner?.githubId;
+    const login = data?.meta?.owner?.githubLogin;
+    if (!Number.isInteger(id) || typeof login !== "string" || !login) return null;
+    return { githubId: id, githubLogin: login };
+  } catch {
+    return null;
+  }
 }

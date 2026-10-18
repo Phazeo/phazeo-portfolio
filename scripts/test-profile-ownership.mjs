@@ -5,12 +5,13 @@
 import assert from "node:assert/strict";
 import { decideProfileOwnership, parseApprovedOwners } from "./profile-ownership.mjs";
 
-const approved = parseApprovedOwners(`56721895 dinesh-ad\n13678035 sowmipriya\n`);
+const approved = parseApprovedOwners(`56721895 dinesh-ad\n13678035 sowmipriya\n99900001 guest-user\n`);
 const exceptionIds = new Set([56721895, 334465155]); // dinesh-ad, phazeo-ci-bot
 const ownersBySlug = {
   "dinesh-allimuthu": { githubId: 56721895, githubLogin: "dinesh-ad" },
   "sowmipriya-rajendiran": { githubId: 13678035, githubLogin: "sowmipriya" },
   "sriram-sm": { githubId: 56721895, githubLogin: "dinesh-ad" },
+  "alex-morgan": { githubId: 99900001, githubLogin: "guest-user" },
 };
 
 function check(name, input, expectOk, expectReason) {
@@ -134,6 +135,67 @@ check(
   },
   false,
   "not-profile-owner"
+);
+
+// data-first: owner edits own profile.json -> pass
+check(
+  "data-owner-edits-own-json",
+  {
+    authorId: 99900001,
+    authorLogin: "guest-user",
+    changedPaths: ["profiles/alex-morgan/profile.json"],
+  },
+  true,
+  "owner-ok"
+);
+
+// data-first: non-owner edits profile.json -> fail
+check(
+  "data-non-owner-edits-json",
+  {
+    authorId: 13678035,
+    authorLogin: "sowmipriya",
+    changedPaths: ["profiles/alex-morgan/profile.json"],
+  },
+  false,
+  "not-profile-owner"
+);
+
+// data-first: non-owner changes meta.owner on someone else's profile (base owner wins) -> fail
+check(
+  "data-non-owner-steals-meta-owner",
+  {
+    authorId: 13678035,
+    authorLogin: "sowmipriya",
+    changedPaths: ["profiles/alex-morgan/profile.json"],
+    // HEAD claims sowmipriya owns it after the edit:
+    ownersBySlug: {
+      ...ownersBySlug,
+      "alex-morgan": { githubId: 13678035, githubLogin: "sowmipriya" },
+    },
+    baseOwnersBySlug: {
+      "alex-morgan": { githubId: 99900001, githubLogin: "guest-user" },
+    },
+  },
+  false,
+  "not-profile-owner"
+);
+
+// new data profile: author not approved -> fail
+check(
+  "data-new-profile-unapproved-author",
+  {
+    authorId: 424242,
+    authorLogin: "random-person",
+    changedPaths: ["profiles/new-guest/profile.json"],
+    ownersBySlug: {
+      ...ownersBySlug,
+      "new-guest": { githubId: 424242, githubLogin: "random-person" },
+    },
+    baseOwnersBySlug: {},
+  },
+  false,
+  "author-not-approved"
 );
 
 console.log("test-profile-ownership: all cases OK");

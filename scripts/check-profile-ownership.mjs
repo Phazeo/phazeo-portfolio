@@ -2,34 +2,86 @@
 /**
  * CI entry: verify PR author may change the listed paths.
  * Env: PR_AUTHOR_ID, PR_AUTHOR_LOGIN, CHANGED_FILES (newline-separated).
+ * Optional: BASE_SHA — when set, owners on the base ref are authoritative for existing slugs.
  * Never prints PII beyond GitHub login/id already in the event.
  */
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { decideProfileOwnership, parseApprovedOwners } from "./profile-ownership.mjs";
+import { execFileSync } from "node:child_process";
+import {
+  decideProfileOwnership,
+  parseApprovedOwners,
+  parseOwnerFromMetaTs,
+  parseOwnerFromProfileJson,
+} from "./profile-ownership.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-function loadOwnersBySlug() {
-  const profilesDir = join(ROOT, "profiles");
+/**
+ * @param {string} profilesDir
+ * @returns {Record<string, { githubId: number, githubLogin: string }>}
+ */
+function loadOwnersFromDir(profilesDir) {
   /** @type {Record<string, { githubId: number, githubLogin: string }>} */
   const map = {};
+  if (!existsSync(profilesDir)) return map;
   for (const ent of readdirSync(profilesDir, { withFileTypes: true })) {
     if (!ent.isDirectory() || ent.name.startsWith("_")) continue;
     const metaPath = join(profilesDir, ent.name, "meta.ts");
-    if (!existsSync(metaPath)) continue;
-    const text = readFileSync(metaPath, "utf8");
-    const idMatch = text.match(/githubId:\s*(\d+)/);
-    const loginMatch = text.match(/githubLogin:\s*"([^"]+)"/);
-    if (!idMatch || !loginMatch) {
-      console.error(`check-profile-ownership: missing owner in profiles/${ent.name}/meta.ts`);
-      process.exit(1);
+    const jsonPath = join(profilesDir, ent.name, "profile.json");
+    if (existsSync(metaPath)) {
+      const owner = parseOwnerFromMetaTs(readFileSync(metaPath, "utf8"));
+      if (!owner) {
+        console.error(`check-profile-ownership: missing owner in profiles/${ent.name}/meta.ts`);
+        process.exit(1);
+      }
+      map[ent.name] = owner;
+      continue;
     }
-    map[ent.name] = {
-      githubId: Number(idMatch[1]),
-      githubLogin: loginMatch[1],
-    };
+    if (existsSync(jsonPath)) {
+      const owner = parseOwnerFromProfileJson(readFileSync(jsonPath, "utf8"));
+      if (!owner) {
+        console.error(`check-profile-ownership: missing owner in profiles/${ent.name}/profile.json`);
+        process.exit(1);
+      }
+      map[ent.name] = owner;
+    }
+  }
+  return map;
+}
+
+/**
+ * @param {string} sha
+ * @returns {Record<string, { githubId: number, githubLogin: string }>}
+ */
+function loadOwnersFromGit(sha) {
+  /** @type {Record<string, { githubId: number, githubLogin: string }>} */
+  const map = {};
+  let listing = "";
+  try {
+    listing = execFileSync("git", ["-C", ROOT, "ls-tree", "-r", "--name-only", sha, "profiles"], {
+      encoding: "utf8",
+    });
+  } catch {
+    return map;
+  }
+  for (const path of listing.split("\n")) {
+    const t = path.trim();
+    if (!t) continue;
+    const metaMatch = t.match(/^profiles\/([^/]+)\/meta\.ts$/);
+    const jsonMatch = t.match(/^profiles\/([^/]+)\/profile\.json$/);
+    const slug = metaMatch?.[1] ?? jsonMatch?.[1];
+    if (!slug || slug.startsWith("_")) continue;
+    if (map[slug]) continue;
+    let text = "";
+    try {
+      text = execFileSync("git", ["-C", ROOT, "show", `${sha}:${t}`], { encoding: "utf8" });
+    } catch {
+      continue;
+    }
+    const owner = metaMatch ? parseOwnerFromMetaTs(text) : parseOwnerFromProfileJson(text);
+    if (owner) map[slug] = owner;
   }
   return map;
 }
@@ -57,11 +109,16 @@ function main() {
   // dinesh-ad + phazeo-ci-bot (verified via API when this file was authored)
   const exceptionIds = new Set([56721895, 334465155]);
 
+  const ownersBySlug = loadOwnersFromDir(join(ROOT, "profiles"));
+  const baseSha = process.env.BASE_SHA || "";
+  const baseOwnersBySlug = baseSha ? loadOwnersFromGit(baseSha) : undefined;
+
   const result = decideProfileOwnership({
     authorId,
     authorLogin,
     changedPaths: changed,
-    ownersBySlug: loadOwnersBySlug(),
+    ownersBySlug,
+    baseOwnersBySlug,
     approvedOwners: approved,
     exceptionIds,
   });
