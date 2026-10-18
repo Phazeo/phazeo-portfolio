@@ -17,27 +17,33 @@ if (!outDir) {
   process.exit(2);
 }
 
-/** Digits only — concatenated at runtime; never a complete phone literal here. */
+/** Digits and fragments — concatenated at runtime; never a complete phone literal here. */
 const D = {
   a: "98",
   b: "76",
   c: "54",
   d: "32",
   e: "10",
-  // landline area (2) + subscriber parts
   area: "44",
   sub1: "26",
   sub2: "48",
   sub3: "90",
-  // intl country-ish prefix digits after +
   intl1: "44",
   intl2: "20",
   intl3: "7946",
   intl4: "0958",
-  // grouped NANP-style parts
   g1: "415",
   g2: "555",
   g3: "0133",
+  // fragments for pass / boundary cases
+  y: "2026",
+  mo: "10",
+  da: "18",
+  hh: "09",
+  mm: "30",
+  ss: "00",
+  y1: "2015",
+  y2: "2019",
 };
 
 function mobile10() {
@@ -56,17 +62,14 @@ mkdirSync(join(outDir, "phone-fail"), { recursive: true });
 mkdirSync(join(outDir, "phone-pass"), { recursive: true });
 
 const m = mobile10();
+const landline = `0${D.area}-${D.sub1}${D.sub2}${D.sub3}`;
 
-// Fail: intl (+ then digits with separators)
+// --- FAIL (text) ---
 write(
   "phone-fail/intl.txt",
   `contact +${D.intl1} ${D.intl2} ${D.intl3} ${D.intl4}\n`
 );
-
-// Fail: grouped
 write("phone-fail/grouped.txt", `call (${D.g1}) ${D.g2}-${D.g3}\n`);
-
-// Fail: in-mobile layouts
 write("phone-fail/in-mobile-plain.txt", `mobile ${m}\n`);
 write("phone-fail/in-mobile-55.txt", `mobile ${m.slice(0, 5)}-${m.slice(5)}\n`);
 write(
@@ -74,29 +77,41 @@ write(
   `mobile ${m.slice(0, 3)}.${m.slice(3, 6)}.${m.slice(6)}\n`
 );
 write("phone-fail/in-mobile-prefix91.txt", `mobile +91 ${m}\n`);
+write("phone-fail/in-landline.txt", `landline ${landline}\n`);
 
-// Fail: in-landline
+// Extra FAIL cases
+write("phone-fail/ph-colon-mobile.txt", `Ph:${m}\n`);
 write(
-  "phone-fail/in-landline.txt",
-  `landline 0${D.area}-${D.sub1}${D.sub2}${D.sub3}\n`
+  "phone-fail/plus91-dash-55.txt",
+  `+91-${m.slice(0, 5)}-${m.slice(5)}\n`
 );
+write("phone-fail/zero-prefix-mobile.txt", `id 0${m}\n`);
+write("phone-fail/mobile-file-start.txt", `${m} trailing note\n`);
+write("phone-fail/mobile-file-end.txt", `leading ${m}`); // no trailing newline
+write("phone-fail/landline-line-start.txt", `note\n${landline} end\n`);
 
-// Pass: clean counter-examples (no phone-like values)
+// --- PASS (text) ---
+// 13-digit epoch-ms; last 10 digits start with 7
 write(
-  "phone-pass/hex-sha.txt",
-  `sha ${"a".repeat(20)}${"b".repeat(20)}\n`
+  "phone-pass/epoch-ms.txt",
+  `ts ${"1"}${"70"}${D.a.slice(0, 1)}${"0".repeat(9)}\n`
 );
-// 13 digits using only 0–5 so no [6-9]\d{9} mobile substring matches.
-write("phone-pass/epoch-ms.txt", `ts ${"12".repeat(6)}0\n`);
+// 15-digit numeric ID starting with 9
+write("phone-pass/long-id.txt", `id ${"9"}${"0".repeat(14)}\n`);
+// 11-digit starting with 1; last 10 start with 6–9 (mobile body)
+write("phone-pass/eleven-leading-1.txt", `n ${"1"}${m}\n`);
+// 12-digit not starting with 91 or 0
+write("phone-pass/twelve-digit.txt", `n ${"2"}${"3".repeat(11)}\n`);
+write(
+  "phone-pass/iso-datetime.txt",
+  `at ${D.y}-${D.mo}-${D.da}T${D.hh}:${D.mm}:${D.ss}Z\n`
+);
+write("phone-pass/date-range.txt", `years ${D.y1}-${D.y2}\n`);
 write("phone-pass/version.txt", `version 1.2.3-beta.4\n`);
-write(
-  "phone-pass/integrity.txt",
-  `integrity sha512-${"A".repeat(20)}+${"B".repeat(20)}/xx==\n`
-);
-write("phone-pass/leading-1to5.txt", `id ${"1"}${"2".repeat(9)}\n`);
+// 40-char hex with mixed letters and digits
+write("phone-pass/hex-sha.txt", `sha ${"a1".repeat(20)}\n`);
 
 function minimalPdfWithStream(streamBuf, filterLine) {
-  // Minimal PDF 1.4 with one page and one content stream (text operator).
   const stream = streamBuf;
   const objects = [];
   objects.push("1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n");
@@ -108,7 +123,6 @@ function minimalPdfWithStream(streamBuf, filterLine) {
     ? `4 0 obj<< /Length ${stream.length} /Filter ${filterLine} >>stream\n`
     : `4 0 obj<< /Length ${stream.length} >>stream\n`;
   objects.push(streamHeader);
-  // stream bytes appended separately
   objects.push("endstream\nendobj\n");
   objects.push("5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n");
 
@@ -116,14 +130,12 @@ function minimalPdfWithStream(streamBuf, filterLine) {
   const parts = [Buffer.from(header, "ascii")];
   const offsets = [0];
   let pos = Buffer.byteLength(header);
-  // obj 1,2,3
   for (let i = 0; i < 3; i++) {
     offsets.push(pos);
     const b = Buffer.from(objects[i], "ascii");
     parts.push(b);
     pos += b.length;
   }
-  // obj 4 header + stream + end
   offsets.push(pos);
   const h = Buffer.from(objects[3], "ascii");
   parts.push(h);
@@ -133,7 +145,6 @@ function minimalPdfWithStream(streamBuf, filterLine) {
   const end = Buffer.from(objects[4], "ascii");
   parts.push(end);
   pos += end.length;
-  // obj 5
   offsets.push(pos);
   const f = Buffer.from(objects[5], "ascii");
   parts.push(f);
@@ -149,19 +160,14 @@ function minimalPdfWithStream(streamBuf, filterLine) {
   return Buffer.concat(parts);
 }
 
-// Uncompressed text stream containing mobile digits (BT/ET text)
-const uncompressedContent = Buffer.from(
-  `BT /F1 12 Tf 10 100 Td (${m}) Tj ET\n`,
-  "ascii"
-);
-write(
-  "pdf-pii-phone-plain.pdf",
-  minimalPdfWithStream(uncompressedContent, null)
-);
+function writePhonePdf(relBase, textInPage) {
+  const content = Buffer.from(`BT /F1 12 Tf 10 100 Td (${textInPage}) Tj ET\n`, "ascii");
+  write(`${relBase}-plain.pdf`, minimalPdfWithStream(content, null));
+  write(`${relBase}-flate.pdf`, minimalPdfWithStream(deflateSync(content), "/FlateDecode"));
+}
 
-// FlateDecode compressed stream with same text
-const compressed = deflateSync(uncompressedContent);
-write(
-  "pdf-pii-phone-flate.pdf",
-  minimalPdfWithStream(compressed, "/FlateDecode")
-);
+// Base mobile PDFs
+writePhonePdf("pdf-pii-phone", m);
+// First two extra FAIL cases as PDFs
+writePhonePdf("pdf-pii-ph-colon", `Ph:${m}`);
+writePhonePdf("pdf-pii-plus91-55", `+91-${m.slice(0, 5)}-${m.slice(5)}`);

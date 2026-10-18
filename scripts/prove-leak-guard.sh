@@ -76,27 +76,66 @@ fail_case "phone-in-mobile-prefix91" \
 fail_case "phone-in-landline" \
   "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/in-landline.txt"
 
-pass_case "phone-hex-sha" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/hex-sha.txt"
+fail_case "phone-ph-colon-mobile" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/ph-colon-mobile.txt"
 
-pass_case "phone-epoch-ms" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/epoch-ms.txt"
+fail_case "phone-plus91-dash-55" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/plus91-dash-55.txt"
 
-pass_case "phone-version" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/version.txt"
+fail_case "phone-zero-prefix-mobile" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/zero-prefix-mobile.txt"
 
-pass_case "phone-integrity" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/integrity.txt"
+fail_case "phone-mobile-file-start" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/mobile-file-start.txt"
 
-pass_case "phone-leading-1to5" \
-  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-pass/leading-1to5.txt"
+fail_case "phone-mobile-file-end" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/mobile-file-end.txt"
 
-fail_case "pdf-pii-phone-plain" \
-  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-pii-phone-plain.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"; rc=$?; rm -rf "$d"; exit $rc' "$GEN_FIX" "$ROOT"
+fail_case "phone-landline-line-start" \
+  "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$GEN_FIX/phone-fail/landline-line-start.txt"
 
-fail_case "pdf-pii-phone-flate" \
-  sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-pii-phone-flate.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"; rc=$?; rm -rf "$d"; exit $rc' "$GEN_FIX" "$ROOT"
+# PASS: gitleaks + PDF text-scanner logic (textMatchesAnyPhone must be false)
+phone_pass_both() {
+  label=$1
+  file=$2
+  pass_case "phone-${label}-gitleaks" \
+    "$GITLEAKS" dir --no-banner --redact -c "$TMPCFG" --exit-code 1 "$file"
+  echo "=== PROVE PASS: phone-${label}-pdf-logic ==="
+  PHONE_PATTERNS_JS="$ROOT/scripts/phone-patterns.mjs" PHONE_PASS_FILE="$file" node --input-type=module <<'NODE'
+import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+const mod = await import(pathToFileURL(process.env.PHONE_PATTERNS_JS).href);
+const t = readFileSync(process.env.PHONE_PASS_FILE, "utf8");
+if (mod.textMatchesAnyPhone(t)) {
+  console.error("PROVE FAILED: pdf-logic matched");
+  process.exit(1);
+}
+NODE
+  echo "OK: phone-${label}-pdf-logic passed"
+}
 
+phone_pass_both "epoch-ms" "$GEN_FIX/phone-pass/epoch-ms.txt"
+phone_pass_both "long-id" "$GEN_FIX/phone-pass/long-id.txt"
+phone_pass_both "eleven-leading-1" "$GEN_FIX/phone-pass/eleven-leading-1.txt"
+phone_pass_both "twelve-digit" "$GEN_FIX/phone-pass/twelve-digit.txt"
+phone_pass_both "iso-datetime" "$GEN_FIX/phone-pass/iso-datetime.txt"
+phone_pass_both "date-range" "$GEN_FIX/phone-pass/date-range.txt"
+phone_pass_both "version" "$GEN_FIX/phone-pass/version.txt"
+phone_pass_both "hex-sha" "$GEN_FIX/phone-pass/hex-sha.txt"
+
+pdf_fail() {
+  name=$1
+  pdf=$2
+  fail_case "$name" \
+    sh -c 'd=$(mktemp -d) && cp -f "$0" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"; rc=$?; rm -rf "$d"; exit $rc' "$pdf" "$ROOT"
+}
+
+pdf_fail "pdf-pii-phone-plain" "$GEN_FIX/pdf-pii-phone-plain.pdf"
+pdf_fail "pdf-pii-phone-flate" "$GEN_FIX/pdf-pii-phone-flate.pdf"
+pdf_fail "pdf-pii-ph-colon-plain" "$GEN_FIX/pdf-pii-ph-colon-plain.pdf"
+pdf_fail "pdf-pii-ph-colon-flate" "$GEN_FIX/pdf-pii-ph-colon-flate.pdf"
+pdf_fail "pdf-pii-plus91-55-plain" "$GEN_FIX/pdf-pii-plus91-55-plain.pdf"
+pdf_fail "pdf-pii-plus91-55-flate" "$GEN_FIX/pdf-pii-plus91-55-flate.pdf"
 pass_case "pdf-clean" \
   sh -c 'd=$(mktemp -d) && cp -f "$0/pdf-clean.pdf" "$d/" && node "$1/scripts/check-forbidden-files.mjs" --include-fixtures --root "$d"; rc=$?; rm -rf "$d"; exit $rc' "$FIX" "$ROOT"
 
@@ -196,6 +235,31 @@ if [ "$rc" -eq 0 ]; then
 fi
 echo "OK: staged rename-blocked-binary failed as expected (exit $rc)"
 
+# Staged typechange (T) of a forbidden-name file to a symlink must fail (ACMT).
+git reset -q --hard HEAD
+git clean -fdq
+printf 'not-a-real-key\n' >staged-secret.pem
+git add staged-secret.pem
+git commit -q -m "add pem"
+rm -f staged-secret.pem
+ln -s "missing-target" staged-secret.pem
+git add staged-secret.pem
+echo "=== PROVE FAIL staged: typechange-pem-to-symlink ==="
+set +e
+# Confirm git sees a typechange when possible
+tc_lines=$(git diff --cached --name-only --no-renames --diff-filter=T || true)
+sh scripts/check-leaks --staged
+rc=$?
+set -e
+if [ -z "$tc_lines" ]; then
+  echo "PROVE NOTE: git did not report diff-filter=T for pem→symlink on this platform; closest ACMT path still required to fail"
+fi
+if [ "$rc" -eq 0 ]; then
+  echo "PROVE FAILED: staged typechange-pem-to-symlink expected non-zero" >&2
+  exit 1
+fi
+echo "OK: staged typechange-pem-to-symlink failed as expected (exit $rc)"
+
 git reset -q --hard HEAD
 git clean -fdq
 printf 'ok note\n' >note.txt
@@ -203,7 +267,6 @@ git add note.txt
 echo "=== PROVE PASS staged: clean ==="
 sh scripts/check-leaks --staged
 echo "OK: staged clean passed"
-
 # --- --commits: binary added then deleted must still fail ---
 echo "=== PROVE FAIL commits: binary-then-deleted ==="
 git reset -q --hard HEAD
