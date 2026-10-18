@@ -1,0 +1,12 @@
+packages:
+  - "."
+
+# Enforce 14-day package cooldown on future installs (minutes).
+minimumReleaseAge: 20160
+
+# Install scripts blocked by default; allow only packages that need a build/postinstall.
+onlyBuiltDependencies:
+  # husky: prepare script installs git hooks
+  - husky
+  # esbuild: optional native binary postinstall used by Vite
+  - esbuild
