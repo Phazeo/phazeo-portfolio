@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 /**
- * Unit tests for decideProfileOwnership (no network).
+ * Unit tests for decideProfileOwnership and CI fail-closed ownership entry (no network).
  */
 import assert from "node:assert/strict";
+import {
+  assertBaseShaInCi,
+  loadOwnersFromGit,
+  runOwnershipCheck,
+} from "./check-profile-ownership.mjs";
 import { decideProfileOwnership, parseApprovedOwners } from "./profile-ownership.mjs";
 
 const approved = parseApprovedOwners(`56721895 dinesh-ad\n13678035 sowmipriya\n99900001 guest-user\n`);
@@ -181,6 +186,27 @@ check(
   "not-profile-owner"
 );
 
+// Explicit: approved non-owner rewrites meta.owner to themselves while base owner remains → fail
+{
+  const result = runOwnershipCheck({
+    authorId: 13678035,
+    authorLogin: "sowmipriya",
+    changedPaths: ["profiles/alex-morgan/profile.json"],
+    githubActions: "true",
+    baseSha: "deadbeef",
+    ownersBySlug: {
+      ...ownersBySlug,
+      "alex-morgan": { githubId: 13678035, githubLogin: "sowmipriya" },
+    },
+    baseOwnersBySlug: {
+      "alex-morgan": { githubId: 99900001, githubLogin: "guest-user" },
+    },
+  });
+  assert.equal(result.ok, false, "data-non-owner-claims-meta-owner: ok");
+  assert.equal(result.reason, "not-profile-owner", "data-non-owner-claims-meta-owner: reason");
+  console.log("OK: data-non-owner-claims-meta-owner");
+}
+
 // new data profile: author not approved -> fail
 check(
   "data-new-profile-unapproved-author",
@@ -197,5 +223,77 @@ check(
   false,
   "author-not-approved"
 );
+
+// CI mode without BASE_SHA → fail closed
+assert.throws(
+  () => assertBaseShaInCi({ githubActions: "true", baseSha: "" }),
+  /BASE_SHA is required/,
+  "ci-missing-base-sha"
+);
+console.log("OK: ci-missing-base-sha");
+
+assert.throws(
+  () =>
+    runOwnershipCheck({
+      authorId: 13678035,
+      authorLogin: "sowmipriya",
+      changedPaths: ["profiles/sowmipriya-rajendiran/meta.ts"],
+      githubActions: "true",
+      baseSha: "",
+      ownersBySlug,
+    }),
+  /BASE_SHA is required/,
+  "ci-run-missing-base-sha"
+);
+console.log("OK: ci-run-missing-base-sha");
+
+// Base git read error → fail closed (never fall back to head owners)
+assert.throws(
+  () =>
+    loadOwnersFromGit("not-a-real-sha", {
+      execFileSync: () => {
+        throw new Error("simulated ls-tree failure");
+      },
+    }),
+  /failed to list base owners/,
+  "base-read-error-ls-tree"
+);
+console.log("OK: base-read-error-ls-tree");
+
+assert.throws(
+  () =>
+    loadOwnersFromGit("abc123", {
+      execFileSync: (_cmd, args) => {
+        if (args.includes("ls-tree")) {
+          return "profiles/alex-morgan/profile.json\n";
+        }
+        throw new Error("simulated show failure");
+      },
+    }),
+  /failed to read base owner file/,
+  "base-read-error-show"
+);
+console.log("OK: base-read-error-show");
+
+assert.throws(
+  () =>
+    runOwnershipCheck({
+      authorId: 13678035,
+      authorLogin: "sowmipriya",
+      changedPaths: ["profiles/alex-morgan/profile.json"],
+      githubActions: "true",
+      baseSha: "abc123",
+      ownersBySlug: {
+        ...ownersBySlug,
+        "alex-morgan": { githubId: 13678035, githubLogin: "sowmipriya" },
+      },
+      loadBaseOwners: () => {
+        throw new Error("check-profile-ownership: failed to list base owners (git ls-tree abc123)");
+      },
+    }),
+  /failed to list base owners/,
+  "ci-run-base-read-error"
+);
+console.log("OK: ci-run-base-read-error");
 
 console.log("test-profile-ownership: all cases OK");

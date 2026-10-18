@@ -141,8 +141,9 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
                 </a>
               ) : null}
               {basics.url ? <ExternalLink href={basics.url}>Website</ExternalLink> : null}
-              {(basics.profiles ?? []).map((p) => (
-                <ExternalLink key={`${p.network}-${p.url}`} href={p.url}>
+              {(basics.profiles ?? []).map((p, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: text+index keeps duplicate labels unique
+                <ExternalLink key={`${i}-${p.network}-${p.url}`} href={p.url}>
                   {p.network}
                 </ExternalLink>
               ))}
@@ -153,8 +154,9 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
         {work && work.length > 0 ? (
           <Section id="work" title="Experience">
             <ul className="space-y-8">
-              {work.map((job) => (
-                <li key={`${job.name}-${job.position}-${job.startDate}`}>
+              {work.map((job, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: text+index keeps duplicate labels unique
+                <li key={`${i}-${job.name}-${job.position}-${job.startDate}`}>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {job.position}
                   </h3>
@@ -171,8 +173,9 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
                   ) : null}
                   {job.highlights && job.highlights.length > 0 ? (
                     <ul className="mt-3 list-disc pl-5 space-y-1 text-gray-600 dark:text-zinc-400">
-                      {job.highlights.map((h) => (
-                        <li key={h}>{h}</li>
+                      {job.highlights.map((h, j) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: text+index keeps duplicate labels unique
+                        <li key={`${i}-${j}-${h}`}>{h}</li>
                       ))}
                     </ul>
                   ) : null}
@@ -185,8 +188,9 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
         {projects && projects.length > 0 ? (
           <Section id="projects" title="Projects">
             <ul className="space-y-6">
-              {projects.map((project) => (
-                <li key={project.name}>
+              {projects.map((project, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: text+index keeps duplicate labels unique
+                <li key={`${i}-${project.name}`}>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {project.url ? (
                       <ExternalLink href={project.url}>{project.name}</ExternalLink>
@@ -199,8 +203,9 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
                   ) : null}
                   {project.highlights && project.highlights.length > 0 ? (
                     <ul className="mt-2 list-disc pl-5 space-y-1 text-gray-600 dark:text-zinc-400">
-                      {project.highlights.map((h) => (
-                        <li key={h}>{h}</li>
+                      {project.highlights.map((h, j) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: text+index keeps duplicate labels unique
+                        <li key={`${i}-${j}-${h}`}>{h}</li>
                       ))}
                     </ul>
                   ) : null}
@@ -213,8 +218,9 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
         {education && education.length > 0 ? (
           <Section id="education" title="Education">
             <ul className="space-y-4">
-              {education.map((ed) => (
-                <li key={`${ed.institution}-${ed.startDate ?? ""}`}>
+              {education.map((ed, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: text+index keeps duplicate labels unique
+                <li key={`${i}-${ed.institution}-${ed.startDate ?? ""}`}>
                   <h3 className="font-semibold text-gray-900 dark:text-white">{ed.institution}</h3>
                   <p className="text-gray-600 dark:text-zinc-400">
                     {[ed.studyType, ed.area].filter(Boolean).join(" · ")}
@@ -231,8 +237,9 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
         {skills && skills.length > 0 ? (
           <Section id="skills" title="Skills">
             <ul className="space-y-3">
-              {skills.map((skill) => (
-                <li key={skill.name}>
+              {skills.map((skill, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: text+index keeps duplicate labels unique
+                <li key={`${i}-${skill.name}`}>
                   <span className="font-medium text-gray-900 dark:text-white">{skill.name}</span>
                   {skill.keywords && skill.keywords.length > 0 ? (
                     <span className="text-gray-600 dark:text-zinc-400">
@@ -249,8 +256,9 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
         {certificates && certificates.length > 0 ? (
           <Section id="certificates" title="Certificates">
             <ul className="space-y-3">
-              {certificates.map((cert) => (
-                <li key={cert.name}>
+              {certificates.map((cert, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: text+index keeps duplicate labels unique
+                <li key={`${i}-${cert.name}`}>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {cert.url ? (
                       <ExternalLink href={cert.url}>{cert.name}</ExternalLink>
@@ -272,8 +280,9 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
         {languages && languages.length > 0 ? (
           <Section id="languages" title="Languages">
             <ul className="space-y-2">
-              {languages.map((lang) => (
-                <li key={lang.language} className="text-gray-700 dark:text-zinc-300">
+              {languages.map((lang, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: text+index keeps duplicate labels unique
+                <li key={`${i}-${lang.language}`} className="text-gray-700 dark:text-zinc-300">
                   <span className="font-medium">{lang.language}</span>
                   {lang.fluency ? (
                     <span className="text-gray-500 dark:text-zinc-500"> — {lang.fluency}</span>
@@ -297,12 +306,4 @@ export function createDataProfilePage(slug: string, data: DataProfileJson): Comp
   }
   DataProfilePage.displayName = `DataProfile(${slug})`;
   return DataProfilePage;
-}
-
-export default function DataProfilePagePlaceholder() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p>Data profile must be created via createDataProfilePage.</p>
-    </div>
-  );
 }
