@@ -1,3 +1,5 @@
+import "../../_shared/fonts/playfair-display-latin.css";
+
 import { About } from "./components/About";
 import { Chatbot } from "./components/Chatbot";
 import { Contact } from "./components/Contact";

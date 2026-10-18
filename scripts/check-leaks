@@ -177,6 +177,14 @@ run_commits_mode() {
           fi
         fi
       done <"$file_list"
+      # Host checks must use the allowlist as of this commit, not HEAD tip.
+      mkdir -p "$commit_tree/.github"
+      if git -C "$source_path" cat-file -e "${commit}:.github/allowed-hosts.txt" 2>/dev/null; then
+        git -C "$source_path" show "${commit}:.github/allowed-hosts.txt" \
+          >"$commit_tree/.github/allowed-hosts.txt"
+      elif [ -f "$ROOT/.github/allowed-hosts.txt" ]; then
+        cp "$ROOT/.github/allowed-hosts.txt" "$commit_tree/.github/allowed-hosts.txt"
+      fi
       set +e
       node "$ROOT/scripts/check-forbidden-files.mjs" --root "$commit_tree"
       ff_rc=$?

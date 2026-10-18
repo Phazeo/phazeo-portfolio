@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../fonts/inter-latin.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -7,7 +8,7 @@
 @source "../**/*.{js,ts,jsx,tsx}";
 
 @theme {
-  --font-display: var(--font-heading), Inter, sans-serif;
+  --font-display: var(--font-heading), "Inter Variable", sans-serif;
 
   --animate-blob: blob 7s infinite;
 
@@ -54,8 +55,8 @@
   --color-secondary: #8b5cf6;
   --color-accent: #ec4899;
   --color-background: #ffffff;
-  --font-heading: "Inter", sans-serif;
-  --font-body: "Inter", sans-serif;
+  --font-heading: "Inter Variable", sans-serif;
+  --font-body: "Inter Variable", sans-serif;
 }
 
 @layer base {

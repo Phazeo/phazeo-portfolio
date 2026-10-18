@@ -16,8 +16,7 @@
       "!**/node_modules",
       "!**/dist",
       "!**/*.min.js",
-      "!**/*.d.ts",
-      "!**/reference"
+      "!**/*.d.ts"
     ]
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },

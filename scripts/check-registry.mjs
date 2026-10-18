@@ -180,13 +180,6 @@ function collectAssetErrors() {
       );
     }
 
-    for (const idx of callSites) {
-      if (!accounted.has(idx)) {
-        // Already reported above as non-literal; keep a single error per site.
-        continue;
-      }
-    }
-
     for (const m of text.matchAll(LOCAL_PATH_RE)) {
       requireFile(m[2], m[3]);
     }

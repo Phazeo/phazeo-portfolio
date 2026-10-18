@@ -5,8 +5,6 @@
 phazeo.com
 portfolio.phazeo.com
 github.com
-fonts.googleapis.com
-fonts.gstatic.com
 linkedin.com
 www.linkedin.com
 biomejs.dev

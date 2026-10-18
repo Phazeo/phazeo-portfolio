@@ -6,7 +6,7 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && node scripts/check-registry.mjs && vite build",
+    "build": "tsc -b && node scripts/check-registry.mjs && vite build && node scripts/write-headers.mjs",
     "preview": "vite preview",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
@@ -16,7 +16,9 @@
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "check:registry": "node scripts/check-registry.mjs",
+    "check:headers": "node scripts/write-headers.mjs --check",
     "test:ownership": "node scripts/test-profile-ownership.mjs",
+    "prove:csp": "node scripts/prove-csp.mjs",
     "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm test:ownership",
     "prepare": "husky"
   },
@@ -33,6 +35,10 @@
     "pnpm": ">=9"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/outfit": "5.3.0",
+    "@fontsource-variable/playfair-display": "5.3.0",
+    "@fontsource-variable/space-grotesk": "5.3.0",
     "motion": "14.0.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

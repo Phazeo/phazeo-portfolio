@@ -29,7 +29,7 @@ jobs:
 
       - name: Setup Node.js
         # actions/setup-node@v5 (tag v5 → this commit)
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: "24"
           cache: "pnpm"
@@ -43,6 +43,20 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Verify headers match build
+        run: pnpm check:headers
+
+      - name: Prove CSP in Chromium
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          if [ ! -x "$CHROME_PATH" ]; then
+            echo "STOP: runner has no usable Chrome at CHROME_PATH=$CHROME_PATH"
+            echo "Do not add a browser download or new dependency — report to maintainers."
+            exit 1
+          fi
+          pnpm prove:csp
+
       - name: Verify build output
         run: |
           if [ ! -d "dist" ]; then
@@ -51,6 +65,14 @@ jobs:
           fi
           if [ ! -f "dist/index.html" ]; then
             echo "Build failed: index.html not found"
+            exit 1
+          fi
+          if [ ! -f "dist/_headers" ]; then
+            echo "Build failed: _headers not found"
+            exit 1
+          fi
+          if [ ! -f "dist/_redirects" ]; then
+            echo "Build failed: _redirects not copied to dist"
             exit 1
           fi
           echo "Build verification successful"

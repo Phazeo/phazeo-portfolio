@@ -1,3 +1,5 @@
+import "../../_shared/fonts/space-grotesk-latin.css";
+
 import { About } from "./components/About";
 import { Achievements } from "./components/Achievements";
 import { Contact } from "./components/Contact";

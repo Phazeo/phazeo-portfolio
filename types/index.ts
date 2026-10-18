@@ -6,8 +6,6 @@ import type { ComponentType } from "react";
  */
 export interface ProfileTheme {
   cssVariables: Record<string, string>;
-  /** Optional Google Fonts URL to load */
-  fontUrl?: string;
 }
 
 /**
@@ -161,8 +159,8 @@ export const DEFAULT_THEME: ProfileTheme = {
     "--color-secondary": "#8b5cf6",
     "--color-accent": "#ec4899",
     "--color-background": "#ffffff",
-    "--font-heading": "'Inter', sans-serif",
-    "--font-body": "'Inter', sans-serif",
+    "--font-heading": "'Inter Variable', sans-serif",
+    "--font-body": "'Inter Variable', sans-serif",
   },
 };
 

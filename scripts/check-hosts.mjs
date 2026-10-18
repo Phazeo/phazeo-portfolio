@@ -37,8 +37,14 @@ function parseArgs(argv) {
   return out;
 }
 
-function loadAllowlist() {
-  const raw = readFileSync(ALLOWLIST_PATH, "utf8");
+function resolveAllowlistPath(scanRoot) {
+  const inRoot = join(scanRoot, ".github", "allowed-hosts.txt");
+  if (existsSync(inRoot)) return inRoot;
+  return ALLOWLIST_PATH;
+}
+
+function loadAllowlist(allowlistPath) {
+  const raw = readFileSync(allowlistPath, "utf8");
   const exact = new Set();
   const wildcards = [];
   for (const line of raw.split("\n")) {
@@ -60,6 +66,10 @@ function loadAllowlist() {
 
 function hostAllowed(host, allow) {
   const h = host.toLowerCase();
+  // Loopback is allowed by the IP gate; treat the same for URL hosts.
+  if (h === "127.0.0.1" || h === "localhost" || h === "::1" || h === "[::1]") {
+    return true;
+  }
   if (allow.exact.has(h)) return true;
   for (const base of allow.wildcards) {
     if (h === base || h.endsWith(`.${base}`)) return true;
@@ -143,10 +153,15 @@ function main() {
     console.error("check-hosts: missing .github/allowed-hosts.txt");
     process.exit(2);
   }
-  const allow = loadAllowlist();
   const findings = [];
 
   for (const root of args.roots) {
+    const allowPath = resolveAllowlistPath(root);
+    if (!existsSync(allowPath)) {
+      console.error(`check-hosts: missing allowlist at ${allowPath}`);
+      process.exit(2);
+    }
+    const allow = loadAllowlist(allowPath);
     const files = args.tracked ? trackedFiles(root) : null;
     const iterable = files ?? walk(root, root, args.includeFixtures);
     for (const { abs, rel } of iterable) {
