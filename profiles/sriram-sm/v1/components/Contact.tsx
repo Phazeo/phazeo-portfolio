@@ -1,7 +1,3 @@
-import { profileAssetUrl } from "../../../_shared/assets";
-
-const RESUME_PDF = profileAssetUrl("sriram-sm", "resume.pdf");
-
 export function Contact() {
   return (
     <section
@@ -28,20 +24,7 @@ export function Contact() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-6">
-          <a
-            href={RESUME_PDF}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 text-center group"
-          >
-            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-(--color-primary) flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform">
-              📄
-            </div>
-            <h3 className="font-display font-semibold text-gray-900 mb-1">Resume</h3>
-            <p className="text-(--color-primary) text-sm">Download PDF</p>
-          </a>
-
+        <div className="grid sm:grid-cols-1 gap-6 max-w-md mx-auto">
           <a
             href="mailto:sriramsm01@gmail.com"
             className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 text-center group"
