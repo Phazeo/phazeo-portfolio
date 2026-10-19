@@ -97,16 +97,25 @@ test.describe("directory demo", () => {
     await page.goto("/?page=3");
     await expect(page).toHaveURL(/[?&]page=3(?:&|$)/);
     await expect(results).toContainText(/Showing \d+ to \d+ of \d+/);
-    await search.pressSequentially("data");
-    const page1Results = (text: string) => {
+    await search.pressSequentially("d");
+    const midType = await page.evaluate(() => {
+      const line = document.querySelector(".directory-results");
+      return {
+        search: location.search,
+        results: line?.textContent?.trim() ?? "",
+      };
+    });
+    expect(midType.search).toMatch(/[?&]page=3(?:&|$)/);
+    const rangeStartsAt1 = (text: string) => {
       const showing = text.match(/Showing (\d+) to/);
       if (showing) return showing[1] === "1";
-      // Single-page filter summary also means the visible range starts at 1.
       return /^\d+ of \d+ match/.test(text.trim());
     };
-    await expect.poll(async () => page1Results(await results.innerText())).toBe(true);
+    expect(rangeStartsAt1(midType.results)).toBe(true);
+
+    await search.pressSequentially("ata");
     await expect(page).toHaveURL(/[?&]q=data/);
-    await expect.poll(async () => page1Results(await results.innerText())).toBe(true);
+    expect(rangeStartsAt1((await results.innerText()).trim())).toBe(true);
 
     const errors: string[] = [];
     page.on("console", (msg) => {
@@ -117,8 +126,8 @@ test.describe("directory demo", () => {
     await search.fill("");
     const burst = "a".repeat(150);
     await search.pressSequentially(burst, { delay: 20 });
-    expect(errors).toEqual([]);
     await expect(page).toHaveURL(new RegExp(`[?&]q=${burst}(?:&|$)`));
+    expect(errors).toEqual([]);
 
     await page.getByRole("button", { name: "Clear search" }).click();
     await expect(search).toHaveValue("");
@@ -178,6 +187,25 @@ test.describe("directory demo", () => {
     const { context, page } = await openWithTheme(browser, baseURL, "light");
     await setViewport(page, 1280);
 
+    // Mouse activation first (no prior keyboard modality): no focus-visible ring after return.
+    const roleText = page.locator("[data-dir-card] .directory-card-role").first();
+    const roleBox = await boundingRect(roleText);
+    await page.mouse.click(roleBox.left + roleBox.width / 2, roleBox.top + roleBox.height / 2);
+    await expect(page).toHaveURL(/\/[^/?#]+/);
+    await page.goBack();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const afterClick = await page.evaluate(() => {
+      const list = document.querySelector("ul.grid");
+      const focusVisible = list
+        ? [...list.querySelectorAll("*")].some((el) => el.matches(":focus-visible"))
+        : false;
+      const card = document.querySelector("[data-dir-card]");
+      const outlineStyle = card ? getComputedStyle(card).outlineStyle : "missing";
+      return { focusVisible, outlineStyle };
+    });
+    expect(afterClick.focusVisible).toBe(false);
+    expect(afterClick.outlineStyle).toBe("none");
+
     await page.getByRole("button", { name: "Dark mode" }).focus();
     for (let i = 0; i < 12; i++) {
       const onSearch = await page.evaluate(
@@ -205,16 +233,6 @@ test.describe("directory demo", () => {
           return `${cs.outlineStyle}:${cs.outlineWidth}`;
         });
         return outline.startsWith("solid:2px");
-      })
-      .toBe(true);
-
-    await link.dispatchEvent("mousedown");
-    await link.blur();
-    await expect
-      .poll(async () => {
-        const card = page.locator("[data-dir-card]").first();
-        const outline = await card.evaluate((el) => getComputedStyle(el).outlineStyle);
-        return outline === "none";
       })
       .toBe(true);
 
@@ -278,17 +296,27 @@ test.describe("directory demo", () => {
         expect(Math.abs(hr.right - gr.right)).toBeLessThanOrEqual(1);
 
         // Glass: shapes clear of hero targets; cards overlap shapes; backdrop present
+        await page.evaluate(() => window.scrollTo(0, 0));
         const geo = await page.evaluate(() => {
-          function rect(el: Element | null) {
+          type R = { left: number; top: number; right: number; bottom: number };
+          function rect(el: Element | null): R | null {
             if (!el) return null;
             const r = el.getBoundingClientRect();
             return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
           }
-          function hit(
-            a: { left: number; top: number; right: number; bottom: number },
-            b: { left: number; top: number; right: number; bottom: number }
-          ) {
+          function hit(a: R, b: R) {
             return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+          }
+          function overlapArea(a: R, b: R) {
+            const left = Math.max(a.left, b.left);
+            const top = Math.max(a.top, b.top);
+            const right = Math.min(a.right, b.right);
+            const bottom = Math.min(a.bottom, b.bottom);
+            if (right <= left || bottom <= top) return 0;
+            return (right - left) * (bottom - top);
+          }
+          function area(r: R) {
+            return Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
           }
           const targets = [
             document.querySelector("[data-dir-eyebrow]"),
@@ -298,18 +326,37 @@ test.describe("directory demo", () => {
             document.querySelector(".directory-segment"),
             document.querySelector(".directory-results-header"),
           ].map(rect);
-          const shapes = [...document.querySelectorAll(".directory-shell__shape")].map((el) =>
-            rect(el)
-          );
+          const shapes = [...document.querySelectorAll(".directory-shell__shape")]
+            .map((el) => rect(el))
+            .filter((s): s is R => Boolean(s));
           const heroHits = shapes.map((s) =>
-            s ? targets.map((t, i) => (t && hit(s, t) ? i : -1)).filter((i) => i >= 0) : []
+            targets.map((t, i) => (t && hit(s, t) ? i : -1)).filter((i) => i >= 0)
           );
-          const cards = [...document.querySelectorAll("[data-dir-card]")].map((el) => rect(el));
-          let overlap = 0;
-          for (const c of cards) {
-            if (!c) continue;
-            if (shapes.some((s) => s && hit(c, s))) overlap++;
+          const vh = window.innerHeight;
+          const vw = window.innerWidth;
+          const cards = [...document.querySelectorAll("[data-dir-card]")]
+            .map((el) => rect(el))
+            .filter((c): c is R => Boolean(c));
+          const inView = cards.filter(
+            (c) => c.top >= 0 && c.bottom <= vh && c.left >= 0 && c.right <= vw
+          );
+          let strongOverlap = 0;
+          for (const c of inView) {
+            const cardArea = area(c);
+            if (cardArea <= 0) continue;
+            const best = shapes.reduce((max, s) => Math.max(max, overlapArea(c, s) / cardArea), 0);
+            if (best >= 0.3) strongOverlap++;
           }
+          const grid = rect(document.querySelector("ul.grid"));
+          const shapeGridCoverage = shapes.map((s) => {
+            if (!grid) return 0;
+            const shapeW = Math.max(0, s.right - s.left);
+            if (shapeW <= 0) return 0;
+            const overlapLeft = Math.max(s.left, grid.left);
+            const overlapRight = Math.min(s.right, grid.right);
+            const overlapW = Math.max(0, overlapRight - overlapLeft);
+            return overlapW / shapeW;
+          });
           const field = document.querySelector(".directory-toolbar-field");
           const card = document.querySelector("[data-dir-card]");
           const seg = document.querySelector(".directory-segment");
@@ -346,7 +393,9 @@ test.describe("directory demo", () => {
           }
           return {
             heroHits,
-            cardOverlapRatio: cards.length ? overlap / cards.length : 1,
+            inViewCount: inView.length,
+            strongOverlap,
+            shapeGridCoverage,
             backdrops: {
               card: bf(card),
               field: bf(field),
@@ -358,7 +407,11 @@ test.describe("directory demo", () => {
         });
 
         expect(geo.heroHits.every((h) => h.length === 0)).toBe(true);
-        expect(geo.cardOverlapRatio).toBeGreaterThan(0);
+        if (width >= 1024) {
+          expect(geo.inViewCount).toBeGreaterThan(0);
+          expect(geo.strongOverlap).toBeGreaterThanOrEqual(Math.ceil(geo.inViewCount / 2));
+          expect(geo.shapeGridCoverage.every((r) => r >= 0.25)).toBe(true);
+        }
         expect(geo.backdrops.card).not.toBe("none");
         expect(geo.backdrops.field).not.toBe("none");
         expect(geo.backdrops.segment).not.toBe("none");
@@ -389,15 +442,43 @@ test.describe("directory demo", () => {
     const box = await boundingRect(sw);
     expect(near(box.width, 72, 1)).toBe(true);
     expect(near(box.height, 32, 1)).toBe(true);
-    const hit = await sw.evaluate((el) => {
-      const r = el.getBoundingClientRect();
-      return { w: r.width + 12, h: r.height + 12, top: r.top, right: window.innerWidth - r.right };
-    });
-    expect(near(hit.w, 84, 2)).toBe(true);
-    expect(near(hit.h, 44, 2)).toBe(true);
-    expect(hit.top).toBeLessThan(40);
-    expect(hit.right).toBeLessThan(40);
+    expect(box.top).toBeLessThan(40);
+    expect(
+      await page.evaluate(() => {
+        const el = document.querySelector(".theme-switch");
+        if (!el) return Number.POSITIVE_INFINITY;
+        return window.innerWidth - el.getBoundingClientRect().right;
+      })
+    ).toBeLessThan(40);
 
+    for (const width of [1280, 390]) {
+      await setViewport(page, width);
+      await page.goto("/");
+      await expect(sw).toBeVisible();
+      await expect(sw).toHaveAttribute("aria-pressed", "false");
+
+      const pad = await sw.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const yAbove = r.top - 5;
+        const yBelow = r.bottom + 5;
+        const hits = (x: number, y: number) => {
+          const n = document.elementFromPoint(x, y);
+          return n === el || n?.closest("button") === el;
+        };
+        return { cx, yAbove, above: hits(cx, yAbove), below: hits(cx, yBelow) };
+      });
+      expect(pad.above, `width ${width} elementFromPoint above`).toBe(true);
+      expect(pad.below, `width ${width} elementFromPoint below`).toBe(true);
+
+      await page.mouse.click(pad.cx, pad.yAbove);
+      await expect(sw).toHaveAttribute("aria-pressed", "true");
+      await sw.click();
+      await expect(sw).toHaveAttribute("aria-pressed", "false");
+    }
+
+    await setViewport(page, 1280);
+    await page.goto("/");
     await page.evaluate(() => window.scrollTo(0, 800));
     const afterScroll = await boundingRect(sw);
     expect(afterScroll.top).toBeLessThan(40);
