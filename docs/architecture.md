@@ -62,5 +62,3 @@ A slug folder has either `meta.ts` or `profile.json`, never both. Folders whose 
 - `pnpm check:imports`: dependency rules above
 - `pnpm test`: all unit tests
 - `pnpm build`: typecheck, checks, production build, and security headers
-
-`pnpm prove:visual` is optional and hand-run only, for large restructures. It is never run in CI. Isolation and the shared kit are the scalable gates.

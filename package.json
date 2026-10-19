@@ -10,6 +10,7 @@
   "packageManager": "pnpm@12.9.1",
   "scripts": {
     "dev": "vite",
+    "dev:guest-example": "VITE_GUEST_CSP_EXAMPLE=1 vite",
     "build": "tsc -b && node tools/checks/check-registry.ts && node tools/checks/check-profiles.ts && vite build && node tools/build/write-headers.ts",
     "preview": "vite preview",
     "lint": "biome lint .",
@@ -32,7 +33,6 @@
     "guard:tree": "sh tools/guard/check-leaks.sh --tree",
     "guard:staged": "sh tools/guard/check-leaks.sh --staged",
     "prove:csp": "node tests/prove/prove-csp.ts",
-    "prove:visual": "node tests/prove/visual-parity.ts",
     "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm check:imports && pnpm test:ownership && pnpm test:profiles && pnpm test:imports && pnpm test:scope && pnpm test:public-boundary",
     "prepare": "husky"
   },
