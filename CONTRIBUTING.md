@@ -19,7 +19,7 @@ Use either a React profile (`meta.ts` plus `v1/`) **or** a data-first `profile.j
 ## Team React profile
 
 1. **Fork** this repository
-2. **Create** `profiles/<your-slug>/` with the files in the table below
+2. **Create** `profiles/<your-slug>/` with the required files listed below
 3. **Ensure** the folder name equals `meta.slug` (the registry discovers `profiles/*/meta.ts`)
 4. **Test** with `pnpm install`, `pnpm dev`, and `pnpm quality`
 5. **Open a PR**
@@ -28,7 +28,7 @@ See `profiles/sriram-sm/` for a complete React example. Architecture notes live 
 
 ### Required files
 
-| File | Purpose |
+| Path | Purpose |
 | --- | --- |
 | `profiles/<slug>/meta.ts` | Exports the `ProfileConfig` (slug, owner, affiliation, card fields, versions). Default export. |
 | `profiles/<slug>/v1/index.tsx` | Exports the `ProfileVersion`: lazy `componentLoader`, `theme`, and optional `seo`. |
@@ -141,14 +141,14 @@ export default function JaneDoeProfilePage() {
       <ProfileNavigation brandInitial="J" items={navItems} />
       <motion.section
         id="hero"
-        className="mx-auto max-w-3xl px-6 py-24"
+        className="mx-auto max-w-3xl px-6 py-16"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <img
           src={profileAssetUrl("jane-doe", "profile-photo.jpg")}
           alt="Jane Doe"
-          className="mb-6 h-24 w-24 rounded-full object-cover"
+          className="mb-6 h-14 w-14 rounded-full object-cover"
         />
         <h1 className="text-4xl font-bold text-(--color-primary)">Jane Doe</h1>
         <p className="mt-2 text-lg text-gray-700">Software Engineer</p>

@@ -62,4 +62,4 @@ A slug folder has either `meta.ts` or `profile.json`, never both. Folders whose 
 - `pnpm check:imports`: dependency rules above
 - `pnpm test`: all unit tests
 - `pnpm build`: typecheck, checks, production build, and security headers
-- `pnpm prove:visual`: compare two commits (dist hashes and screenshots). Pass the allow-dist-diff option to report dist drift without failing; screenshots stay strict. CI passes that option so chunk-hash churn from layout moves does not fail the job; pixel diffs still fail.
+- `pnpm prove:visual`: optional local tool for rare layout restructures. It is not run in CI. Isolation and the shared kit are the scalable quality gates.
