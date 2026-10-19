@@ -147,6 +147,7 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
     <li className={`group relative mb-6 h-full ${subgridLi}`}>
       <article data-dir-card className={`directory-card p-[1.35rem] ${subgridArticle}`}>
         <div className="directory-card__spot" aria-hidden="true" />
+        <div className="directory-card__sheen" aria-hidden="true" />
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3.5">
             <div className="directory-avatar">
@@ -154,14 +155,17 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
                 className={`directory-avatar__glow bg-linear-to-br ${gradient}`}
                 aria-hidden="true"
               />
-              <div className="directory-avatar__face">{initials}</div>
+              <div className="directory-avatar__face">
+                <span className="directory-avatar__sheen" aria-hidden="true" />
+                <span className="relative z-10">{initials}</span>
+              </div>
             </div>
             <div className="min-w-0">
               <h3 className="directory-card-name line-clamp-2 break-words">
                 <Link
                   to={`/${profile.slug}`}
                   title={profile.displayName}
-                  className="text-inherit no-underline after:absolute after:inset-0 after:z-0 after:rounded-[20px] after:content-[''] focus-visible:outline-none"
+                  className="text-inherit no-underline after:absolute after:inset-0 after:z-0 after:rounded-[24px] after:content-[''] focus-visible:outline-none"
                 >
                   <span className="relative z-10">{profile.displayName}</span>
                 </Link>
@@ -557,7 +561,13 @@ export function HomePage() {
 
   return (
     <div className="directory-shell">
-      <div className="directory-shell__bg" aria-hidden="true" />
+      <div className="directory-shell__bg" aria-hidden="true">
+        <div className="directory-shell__shape directory-shell__shape--violet" />
+        <div className="directory-shell__shape directory-shell__shape--fuchsia" />
+        <div className="directory-shell__shape directory-shell__shape--cyan" />
+        <div className="directory-shell__shape directory-shell__shape--amber" />
+        <div className="directory-shell__grain" />
+      </div>
       <div className="directory-shell__content">
         <ThemeToggle />
 
@@ -608,7 +618,7 @@ export function HomePage() {
                       value={qDraft}
                       onChange={(e) => setQuery(e.target.value)}
                       onBlur={onSearchBlur}
-                      className="w-full rounded-[14px] py-2.5 pr-16 pl-10 text-[color:var(--dir-text-name)] placeholder:text-[color:var(--dir-text-placeholder)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                      className="w-full rounded-[16px] py-2.5 pr-16 pl-10 text-[color:var(--dir-text-name)] placeholder:text-[color:var(--dir-text-placeholder)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
                       placeholder="Search name, role or skill"
                       autoComplete="off"
                     />

@@ -1,54 +1,59 @@
 /*
-  Directory glass tokens and surfaces.
+  Directory glossy glass tokens and surfaces.
   Contrast is verified by tests/unit/directory-contrast.test.ts
-  against --dir-base and --dir-glow-bright composited with --dir-card-fill.
+  against --dir-base and each --dir-shape-* centre at --dir-shape-opacity,
+  composited with --dir-card-fill / --dir-card-fill-touch.
 */
 
 .directory-shell {
-  /* Light theme */
-  --dir-base: #f4f5f7;
-  --dir-glow-tl: #93c5fd;
-  --dir-glow-br: #c4b5fd;
-  --dir-glow-opacity-tl: 0.1;
-  --dir-glow-opacity-br: 0.08;
-  --dir-glow-bright: #93c5fd;
-  --dir-card-fill: rgba(255, 255, 255, 0.72);
-  --dir-card-fill-touch: rgba(255, 255, 255, 0.88);
+  /* Light theme: soft lavender base, frosted white glass */
+  --dir-base: #ebe4f7;
+  --dir-base-mid: #f5f1fb;
+  --dir-base-end: #ffffff;
+  --dir-shape-1: #6d28d9;
+  --dir-shape-2: #db2777;
+  --dir-shape-3: #0891b2;
+  --dir-shape-4: #d97706;
+  --dir-shape-opacity: 0.55;
+  --dir-card-fill: rgba(255, 255, 255, 0.5);
+  --dir-card-fill-touch: rgba(255, 255, 255, 0.62);
   --dir-card-fill-opaque: #ffffff;
-  --dir-card-border: rgba(15, 23, 42, 0.1);
-  --dir-card-border-hover: rgba(15, 23, 42, 0.18);
-  --dir-card-highlight: rgba(255, 255, 255, 0.7);
-  --dir-card-shadow-tight: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --dir-card-shadow-wide: 0 18px 40px rgba(15, 23, 42, 0.08);
-  --dir-spotlight: rgba(255, 255, 255, 0.45);
-  --dir-blur: 12px;
-  --dir-radius: 20px;
+  --dir-card-edge-bright: rgba(255, 255, 255, 0.85);
+  --dir-card-edge-fade: rgba(255, 255, 255, 0.12);
+  --dir-card-highlight: rgba(255, 255, 255, 0.25);
+  --dir-card-sheen: rgba(255, 255, 255, 0.12);
+  --dir-card-shadow: 0 10px 40px rgba(49, 46, 129, 0.45);
+  --dir-spotlight: rgba(255, 255, 255, 0.4);
+  --dir-blur: 18px;
+  --dir-saturate: 160%;
+  --dir-radius: 24px;
+  --dir-radius-control: 16px;
   --dir-text-name: #18181b;
-  --dir-text-role: #52525b;
+  --dir-text-role: #3f3f46;
   --dir-text-summary: #3f3f46;
-  --dir-text-muted: #52525b;
-  --dir-text-placeholder: #52525b;
-  --dir-text-results: #52525b;
-  --dir-text-status: #52525b;
-  --dir-text-pagination: #3f3f46;
-  --dir-search-border: rgba(15, 23, 42, 0.5);
-  --dir-focus-ring: #0891b2;
-  --dir-avatar-fill: rgba(255, 255, 255, 0.55);
+  --dir-text-muted: #3f3f46;
+  --dir-text-placeholder: #3f3f46;
+  --dir-text-results: #3f3f46;
+  --dir-text-status: #3f3f46;
+  --dir-text-pagination: #27272a;
+  --dir-search-border: rgba(15, 23, 42, 0.55);
+  --dir-focus-ring: #0e7490;
+  --dir-avatar-fill: rgba(255, 255, 255, 0.5);
   --dir-avatar-ring: rgba(15, 23, 42, 0.12);
   --dir-avatar-initials: #18181b;
-  --dir-toolbar-fill: rgba(255, 255, 255, 0.7);
+  --dir-toolbar-fill: rgba(255, 255, 255, 0.5);
   --dir-toolbar-fill-opaque: #ffffff;
-  --dir-segment-active-fill: rgba(8, 145, 178, 0.12);
+  --dir-segment-active-fill: rgba(14, 116, 144, 0.14);
   --dir-segment-active-text: #155e75;
   --dir-hero-from: #18181b;
-  --dir-hero-to: #71717a;
+  --dir-hero-to: #52525b;
   --dir-grain-opacity: 0.035;
-  --dir-btn-fill: rgba(255, 255, 255, 0.75);
+  --dir-btn-fill: rgba(255, 255, 255, 0.5);
   --dir-btn-fill-opaque: #ffffff;
   --dir-btn-border: rgba(15, 23, 42, 0.12);
-  --dir-divider: rgba(15, 23, 42, 0.08);
-  --dir-status-available: #10b981;
-  --dir-status-building: #f59e0b;
+  --dir-divider: rgba(15, 23, 42, 0.1);
+  --dir-status-available: #059669;
+  --dir-status-building: #d97706;
   --dir-status-away: #71717a;
 
   position: relative;
@@ -60,45 +65,43 @@
 }
 
 .dark .directory-shell {
-  --dir-base: #07080c;
-  --dir-glow-tl: #4f6ef7;
-  --dir-glow-br: #8b5cf6;
-  --dir-glow-opacity-tl: 0.12;
-  --dir-glow-opacity-br: 0.1;
-  --dir-glow-bright: #4f6ef7;
-  --dir-card-fill: rgba(255, 255, 255, 0.04);
-  --dir-card-fill-touch: rgba(255, 255, 255, 0.1);
-  --dir-card-fill-opaque: #12141a;
-  --dir-card-border: rgba(255, 255, 255, 0.08);
-  --dir-card-border-hover: rgba(255, 255, 255, 0.14);
-  --dir-card-highlight: rgba(255, 255, 255, 0.06);
-  --dir-card-shadow-tight: 0 1px 2px rgba(0, 0, 0, 0.45);
-  --dir-card-shadow-wide: 0 22px 48px rgba(0, 0, 0, 0.35);
-  --dir-spotlight: rgba(255, 255, 255, 0.06);
-  --dir-text-name: #f4f4f5;
-  --dir-text-role: #a1a1aa;
-  --dir-text-summary: #a1a1aa;
-  --dir-text-muted: #a1a1aa;
-  --dir-text-placeholder: #a1a1aa;
-  --dir-text-results: #a1a1aa;
-  --dir-text-status: #a1a1aa;
-  --dir-text-pagination: #d4d4d8;
-  --dir-search-border: rgba(255, 255, 255, 0.38);
-  --dir-focus-ring: #22d3ee;
-  --dir-avatar-fill: rgba(255, 255, 255, 0.06);
-  --dir-avatar-ring: rgba(255, 255, 255, 0.12);
+  --dir-base: #0c0a24;
+  --dir-base-mid: #140b2e;
+  --dir-base-end: #08121f;
+  --dir-shape-opacity: 0.85;
+  --dir-card-fill: rgba(14, 12, 40, 0.55);
+  --dir-card-fill-touch: rgba(18, 16, 48, 0.68);
+  --dir-card-fill-opaque: #12101f;
+  --dir-card-edge-bright: rgba(255, 255, 255, 0.55);
+  --dir-card-edge-fade: rgba(255, 255, 255, 0.06);
+  --dir-card-highlight: rgba(255, 255, 255, 0.25);
+  --dir-card-sheen: rgba(255, 255, 255, 0.12);
+  --dir-card-shadow: 0 10px 40px rgba(8, 6, 32, 0.45);
+  --dir-spotlight: rgba(255, 255, 255, 0.08);
+  --dir-text-name: #fafafa;
+  --dir-text-role: #e4e4e7;
+  --dir-text-summary: #e4e4e7;
+  --dir-text-muted: #e4e4e7;
+  --dir-text-placeholder: #e4e4e7;
+  --dir-text-results: #e4e4e7;
+  --dir-text-status: #e4e4e7;
+  --dir-text-pagination: #f4f4f5;
+  --dir-search-border: rgba(255, 255, 255, 0.55);
+  --dir-focus-ring: #67e8f9;
+  --dir-avatar-fill: rgba(14, 12, 40, 0.45);
+  --dir-avatar-ring: rgba(255, 255, 255, 0.14);
   --dir-avatar-initials: #fafafa;
-  --dir-toolbar-fill: rgba(255, 255, 255, 0.05);
-  --dir-toolbar-fill-opaque: #12141a;
-  --dir-segment-active-fill: rgba(34, 211, 238, 0.12);
+  --dir-toolbar-fill: rgba(14, 12, 40, 0.55);
+  --dir-toolbar-fill-opaque: #12101f;
+  --dir-segment-active-fill: rgba(103, 232, 249, 0.14);
   --dir-segment-active-text: #a5f3fc;
   --dir-hero-from: #fafafa;
   --dir-hero-to: #a1a1aa;
   --dir-grain-opacity: 0.04;
-  --dir-btn-fill: rgba(255, 255, 255, 0.06);
-  --dir-btn-fill-opaque: #12141a;
-  --dir-btn-border: rgba(255, 255, 255, 0.1);
-  --dir-divider: rgba(255, 255, 255, 0.08);
+  --dir-btn-fill: rgba(14, 12, 40, 0.55);
+  --dir-btn-fill-opaque: #12101f;
+  --dir-btn-border: rgba(255, 255, 255, 0.12);
+  --dir-divider: rgba(255, 255, 255, 0.1);
   --dir-status-available: #34d399;
   --dir-status-building: #fbbf24;
   --dir-status-away: #a1a1aa;
@@ -109,25 +112,68 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-color: var(--dir-base);
-  background-image:
-    radial-gradient(
-      ellipse 70% 55% at 12% 8%,
-      color-mix(in srgb, var(--dir-glow-tl) calc(var(--dir-glow-opacity-tl) * 100%), transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 65% 50% at 88% 92%,
-      color-mix(in srgb, var(--dir-glow-br) calc(var(--dir-glow-opacity-br) * 100%), transparent),
-      transparent 70%
-    );
-  background-size: auto, auto;
-  background-repeat: no-repeat, no-repeat;
-  opacity: 1;
+  overflow: hidden;
+  background: linear-gradient(
+    160deg,
+    var(--dir-base) 0%,
+    var(--dir-base-mid) 48%,
+    var(--dir-base-end) 100%
+  );
 }
 
-.directory-shell__bg::after {
+.directory-shell__shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: var(--dir-shape-opacity);
+  pointer-events: none;
+}
+
+.directory-shell__shape::after {
   content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 32% 28%,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0) 55%
+  );
+  pointer-events: none;
+}
+
+.directory-shell__shape--violet {
+  width: clamp(280px, 42vw, 520px);
+  height: clamp(280px, 42vw, 520px);
+  top: -12%;
+  left: -10%;
+  background: linear-gradient(145deg, #a78bfa 0%, #6d28d9 42%, #312e81 100%);
+}
+
+.directory-shell__shape--fuchsia {
+  width: clamp(220px, 32vw, 380px);
+  height: clamp(220px, 32vw, 380px);
+  top: clamp(220px, 28vh, 340px);
+  right: -8%;
+  background: linear-gradient(145deg, #f472b6 0%, #db2777 45%, #ea580c 100%);
+}
+
+.directory-shell__shape--cyan {
+  width: clamp(180px, 26vw, 300px);
+  height: clamp(180px, 26vw, 300px);
+  bottom: 8%;
+  left: -4%;
+  background: linear-gradient(145deg, #67e8f9 0%, #0891b2 48%, #1d4ed8 100%);
+}
+
+.directory-shell__shape--amber {
+  width: clamp(88px, 12vw, 140px);
+  height: clamp(88px, 12vw, 140px);
+  top: clamp(72px, 10vh, 120px);
+  right: clamp(48px, 8vw, 120px);
+  background: linear-gradient(145deg, #fde68a 0%, #d97706 55%, #b45309 100%);
+}
+
+.directory-shell__grain {
   position: absolute;
   inset: 0;
   background: url("./assets/directory-grain.png");
@@ -150,17 +196,64 @@
   letter-spacing: -0.03em;
 }
 
+.directory-glass-surface {
+  background-image: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.08) 42%,
+      rgba(255, 255, 255, 0.02) 100%
+    ),
+    linear-gradient(var(--dir-card-fill), var(--dir-card-fill));
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    var(--dir-card-shadow);
+}
+
 .directory-glass-btn {
-  background: var(--dir-btn-fill);
-  border: 1px solid var(--dir-btn-border);
-  border-radius: 12px;
-  backdrop-filter: blur(var(--dir-blur));
-  -webkit-backdrop-filter: blur(var(--dir-blur));
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-image: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.08) 42%,
+      rgba(255, 255, 255, 0.02) 100%
+    ),
+    linear-gradient(var(--dir-btn-fill), var(--dir-btn-fill));
+  border: 1px solid transparent;
+  border-radius: var(--dir-radius-control);
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
   color: var(--dir-text-pagination);
-  box-shadow: inset 0 1px 0 var(--dir-card-highlight);
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    var(--dir-card-shadow);
   transition:
     transform 160ms ease,
-    opacity 160ms ease;
+    opacity 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.directory-glass-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--dir-card-edge-bright),
+    var(--dir-card-edge-fade)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .directory-glass-btn:disabled {
@@ -170,21 +263,58 @@
 
 .directory-glass-btn[aria-current="page"],
 .directory-glass-btn[data-active="true"] {
-  background: var(--dir-segment-active-fill);
+  background-image: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.06) 100%
+    ),
+    linear-gradient(var(--dir-segment-active-fill), var(--dir-segment-active-fill));
   color: var(--dir-segment-active-text);
-  border-color: color-mix(in srgb, var(--dir-focus-ring) 45%, var(--dir-btn-border));
 }
 
 .directory-toolbar-field {
-  background: var(--dir-toolbar-fill);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-image: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.08) 42%,
+      rgba(255, 255, 255, 0.02) 100%
+    ),
+    linear-gradient(var(--dir-toolbar-fill), var(--dir-toolbar-fill));
   border: 1px solid var(--dir-search-border);
-  border-radius: 14px;
-  backdrop-filter: blur(var(--dir-blur));
-  -webkit-backdrop-filter: blur(var(--dir-blur));
-  box-shadow: inset 0 1px 0 var(--dir-card-highlight);
+  border-radius: var(--dir-radius-control);
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    var(--dir-card-shadow);
+}
+
+.directory-toolbar-field::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--dir-card-edge-bright),
+    var(--dir-card-edge-fade)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .directory-toolbar-field input {
+  position: relative;
+  z-index: 1;
   color: var(--dir-text-name);
   background: transparent;
 }
@@ -194,21 +324,53 @@
 }
 
 .directory-segment {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   padding: 3px;
-  border-radius: 14px;
-  background: var(--dir-toolbar-fill);
-  border: 1px solid var(--dir-card-border);
-  backdrop-filter: blur(var(--dir-blur));
-  -webkit-backdrop-filter: blur(var(--dir-blur));
-  box-shadow: inset 0 1px 0 var(--dir-card-highlight);
+  border-radius: var(--dir-radius-control);
+  background-image: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.08) 42%,
+      rgba(255, 255, 255, 0.02) 100%
+    ),
+    linear-gradient(var(--dir-toolbar-fill), var(--dir-toolbar-fill));
+  border: 1px solid transparent;
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    var(--dir-card-shadow);
+}
+
+.directory-segment::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--dir-card-edge-bright),
+    var(--dir-card-edge-fade)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .directory-segment button {
+  position: relative;
+  z-index: 1;
   border: 0;
   background: transparent;
   color: var(--dir-text-muted);
-  border-radius: 11px;
+  border-radius: calc(var(--dir-radius-control) - 3px);
   padding: 0.4rem 0.75rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -230,24 +392,51 @@
 .directory-card {
   --x: 50%;
   --y: 50%;
+  --sheen-shift: 0%;
   position: relative;
   isolation: isolate;
   display: flex;
   flex-direction: column;
   height: 100%;
   border-radius: var(--dir-radius);
-  background: var(--dir-card-fill);
-  border: 1px solid var(--dir-card-border);
+  border: 1px solid transparent;
+  background-image: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.08) 42%,
+      rgba(255, 255, 255, 0.02) 100%
+    ),
+    linear-gradient(var(--dir-card-fill), var(--dir-card-fill));
   box-shadow:
     inset 0 1px 0 var(--dir-card-highlight),
-    var(--dir-card-shadow-tight),
-    var(--dir-card-shadow-wide);
-  backdrop-filter: blur(var(--dir-blur));
-  -webkit-backdrop-filter: blur(var(--dir-blur));
+    var(--dir-card-shadow);
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate));
   transition:
     transform 180ms ease,
-    opacity 180ms ease;
+    box-shadow 180ms ease;
   outline: none;
+}
+
+.directory-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--dir-card-edge-bright),
+    var(--dir-card-edge-fade)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 180ms ease;
 }
 
 .directory-card:has(:focus-visible) {
@@ -271,18 +460,37 @@
   );
 }
 
+.directory-card__sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(
+    125deg,
+    transparent 0%,
+    var(--dir-card-sheen) calc(18% + var(--sheen-shift)),
+    transparent 42%
+  );
+  background-size: 100% 40%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
 .directory-avatar {
   position: relative;
   width: 48px;
   height: 48px;
   flex-shrink: 0;
+  z-index: 1;
 }
 
 .directory-avatar__glow {
   position: absolute;
   inset: 0;
   border-radius: 12px;
-  opacity: 0.3;
+  opacity: 0.55;
 }
 
 .directory-avatar__face {
@@ -293,12 +501,35 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: var(--dir-avatar-fill);
+  overflow: hidden;
+  isolation: isolate;
+  background-image: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.06) 100%
+    ),
+    linear-gradient(var(--dir-avatar-fill), var(--dir-avatar-fill));
   box-shadow: inset 0 0 0 1px var(--dir-avatar-ring);
   color: var(--dir-avatar-initials);
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.04em;
+  backdrop-filter: blur(10px) saturate(var(--dir-saturate));
+  -webkit-backdrop-filter: blur(10px) saturate(var(--dir-saturate));
+}
+
+.directory-avatar__sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    125deg,
+    transparent 10%,
+    rgba(255, 255, 255, 0.2) 28%,
+    transparent 48%
+  );
 }
 
 .directory-card-name {
@@ -383,12 +614,24 @@
   }
 
   .directory-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--dir-card-border-hover);
+    transform: translateY(-3px);
+    --sheen-shift: 8%;
+  }
+
+  .directory-card:hover::before {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.95),
+      rgba(255, 255, 255, 0.18)
+    );
   }
 
   .directory-card:hover .directory-card__spot {
     opacity: 1;
+  }
+
+  .directory-card:hover .directory-card__sheen {
+    transition: background 220ms ease;
   }
 
   .directory-card:hover .directory-card-arrow {
@@ -400,6 +643,7 @@
 @media (prefers-reduced-motion: reduce) {
   .directory-card,
   .directory-card__spot,
+  .directory-card__sheen,
   .directory-card-arrow,
   .directory-glass-btn,
   .directory-segment button {
@@ -408,6 +652,7 @@
 
   .directory-card:hover {
     transform: none;
+    --sheen-shift: 0%;
   }
 
   .directory-card:hover .directory-card__spot {
@@ -420,8 +665,13 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
+  .directory-shell__shape {
+    opacity: 0.3;
+  }
+
   .directory-card {
     background: var(--dir-card-fill-opaque);
+    background-image: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -431,6 +681,7 @@
   .directory-glass-btn,
   .directory-avatar__face {
     background: var(--dir-toolbar-fill-opaque);
+    background-image: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -439,7 +690,9 @@
     background: var(--dir-btn-fill-opaque);
   }
 
-  .directory-card__spot {
+  .directory-card__spot,
+  .directory-card__sheen,
+  .directory-avatar__sheen {
     display: none;
   }
 }
@@ -470,8 +723,12 @@
 
 @media (forced-colors: active) {
   .directory-shell__bg,
+  .directory-shell__shape,
+  .directory-shell__grain,
   .directory-card__spot,
-  .directory-avatar__glow {
+  .directory-card__sheen,
+  .directory-avatar__glow,
+  .directory-avatar__sheen {
     display: none !important;
   }
 
@@ -487,6 +744,13 @@
     box-shadow: none;
   }
 
+  .directory-card::before,
+  .directory-toolbar-field::before,
+  .directory-segment::before,
+  .directory-glass-btn::before {
+    display: none;
+  }
+
   .directory-card:has(:focus-visible),
   .directory-glass-btn:focus-visible,
   .directory-segment button:focus-visible,
@@ -495,10 +759,14 @@
   }
 }
 
+/* Keep blur on touch when detail sits behind glass; opaque touch fill still applies. */
 @media (hover: none) {
   .directory-card {
-    background: var(--dir-card-fill-touch);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background-image: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.22) 0%,
+        rgba(255, 255, 255, 0.06) 100%
+      ),
+      linear-gradient(var(--dir-card-fill-touch), var(--dir-card-fill-touch));
   }
 }
