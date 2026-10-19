@@ -117,10 +117,9 @@
       ellipse 65% 50% at 88% 92%,
       color-mix(in srgb, var(--dir-glow-br) calc(var(--dir-glow-opacity-br) * 100%), transparent),
       transparent 70%
-    ),
-    url("/directory-grain.png");
-  background-size: auto, auto, 128px 128px;
-  background-repeat: no-repeat, no-repeat, repeat;
+    );
+  background-size: auto, auto;
+  background-repeat: no-repeat, no-repeat;
   opacity: 1;
 }
 
@@ -129,7 +128,7 @@
   position: absolute;
   inset: 0;
   background: url("/directory-grain.png");
-  background-size: 128px 128px;
+  background-size: 64px 64px;
   opacity: var(--dir-grain-opacity);
   mix-blend-mode: overlay;
   pointer-events: none;
@@ -229,6 +228,7 @@
   --x: 50%;
   --y: 50%;
   position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -258,7 +258,7 @@
   border-radius: inherit;
   overflow: hidden;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
   opacity: 0;
   transition: opacity 180ms ease;
   background: radial-gradient(

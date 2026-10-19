@@ -110,66 +110,70 @@ function requireVar(vars: Map<string, string>, name: string): string {
   return v;
 }
 
-function surfaces(vars: Map<string, string>): { overBase: Rgba; overGlow: Rgba } {
+/** Card fill over base, and over each glow (tl / br) at its own opacity. */
+function cardSurfaces(vars: Map<string, string>): Rgba[] {
   const base = { ...parseColor(requireVar(vars, "--dir-base")), a: 1 };
-  const glow = parseColor(requireVar(vars, "--dir-glow-bright"));
-  const glowOpacity = Math.max(
-    Number(requireVar(vars, "--dir-glow-opacity-tl")),
-    Number(requireVar(vars, "--dir-glow-opacity-br"))
-  );
   const card = parseColor(requireVar(vars, "--dir-card-fill"));
   const overBase = composite(card, base);
-  const lit = composite({ ...glow, a: glowOpacity }, base);
-  const overGlow = composite(card, lit);
-  return { overBase, overGlow };
+  const glows: Rgba[] = [overBase];
+  for (const [colorKey, opacityKey] of [
+    ["--dir-glow-tl", "--dir-glow-opacity-tl"],
+    ["--dir-glow-br", "--dir-glow-opacity-br"],
+  ] as const) {
+    const glow = parseColor(requireVar(vars, colorKey));
+    const opacity = Number(requireVar(vars, opacityKey));
+    const lit = composite({ ...glow, a: opacity }, base);
+    glows.push(composite(card, lit));
+  }
+  return glows;
 }
 
 function assertTextContrast(vars: Map<string, string>, names: string[], min: number) {
-  const { overBase, overGlow } = surfaces(vars);
+  const surfaces = cardSurfaces(vars);
   for (const name of names) {
-    const fg = parseColor(requireVar(vars, name));
-    const solid = { ...fg, a: 1 };
-    const r1 = contrastRatio(solid, overBase);
-    const r2 = contrastRatio(solid, overGlow);
-    assert.ok(
-      r1 >= min,
-      `${name} over base+card: ${r1.toFixed(2)} < ${min}`
-    );
-    assert.ok(
-      r2 >= min,
-      `${name} over glow+card: ${r2.toFixed(2)} < ${min}`
-    );
+    const fg = { ...parseColor(requireVar(vars, name)), a: 1 };
+    for (const [i, surface] of surfaces.entries()) {
+      const r = contrastRatio(fg, surface);
+      assert.ok(r >= min, `${name} over surface[${i}]: ${r.toFixed(2)} < ${min}`);
+    }
   }
 }
 
 function assertUiContrast(vars: Map<string, string>, token: string, min: number) {
-  const { overBase, overGlow } = surfaces(vars);
+  const surfaces = cardSurfaces(vars);
   const color = parseColor(requireVar(vars, token));
-  // Focus ring is drawn as opaque outline color.
-  if (token === "--dir-focus-ring") {
+  if (token === "--dir-focus-ring" || token === "--dir-text-muted") {
     const solid = { ...color, a: 1 };
     const base = { ...parseColor(requireVar(vars, "--dir-base")), a: 1 };
     assert.ok(
       contrastRatio(solid, base) >= min,
       `${token} vs base: ${contrastRatio(solid, base).toFixed(2)} < ${min}`
     );
-    assert.ok(
-      contrastRatio(solid, overGlow) >= min,
-      `${token} vs glow+card: ${contrastRatio(solid, overGlow).toFixed(2)} < ${min}`
-    );
+    for (const [i, surface] of surfaces.entries()) {
+      const r = contrastRatio(solid, surface);
+      assert.ok(r >= min, `${token} vs surface[${i}]: ${r.toFixed(2)} < ${min}`);
+    }
     return;
   }
-  // Search border: composite translucent stroke over the field/card surface.
-  const edgeBase = composite(color, overBase);
-  const edgeGlow = composite(color, overGlow);
-  assert.ok(
-    contrastRatio(edgeBase, overBase) >= min,
-    `${token} edge over base+card: ${contrastRatio(edgeBase, overBase).toFixed(2)} < ${min}`
-  );
-  assert.ok(
-    contrastRatio(edgeGlow, overGlow) >= min,
-    `${token} edge over glow+card: ${contrastRatio(edgeGlow, overGlow).toFixed(2)} < ${min}`
-  );
+  for (const [i, surface] of surfaces.entries()) {
+    const edge = composite(color, surface);
+    const r = contrastRatio(edge, surface);
+    assert.ok(r >= min, `${token} edge over surface[${i}]: ${r.toFixed(2)} < ${min}`);
+  }
+}
+
+function assertSegmentActiveContrast(vars: Map<string, string>, min: number) {
+  const surfaces = cardSurfaces(vars);
+  const fill = parseColor(requireVar(vars, "--dir-segment-active-fill"));
+  const text = { ...parseColor(requireVar(vars, "--dir-segment-active-text")), a: 1 };
+  for (const [i, surface] of surfaces.entries()) {
+    const activeSurface = composite(fill, surface);
+    const r = contrastRatio(text, activeSurface);
+    assert.ok(
+      r >= min,
+      `--dir-segment-active-text over active fill on surface[${i}]: ${r.toFixed(2)} < ${min}`
+    );
+  }
 }
 
 describe("directory contrast tokens", () => {
@@ -203,5 +207,21 @@ describe("directory contrast tokens", () => {
   it("meets WCAG 3:1 for search border and focus ring in dark theme", () => {
     assertUiContrast(dark, "--dir-search-border", 3);
     assertUiContrast(dark, "--dir-focus-ring", 3);
+  });
+
+  it("meets WCAG 4.5:1 for segment active text over active fill in light theme", () => {
+    assertSegmentActiveContrast(light, 4.5);
+  });
+
+  it("meets WCAG 4.5:1 for segment active text over active fill in dark theme", () => {
+    assertSegmentActiveContrast(dark, 4.5);
+  });
+
+  it("meets WCAG 3:1 for social icon muted colour in light theme", () => {
+    assertUiContrast(light, "--dir-text-muted", 3);
+  });
+
+  it("meets WCAG 3:1 for social icon muted colour in dark theme", () => {
+    assertUiContrast(dark, "--dir-text-muted", 3);
   });
 });

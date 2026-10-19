@@ -1,6 +1,7 @@
 import {
   type ComponentType,
   type FormEvent,
+  useCallback,
   useDeferredValue,
   useEffect,
   useId,
@@ -84,8 +85,7 @@ function SocialLinks({
           href={link.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="relative z-10 inline-flex min-h-6 min-w-6 items-center justify-center rounded-md p-1.5 text-[color:var(--dir-text-muted)] transition-[opacity] duration-150 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
-          style={{ opacity: 0.85 }}
+          className="relative z-10 inline-flex min-h-6 min-w-6 items-center justify-center rounded-md p-1.5 text-[color:var(--dir-text-muted)] transition-colors duration-150 hover:text-[color:var(--dir-text-name)] focus-visible:text-[color:var(--dir-text-name)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
           title={link.label}
           aria-label={link.label}
         >
@@ -163,7 +163,7 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
     <li className={`group relative mb-6 h-full ${subgridLi}`}>
       <article data-dir-card className={`directory-card p-[1.35rem] ${subgridArticle}`}>
         <div className="directory-card__spot" aria-hidden="true" />
-        <div className="relative z-10 flex min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3.5">
             <div className="directory-avatar">
               <div
@@ -191,7 +191,7 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
           ) : null}
         </div>
 
-        <div className="relative z-10 mt-2 min-h-[1.5rem] min-w-0">
+        <div className="mt-2 min-h-[1.5rem] min-w-0">
           <p className="directory-card-role flex flex-wrap items-baseline gap-x-1.5">
             <span className="min-w-0">{role}</span>
             {expYears ? (
@@ -206,13 +206,13 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
           </p>
         </div>
 
-        <div className="relative z-10 mt-3 min-h-[3.6rem]">
+        <div className="mt-3 min-h-[3.6rem]">
           {profile.cardSummary ? (
             <p className="directory-card-summary line-clamp-3">{profile.cardSummary}</p>
           ) : null}
         </div>
 
-        <div className="directory-card-footer relative z-10">
+        <div className="directory-card-footer">
           <SocialLinks socials={profile.socials} />
           <span className="directory-card-arrow pointer-events-none" aria-hidden="true">
             <svg
@@ -326,7 +326,47 @@ export function HomePage() {
   const resultsLineRef = useRef<HTMLParagraphElement>(null);
   const listTopRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+
+  const listSpotlightRef = useCallback((listEl: HTMLUListElement | null) => {
+    if (!listEl) {
+      return;
+    }
+    let raf = 0;
+    let lastCard: HTMLElement | null = null;
+
+    const onPointerMove = (event: PointerEvent) => {
+      const card = (event.target as Element | null)?.closest?.(
+        "[data-dir-card]"
+      ) as HTMLElement | null;
+      if (!card || !listEl.contains(card)) {
+        return;
+      }
+      const { clientX, clientY } = event;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty("--x", `${clientX - rect.left}px`);
+        card.style.setProperty("--y", `${clientY - rect.top}px`);
+        lastCard = card;
+      });
+    };
+
+    const onPointerLeave = () => {
+      if (lastCard) {
+        lastCard.style.removeProperty("--x");
+        lastCard.style.removeProperty("--y");
+        lastCard = null;
+      }
+    };
+
+    listEl.addEventListener("pointermove", onPointerMove, { passive: true });
+    listEl.addEventListener("pointerleave", onPointerLeave);
+    return () => {
+      cancelAnimationFrame(raf);
+      listEl.removeEventListener("pointermove", onPointerMove);
+      listEl.removeEventListener("pointerleave", onPointerLeave);
+    };
+  }, []);
 
   useEffect(() => {
     setQDraft(params.q);
@@ -387,49 +427,6 @@ export function HomePage() {
   const pageProfiles = items
     .map((e) => bySlug.get(e.slug))
     .filter((p): p is ProfileConfig => Boolean(p));
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-bind when the list remounts after empty results
-  useEffect(() => {
-    const listEl = listRef.current;
-    if (!listEl) {
-      return;
-    }
-    let raf = 0;
-    let lastCard: HTMLElement | null = null;
-
-    const onPointerMove = (event: PointerEvent) => {
-      const card = (event.target as Element | null)?.closest?.(
-        "[data-dir-card]"
-      ) as HTMLElement | null;
-      if (!card || !listEl.contains(card)) {
-        return;
-      }
-      const { clientX, clientY } = event;
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const rect = card.getBoundingClientRect();
-        card.style.setProperty("--x", `${clientX - rect.left}px`);
-        card.style.setProperty("--y", `${clientY - rect.top}px`);
-        lastCard = card;
-      });
-    };
-
-    const onPointerLeave = () => {
-      if (lastCard) {
-        lastCard.style.removeProperty("--x");
-        lastCard.style.removeProperty("--y");
-        lastCard = null;
-      }
-    };
-
-    listEl.addEventListener("pointermove", onPointerMove, { passive: true });
-    listEl.addEventListener("pointerleave", onPointerLeave);
-    return () => {
-      cancelAnimationFrame(raf);
-      listEl.removeEventListener("pointermove", onPointerMove);
-      listEl.removeEventListener("pointerleave", onPointerLeave);
-    };
-  }, [pageProfiles.length]);
 
   const hasActiveFilters = Boolean(qDraft.trim()) || params.type !== "all";
   const rangeStart = filtered.length === 0 ? 0 : (page - 1) * DIRECTORY_PAGE_SIZE + 1;
@@ -602,7 +599,7 @@ export function HomePage() {
           <h2 className="sr-only">People</h2>
 
           {pageProfiles.length > 0 ? (
-            <ul ref={listRef} className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
+            <ul ref={listSpotlightRef} className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
               {pageProfiles.map((profile) => (
                 <ProfileCard key={profile.slug} profile={profile} />
               ))}
