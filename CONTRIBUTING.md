@@ -1,143 +1,72 @@
 # Contributing to Phazeo Portfolio Profiles
 
+Profiles are **invite-only**. To get invited, ask the repository owner (do not put contact details in this file). An approved GitHub account owns each slug.
+
+Before you publish personal content, read [PROFILE-TERMS.md](./PROFILE-TERMS.md).
+
 ## Guest profile in 5 steps
 
-Guests must be **invited by the repository owner** first (approved GitHub account). Then:
+Guests must be invited by the repository owner first (approved GitHub account). Then:
 
 1. **Fork** this repository
 2. **Copy** [`docs/guest-profile.example.json`](./docs/guest-profile.example.json) to `profiles/<your-slug>/profile.json`
 3. **Fill it in** - point `$schema` at `../../schemas/profile.schema.json` for editor autocomplete; keep every URL on `https://`
-4. **Optionally add** `public/profiles/<your-slug>/photo.jpg` (strip image metadata first) and `public/profiles/<your-slug>/resume.pdf` (no phone numbers - the PR will be blocked if scanners find them)
+4. **Optionally add** `public/profiles/<your-slug>/photo.jpg` (strip image metadata first) and `public/profiles/<your-slug>/resume.pdf` (no phone numbers - scanners will block the PR)
 5. **Open a PR** from your approved account
 
 Use either a React profile (`meta.ts` + `v1/…`) **or** a data-first `profile.json`, never both in the same slug folder.
 
-## Adding a React profile (team)
+## Team React profile
 
 1. **Fork** this repository
-2. **Create** your profile folder: `profiles/<your-slug>/`
-3. **Add** `meta.ts`, `v1/theme.ts`, `v1/ProfilePage.tsx`, `v1/index.tsx`, and components
-4. **Ensure** the folder name equals `meta.slug` (registry auto-discovers `profiles/*/meta.ts`)
-5. **Test** locally with `pnpm dev`
-6. **Open a PR** with your changes
+2. **Create** `profiles/<your-slug>/` with `meta.ts`, `v1/theme.ts`, `v1/ProfilePage.tsx`, `v1/index.tsx`, and components as needed
+3. **Ensure** the folder name equals `meta.slug` (the registry discovers `profiles/*/meta.ts`)
+4. **Test** with `pnpm install`, `pnpm dev`, and `pnpm quality`
+5. **Open a PR**
 
-## Profile Slug (address)
+See `profiles/sriram-sm/` for a complete React example.
 
-- The address is the person's **full name as they write it**, lowercase and hyphenated
-  (e.g. `jane-doe`). Initials for a later part are accepted (e.g. `jane-d`).
-- Must match `^[a-z][a-z0-9]*(-[a-z0-9]+)+$`, max 40 characters, **at least two**
-  hyphen-separated parts.
+### Address (slug)
+
+- Full name as the person writes it, lowercase and hyphenated (for example `jane-doe`). An initial is fine for a later part (for example `jane-d`).
+- Must match `^[a-z][a-z0-9]*(-[a-z0-9]+)+$`, max 40 characters, at least two hyphen-separated parts.
 - Must not appear in `.github/retired-slugs.txt` or `.github/reserved-slugs.txt`.
-- Must be unique across all profiles. The repository owner approves the address.
-- Read [PROFILE-TERMS.md](./PROFILE-TERMS.md) before publishing anything personal.
+- Must be unique. The repository owner approves the address.
 
-## Required Files
+### Assets
 
-| File | Purpose |
-|------|---------|
-| `meta.ts` | ProfileConfig: slug, displayName, role, versions |
-| `v1/theme.ts` | Theme (CSS vars) and SEO metadata |
-| `v1/ProfilePage.tsx` | Main component (default export) with the actual portfolio UI |
-| `v1/index.tsx` | Exports `profileVersion` with `componentLoader`, `theme`, `seo` |
+- Put resumes and images under `public/profiles/<slug>/`
+- Use `profileAssetUrl` / `profileAssetPath` from `profiles/_shared/assets.ts`
+- Old `/profiles/_public/*` URLs permanently redirect to `/profiles/*` via `public/_redirects`
 
-## File Structure (Code Splitting)
+## What gets blocked and why
 
-Each profile version uses a **componentLoader** pattern for lazy loading. This ensures each profile is loaded on demand when a user visits its URL (e.g. `/sriram-sm` loads only that profile’s chunk, not everyone else’s).
+This repository is public. Automated checks block:
 
-```
-profiles/<slug>/
-├── meta.ts
-└── v1/
-    ├── index.tsx      # Exports componentLoader, theme, seo
-    ├── ProfilePage.tsx # Default export: the actual portfolio UI
-    ├── theme.ts
-    └── components/
-```
+- **Phone numbers** and **street addresses** in source, text, images, or PDFs
+- **Image metadata** (EXIF/XMP) on JPEG/PNG/WebP/GIF
+- **Resume PDFs** that contain phone numbers
+- **Unreviewed hosts** - every hostname must be listed in `.github/allowed-hosts.txt`
+- **Long dashes** (em dash or en dash) outside `profiles/` and `public/profiles/`
 
-### Example: `v1/index.tsx`
+Credentials, private keys, tool caches, oversized binaries, and similar secrets are also blocked by the leak guard.
 
-```tsx
-import type { ProfileVersion } from "../../../types";
-import { seo, theme } from "./theme";
+## How to fix a blocked PR
 
-export const profileVersion: ProfileVersion = {
-  componentLoader: () => import("./ProfilePage"),
-  theme,
-  seo,
-};
-
-export default profileVersion;
-```
-
-### Example: `v1/ProfilePage.tsx`
-
-```tsx
-import { About } from "./components/About";
-import { Contact } from "./components/Contact";
-import { Hero } from "./components/Hero";
-// ... other components
-
-export default function SriramProfilePage() {
-  return (
-    <div className="min-h-screen">
-      <Hero />
-      <About />
-      {/* ... */}
-      <Contact />
-    </div>
-  );
-}
-```
-
-See `profiles/sriram-sm/` for a complete example.
-
-## Assets
-
-- Place resume PDF at `public/profiles/<slug>/resume.pdf`
-- Place images (e.g. og-image) at `public/profiles/<slug>/`
-- In code and SEO, use `profileAssetUrl` / `profileAssetPath` from
-  `profiles/_shared/assets.ts` (`profiles/<slug>/<file>`). Old
-  `/profiles/_public/*` URLs 301 to `/profiles/*` via `public/_redirects`.
-- Optional: set `cardSummary` and `skills` in `meta.ts` - the local home page
-  shows `cardSummary` on profile cards
-
-## Guidelines
-
-- Follow existing patterns in `profiles/sriram-sm/`
-- Keep profiles self-contained; share only via `profiles/_shared/` when needed
-- Run `pnpm quality` before opening a PR
-
-## Security: what must never be committed
-
-This repository is **public**. Treat every commit as visible forever.
-
-Never commit:
-
-- **Internal IPs** - private ranges (`10/8`, `172.16/12`, `192.168/16`, `fc00::/7`) or other non-documentation literals. Loopback, `0.0.0.0`, and RFC 5737 / RFC 3849 documentation ranges are the only IP literals the gate allows.
-- **Unreviewed hosts/URLs** - every hostname anywhere (including `profiles/`) must appear in `.github/allowed-hosts.txt` as an **exact** entry (or `*.example.com` for deliberate subdomain allowlists - never `*.phazeo.com`). Bare `*.phazeo.com` hostnames are also gated. Do not add unreviewed API or infrastructure hosts without review.
-- **Tool caches / binaries / oversized files** - never commit `.tools/`, `node_modules/`, or `dist/`; never commit ELF/Mach-O/PE/zip/tar/gzip (or +x) binaries outside `.github/allowed-binaries.txt`; never commit files over 2 MB outside `.github/allowed-large-files.txt`.
-- **Credentials** - connection strings, password/token/api_key literals, `Authorization` headers, private key blocks, cloud tokens.
-- **Internal architecture details** that would help an attacker (non-public hostnames, endpoints, or deploy secrets).
-- **Image metadata** - JPEG/PNG/WebP/GIF anywhere must not carry EXIF or XMP (including orientation-only EXIF). Strip metadata before adding images.
-- **Forbidden filenames** - `.env*`, `*.pem` / `*.key` / `*.p12` / `*.pfx`, `id_rsa*` / `id_ed25519*`, `*.tfstate*`, `*.sqlite*` / `*.db` / `*.dump`, `docker-compose*.yml`, nginx/caddy configs, `*.kdbx`.
-- **Em dashes and en dashes** outside `profiles/` and `public/profiles/` - use a normal hyphen, a colon, or rewrite. Profile content trees are exempt so people can keep their own wording.
-
-Run the single entry point before you push (also runs on husky pre-commit for staged changes, and in CI):
+1. Read the failing check log (leak guard, public boundary, ownership, or build).
+2. Remove or rewrite the blocked content. For images, strip metadata before committing. For hosts, ask for an allowlist review instead of adding internal names.
+3. Re-run locally:
 
 ```sh
+pnpm quality
 sh scripts/check-leaks --tree
 ```
 
-First run downloads the **pinned** gitleaks binary and verifies its SHA-256 against `scripts/gitleaks.pin` (source: the official release `checksums.txt`). Prove the gate with `sh scripts/prove-leak-guard.sh`.
+4. Push again. Do not bypass hooks.
 
-## Commit messages (no AI attribution)
+## Commit rules
 
-Human contributor emails are fine. Do **not** let AI tools appear in commits:
+- **No AI attribution** in author, committer, co-author, or message trailers. Local hooks strip common trailers and refuse leftovers; CI re-checks (`scripts/check-no-ai-commit.mjs`).
+- **No long dashes** in commit messages (or in files outside profile content trees). Use a normal hyphen, a colon, or rewrite.
 
-- No `Co-authored-by: Cursor <cursoragent@cursor.com>` (or Copilot / Claude / ChatGPT)
-- No `Made-with: Cursor` / “Generated with Claude” style lines
-- Do not set `git user.email` to an AI address (`cursoragent@…`, `noreply@anthropic.com`, …)
-
-Local husky strips common trailers, then refuses if any remain. CI re-checks every PR
-(`scripts/check-no-ai-commit.mjs`). In Cursor, you can also turn off
-**Settings → Agent → Attribution** (or **Git & PRs → Attribution**); the hook covers CLI/cloud misses.
+Human contributor emails are fine. Do not set `git user.email` to an AI tool address.

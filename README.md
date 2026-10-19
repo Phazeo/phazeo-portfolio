@@ -1,75 +1,50 @@
 # Phazeo Portfolio Profiles
 
-Public repository for portfolio profiles. External developers can add and edit profiles here.
+A public showcase of Phazeo team portfolios, plus invited guests.
 
-Before publishing personal content, read [PROFILE-TERMS.md](./PROFILE-TERMS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md).
+## Profile types
 
-## Quick Start
+- **Team (React):** `profiles/<slug>/meta.ts` plus a `v1/` React page (lazy-loaded).
+- **Guest (`profile.json`):** invite-only data file at `profiles/<slug>/profile.json`, rendered by the shared template.
+
+Do not put both kinds in the same slug folder.
+
+## Address (slug)
+
+The address is the person's full name as they write it, lowercase and hyphenated. An initial is fine for a later part.
+
+Examples: `firstname-lastname`, `firstname-x`.
+
+Rules: at least two hyphen-separated parts, max 40 characters, must match `^[a-z][a-z0-9]*(-[a-z0-9]+)+$`, and must not appear in `.github/retired-slugs.txt` or `.github/reserved-slugs.txt`.
+
+## Local development
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Open http://localhost:5173 to preview profiles locally. Profiles use the `componentLoader` pattern for lazy loading - each profile is loaded on demand when visited.
+Other useful commands:
 
-## Structure
-
-```
-phazeo-portfolio-profiles/
-├── profiles/           # Profile folders (one per person)
-│   └── <slug>/
-│       ├── meta.ts     # ProfileConfig (slug, displayName, role, versions, etc.)
-│       └── v1/
-│           ├── index.tsx      # Exports componentLoader, theme, seo (enables lazy loading)
-│           ├── ProfilePage.tsx # Default export: the actual portfolio UI
-│           ├── theme.ts       # Theme + SEO
-│           └── components/
-├── types/              # Shared types (ProfileConfig, ProfileVersion, etc.)
-├── src/                # Dev server (Vite + React Router)
-│   ├── registry.ts     # Imports and registers all profiles
-│   ├── router.tsx
-│   └── pages/
-├── profiles/_shared/      # Shared helpers (asset URLs, navigation shell)
-├── public/
-│   └── profiles/<slug>/   # Static assets (resume.pdf, images) - see Assets below
-└── package.json
+```bash
+pnpm quality
+pnpm build
 ```
 
-## Assets
+Open http://localhost:5173 to preview locally.
 
-Store files under `public/profiles/<slug>/` (e.g. `resume.pdf`, photos). This
-repo serves them at `/profiles/<slug>/…`. Use the helpers in
-[`profiles/_shared/assets.ts`](profiles/_shared/assets.ts):
+## What CI checks on every PR
 
-```ts
-import { profileAssetPath, profileAssetUrl } from "../../_shared/assets";
+- **Leak guard:** personal data, credentials, and host allowlist on the change set and tree.
+- **Public boundary:** denylisted tokens, section-sign markers in text, and long dashes outside profile content.
+- **Profile ownership:** only the profile owner (or an allowed exception) may change that slug.
+- **Build and security headers:** quality, production build, and hashed CSP / headers check.
 
-const resume = profileAssetUrl("your-slug", "resume.pdf");
-// seo.ogImage: profileAssetPath("your-slug", "profile-photo.jpg")
-```
+## Contributing and terms
 
-Legacy `/profiles/_public/*` links 301 to `/profiles/*` via `public/_redirects`.
-
-## Adding a New Profile
-
-1. Create `profiles/<slug>/meta.ts` with `ProfileConfig` (folder name must equal `meta.slug`)
-2. Create `profiles/<slug>/v1/theme.ts` with theme and SEO
-3. Create `profiles/<slug>/v1/ProfilePage.tsx` with your portfolio component (default export)
-4. Create `profiles/<slug>/v1/index.tsx` exporting `profileVersion` with `componentLoader: () => import("./ProfilePage")`, `theme`, and `seo`
-5. Add components in `profiles/<slug>/v1/components/`
-6. Registry auto-discovers `profiles/*/meta.ts` - run `pnpm check:registry` / `pnpm build`
-
-The `componentLoader` pattern enables lazy loading so each profile is loaded on demand when visited.
-
-See `profiles/sriram-sm/` for a complete example.
-
-## Types
-
-- `ProfileConfig` - metadata (slug, displayName, role, skills, socials, versions)
-- `ProfileVersion` - `{ componentLoader, theme, seo }` (componentLoader enables per-profile code splitting)
-- `ProfileTheme` - CSS variables (self-hosted fonts via `@fontsource-variable`)
-- `ProfileSeo` - title, description, ogImage
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - how to add or change a profile
+- [PROFILE-TERMS.md](./PROFILE-TERMS.md) - what you may publish
+- [SECURITY.md](./SECURITY.md) - how to report a vulnerability privately
 
 ## Deployment
 
@@ -77,4 +52,5 @@ Deployment is handled by the maintainers.
 
 ## License
 
-See [LICENSE](./LICENSE).
+- **Code** (app shell, shared scripts, profile UI code): MIT - see [LICENSE](./LICENSE).
+- **Profile content** (biography, experience text, photos, and similar material) belongs to each person and is **not** licensed under MIT.
