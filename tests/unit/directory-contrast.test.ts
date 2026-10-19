@@ -335,6 +335,17 @@ describe("directory contrast tokens", () => {
     assertUiContrast(dark, "--dir-text-muted", 3);
   });
 
+  it("meets WCAG 3:1 for dark hero title end colour over base (large text)", () => {
+    const fg = { ...parseColor(requireVar(dark, "--dir-hero-to")), a: 1 };
+    const base = { ...parseColor(requireVar(dark, "--dir-base")), a: 1 };
+    const r = contrastRatio(fg, base);
+    assert.ok(
+      r + 1e-9 >= 3,
+      `--dir-hero-to over --dir-base: ${r.toFixed(2)} < 3`
+    );
+    console.log(`contrast dark hero-to over base: ${r.toFixed(2)}`);
+  });
+
   it("reports worst-case ratios per text token", () => {
     const lightWorst = worstTextContrast(light, textTokens);
     const darkWorst = worstTextContrast(dark, textTokens);
