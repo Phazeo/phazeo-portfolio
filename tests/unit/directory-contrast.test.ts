@@ -189,6 +189,23 @@ function textZoneSurfaces(vars: Map<string, string>): Rgba[] {
   return surfaces;
 }
 
+/** Hero sits on base plus soft glow peaks (no glass). */
+function heroSurfaces(vars: Map<string, string>): Rgba[] {
+  const base = { ...parseColor(requireVar(vars, "--dir-base")), a: 1 };
+  const violet = parseColor(requireVar(vars, "--dir-hero-glow-violet"));
+  const blue = parseColor(requireVar(vars, "--dir-hero-glow-blue"));
+  return [
+    base,
+    composite(violet, base),
+    composite(blue, base),
+    composite(violet, composite(blue, base)),
+  ];
+}
+
+function fieldSurfaces(vars: Map<string, string>): Rgba[] {
+  return textZoneSurfaces(vars);
+}
+
 function worstTextContrast(vars: Map<string, string>, names: string[]): Map<string, number> {
   const surfaces = textZoneSurfaces(vars);
   const worst = new Map<string, number>();
@@ -211,10 +228,24 @@ function assertTextContrast(vars: Map<string, string>, names: string[], min: num
   }
 }
 
+function assertSolidOnSurfaces(
+  vars: Map<string, string>,
+  token: string,
+  surfaces: Rgba[],
+  min: number,
+  label: string
+) {
+  const fg = { ...parseColor(requireVar(vars, token)), a: 1 };
+  for (const [i, surface] of surfaces.entries()) {
+    const r = contrastRatio(fg, surface);
+    assert.ok(r + 1e-9 >= min, `${label} ${token} vs surface[${i}]: ${r.toFixed(2)} < ${min}`);
+  }
+}
+
 function assertUiContrast(vars: Map<string, string>, token: string, min: number) {
   const surfaces = textZoneSurfaces(vars);
   const color = parseColor(requireVar(vars, token));
-  if (token === "--dir-focus-ring" || token === "--dir-text-muted") {
+  if (token === "--dir-focus-ring" || token === "--dir-text-muted" || token === "--dir-search-icon") {
     const solid = { ...color, a: 1 };
     for (const [i, surface] of surfaces.entries()) {
       const r = contrastRatio(solid, surface);
@@ -252,6 +283,8 @@ describe("directory contrast tokens", () => {
   const light = readVars(extractBlock(css, ".directory-shell {"));
   const darkOverrides = readVars(extractBlock(css, ".dark .directory-shell {"));
   const dark = new Map([...light, ...darkOverrides]);
+
+  assert.equal(css.includes("--dir-search-border"), false, "search-border token must be removed");
 
   const textTokens = [
     "--dir-text-name",
@@ -309,14 +342,35 @@ describe("directory contrast tokens", () => {
     assertTextContrast(dark, textTokens, 4.5);
   });
 
-  it("meets WCAG 3:1 for search border and focus ring in light theme", () => {
-    assertUiContrast(light, "--dir-search-border", 3);
+  it("meets WCAG 3:1 for focus ring on field surfaces in both themes", () => {
     assertUiContrast(light, "--dir-focus-ring", 3);
+    assertUiContrast(dark, "--dir-focus-ring", 3);
   });
 
-  it("meets WCAG 3:1 for search border and focus ring in dark theme", () => {
-    assertUiContrast(dark, "--dir-search-border", 3);
-    assertUiContrast(dark, "--dir-focus-ring", 3);
+  it("meets WCAG 3:1 for focus ring against plain base in both themes", () => {
+    for (const [label, vars] of [
+      ["light", light],
+      ["dark", dark],
+    ] as const) {
+      const brightness = Number(requireVar(vars, "--dir-brightness"));
+      const base = applyBrightness(
+        { ...parseColor(requireVar(vars, "--dir-base")), a: 1 },
+        brightness
+      );
+      const ring = { ...parseColor(requireVar(vars, "--dir-focus-ring")), a: 1 };
+      const r = contrastRatio(ring, base);
+      assert.ok(r + 1e-9 >= 3, `${label} focus ring over base: ${r.toFixed(2)} < 3`);
+    }
+  });
+
+  it("meets WCAG 3:1 for search icon and 4.5:1 for placeholder on field surfaces", () => {
+    for (const [label, vars] of [
+      ["light", light],
+      ["dark", dark],
+    ] as const) {
+      assertSolidOnSurfaces(vars, "--dir-search-icon", fieldSurfaces(vars), 3, label);
+      assertSolidOnSurfaces(vars, "--dir-text-placeholder", fieldSurfaces(vars), 4.5, label);
+    }
   });
 
   it("meets WCAG 3:1 for segment active text over active fill in light theme", () => {
@@ -335,15 +389,19 @@ describe("directory contrast tokens", () => {
     assertUiContrast(dark, "--dir-text-muted", 3);
   });
 
-  it("meets WCAG 3:1 for dark hero title end colour over base (large text)", () => {
-    const fg = { ...parseColor(requireVar(dark, "--dir-hero-to")), a: 1 };
-    const base = { ...parseColor(requireVar(dark, "--dir-base")), a: 1 };
-    const r = contrastRatio(fg, base);
-    assert.ok(
-      r + 1e-9 >= 3,
-      `--dir-hero-to over --dir-base: ${r.toFixed(2)} < 3`
-    );
-    console.log(`contrast dark hero-to over base: ${r.toFixed(2)}`);
+  it("meets hero text contrast over base and glow peaks", () => {
+    for (const [label, vars] of [
+      ["light", light],
+      ["dark", dark],
+    ] as const) {
+      const surfaces = heroSurfaces(vars);
+      assertSolidOnSurfaces(vars, "--dir-eyebrow-text", surfaces, 4.5, `${label} eyebrow`);
+      assertSolidOnSurfaces(vars, "--dir-text-muted", surfaces, 4.5, `${label} subtitle`);
+      assertSolidOnSurfaces(vars, "--dir-text-results", surfaces, 4.5, `${label} results`);
+      for (const token of ["--dir-hero-from", "--dir-hero-to"] as const) {
+        assertSolidOnSurfaces(vars, token, surfaces, 3, `${label} ${token}`);
+      }
+    }
   });
 
   it("reports worst-case ratios per text token", () => {
