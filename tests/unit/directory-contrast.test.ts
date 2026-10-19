@@ -376,4 +376,44 @@ describe("directory contrast tokens", () => {
       );
     }
   });
+
+  /**
+   * Below 1024px shapes may sit under bare hero/toolbar text (no glass).
+   * Check subtitle and results at 4.5:1, and hero title gradient ends at 3:1 (large text).
+   */
+  function bareShapeSurfaces(vars: Map<string, string>): Rgba[] {
+    const base = { ...parseColor(requireVar(vars, "--dir-base")), a: 1 };
+    const shapeOpacity = Number(requireVar(vars, "--dir-shape-opacity"));
+    const out: Rgba[] = [];
+    for (const n of [1, 2, 3, 4] as const) {
+      out.push(composite({ ...shapeLightest(vars, n), a: shapeOpacity }, base));
+      out.push(composite({ ...shapeDarkest(vars, n), a: shapeOpacity }, base));
+    }
+    return out;
+  }
+
+  function assertBareText(vars: Map<string, string>, token: string, min: number) {
+    const fg = { ...parseColor(requireVar(vars, token)), a: 1 };
+    for (const [i, surface] of bareShapeSurfaces(vars).entries()) {
+      const r = contrastRatio(fg, surface);
+      assert.ok(
+        r + 1e-9 >= min,
+        `${token} over bare shape[${i}]: ${r.toFixed(2)} < ${min}`
+      );
+    }
+  }
+
+  it("meets bare-shape text contrast below 1024px (light)", () => {
+    assertBareText(light, "--dir-text-muted", 4.5);
+    assertBareText(light, "--dir-text-results", 4.5);
+    assertBareText(light, "--dir-hero-from", 3);
+    assertBareText(light, "--dir-hero-to", 3);
+  });
+
+  it("meets bare-shape text contrast below 1024px (dark)", () => {
+    assertBareText(dark, "--dir-text-muted", 4.5);
+    assertBareText(dark, "--dir-text-results", 4.5);
+    assertBareText(dark, "--dir-hero-from", 3);
+    assertBareText(dark, "--dir-hero-to", 3);
+  });
 });
