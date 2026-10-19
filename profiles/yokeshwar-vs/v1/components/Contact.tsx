@@ -1,3 +1,4 @@
+import { EmailText } from "#kit";
 export function Contact() {
   return (
     <section
@@ -35,7 +36,9 @@ export function Contact() {
               ✉️
             </div>
             <h3 className="font-display font-semibold text-gray-900 mb-1">Email</h3>
-            <p className="text-(--color-primary) text-sm break-all">yokeshwarmecheri@gmail.com</p>
+            <p className="text-(--color-primary) text-sm">
+              <EmailText email={"yokeshwarmecheri@gmail.com"} />
+            </p>
           </a>
 
           <div className="bg-white rounded-xl p-6 shadow-lg text-center">

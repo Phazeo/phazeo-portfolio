@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { useState } from "react";
+import { EmailText } from "#kit";
 
 import { LampContainer } from "../ui/lamp";
 
@@ -72,7 +73,7 @@ export function Contact() {
       {/* Contact cards - on white background */}
       <div className="bg-slate-50/80 border-t border-slate-200 py-12 md:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-3 gap-6 mb-10">
+          <div className="grid sm:grid-cols-3 gap-6 mb-10 min-w-0">
             <a
               href={`mailto:${contact.email}`}
               className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs hover:shadow-md transition-all hover:-translate-y-0.5 text-center"
@@ -81,7 +82,9 @@ export function Contact() {
                 ✉️
               </div>
               <h3 className="font-display font-semibold text-slate-900 mb-1">Email</h3>
-              <p className="text-(--color-primary) text-sm break-all">{contact.email}</p>
+              <p className="text-(--color-primary) text-sm">
+                <EmailText email={contact.email} />
+              </p>
             </a>
 
             <a
