@@ -19,6 +19,8 @@ const INLINE_HANDLER = /<[^>]+\son[a-z]+\s*=/i;
 const STYLE_BLOCK = /<style\b[^>]*>/i;
 const STYLE_ATTR = /\sstyle\s*=/i;
 
+const ASSETS_CACHE = "Cache-Control: public, max-age=31536000, immutable";
+
 function fail(msg: string): never {
   console.error(`write-headers: ${msg}`);
   process.exit(1);
@@ -85,10 +87,8 @@ function buildCsp(html: string): string {
   ].join("; ");
 }
 
-function buildHeadersFile(html: string): string {
-  const csp = buildCsp(html);
-  const lines = [
-    "/*",
+function securityHeaderLines(csp: string): string[] {
+  return [
     `  Content-Security-Policy: ${csp}`,
     "  X-Content-Type-Options: nosniff",
     "  Referrer-Policy: strict-origin-when-cross-origin",
@@ -96,9 +96,64 @@ function buildHeadersFile(html: string): string {
     "  Cross-Origin-Opener-Policy: same-origin",
     "  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
     "  Strict-Transport-Security: max-age=31536000",
+  ];
+}
+
+function buildHeadersFile(html: string): string {
+  const csp = buildCsp(html);
+  const sec = securityHeaderLines(csp);
+  const lines = [
+    "/*",
+    ...sec,
+    "",
+    "/assets/*",
+    ...sec,
+    `  ${ASSETS_CACHE}`,
+    "",
+    "/index.html",
+    ...sec,
     "",
   ];
   return lines.join("\n");
+}
+
+/** Path block body lines under a leading `/path` header (indented header lines). */
+function blockBody(headersText: string, pathHeader: string): string {
+  const lines = headersText.split("\n");
+  const start = lines.findIndex((l) => l.trim() === pathHeader);
+  if (start < 0) {
+    fail(`missing path block ${pathHeader}`);
+  }
+  const body: string[] = [];
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    if (line !== "" && !line.startsWith(" ") && !line.startsWith("\t")) {
+      break;
+    }
+    body.push(line);
+  }
+  return body.join("\n");
+}
+
+function assertCachePolicy(headersText: string): void {
+  const assets = blockBody(headersText, "/assets/*");
+  if (!assets.includes(ASSETS_CACHE)) {
+    fail(`/assets/* must include ${ASSETS_CACHE}`);
+  }
+  const star = blockBody(headersText, "/*");
+  if (/immutable/i.test(star)) {
+    fail("/* must not use immutable caching");
+  }
+  const index = blockBody(headersText, "/index.html");
+  if (/immutable/i.test(index)) {
+    fail("/index.html must not use immutable caching");
+  }
+  for (const path of ["/*", "/assets/*", "/index.html"] as const) {
+    const body = blockBody(headersText, path);
+    if (!body.includes("Content-Security-Policy:")) {
+      fail(`${path} must keep security headers`);
+    }
+  }
 }
 
 function main(): void {
@@ -117,6 +172,7 @@ function main(): void {
     if (actual !== expected) {
       fail("dist/_headers does not match current dist/index.html hashes");
     }
+    assertCachePolicy(actual);
     console.log("write-headers: --check OK");
     return;
   }
