@@ -2,11 +2,19 @@
 /**
  * Write (or --check) dist/_headers with a hashed CSP for the static host.
  * Hashes are computed from dist/index.html - never hard-coded.
+ *
+ * Path blocks are structured so static host merge does not duplicate header names:
+ * /* carries security headers; /assets/* only adds Cache-Control.
  */
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  ASSETS_CACHE_VALUE,
+  assertHeadersMerge,
+  parseHeadersFile,
+} from "./headers-merge.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const DIST = join(ROOT, "dist");
@@ -19,7 +27,7 @@ const INLINE_HANDLER = /<[^>]+\son[a-z]+\s*=/i;
 const STYLE_BLOCK = /<style\b[^>]*>/i;
 const STYLE_ATTR = /\sstyle\s*=/i;
 
-const ASSETS_CACHE = "Cache-Control: public, max-age=31536000, immutable";
+const ASSETS_CACHE = `Cache-Control: ${ASSETS_CACHE_VALUE}`;
 
 function fail(msg: string): never {
   console.error(`write-headers: ${msg}`);
@@ -102,57 +110,28 @@ function securityHeaderLines(csp: string): string[] {
 function buildHeadersFile(html: string): string {
   const csp = buildCsp(html);
   const sec = securityHeaderLines(csp);
-  const lines = [
-    "/*",
-    ...sec,
-    "",
-    "/assets/*",
-    ...sec,
-    `  ${ASSETS_CACHE}`,
-    "",
-    "/index.html",
-    ...sec,
-    "",
-  ];
+  const lines = ["/*", ...sec, "", "/assets/*", `  ${ASSETS_CACHE}`, ""];
   return lines.join("\n");
 }
 
-/** Path block body lines under a leading `/path` header (indented header lines). */
-function blockBody(headersText: string, pathHeader: string): string {
-  const lines = headersText.split("\n");
-  const start = lines.findIndex((l) => l.trim() === pathHeader);
-  if (start < 0) {
-    fail(`missing path block ${pathHeader}`);
+function assertHeadersPolicy(headersText: string): void {
+  if (/(^|\n)\/index\.html(\n|$)/.test(headersText)) {
+    fail("/index.html path block must not be present");
   }
-  const body: string[] = [];
-  for (let i = start + 1; i < lines.length; i++) {
-    const line = lines[i] ?? "";
-    if (line !== "" && !line.startsWith(" ") && !line.startsWith("\t")) {
-      break;
-    }
-    body.push(line);
+  const blocks = parseHeadersFile(headersText);
+  const assets = blocks.find((b) => b.pattern === "/assets/*");
+  if (!assets) {
+    fail("missing /assets/* block");
   }
-  return body.join("\n");
-}
-
-function assertCachePolicy(headersText: string): void {
-  const assets = blockBody(headersText, "/assets/*");
-  if (!assets.includes(ASSETS_CACHE)) {
+  if (assets.headers.size !== 1 || !assets.headers.has("Cache-Control")) {
+    fail("/assets/* must contain only Cache-Control");
+  }
+  if (assets.headers.get("Cache-Control") !== ASSETS_CACHE_VALUE) {
     fail(`/assets/* must include ${ASSETS_CACHE}`);
   }
-  const star = blockBody(headersText, "/*");
-  if (/immutable/i.test(star)) {
-    fail("/* must not use immutable caching");
-  }
-  const index = blockBody(headersText, "/index.html");
-  if (/immutable/i.test(index)) {
-    fail("/index.html must not use immutable caching");
-  }
-  for (const path of ["/*", "/assets/*", "/index.html"] as const) {
-    const body = blockBody(headersText, path);
-    if (!body.includes("Content-Security-Policy:")) {
-      fail(`${path} must keep security headers`);
-    }
+  const issues = assertHeadersMerge(headersText);
+  if (issues.length > 0) {
+    fail(`static host merge checks failed:\n${issues.join("\n")}`);
   }
 }
 
@@ -172,7 +151,7 @@ function main(): void {
     if (actual !== expected) {
       fail("dist/_headers does not match current dist/index.html hashes");
     }
-    assertCachePolicy(actual);
+    assertHeadersPolicy(actual);
     console.log("write-headers: --check OK");
     return;
   }
