@@ -13,6 +13,7 @@ import type { ProfileConfig } from "#kit";
 import { useTheme } from "../../app/providers/ThemeProvider";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon, XIcon } from "../../components/SocialIcons";
 import { getListedProfiles } from "../../registry";
+import "./directory.css";
 import { getExperienceYearsDisplay } from "./experience";
 import {
   DIRECTORY_PAGE_SIZE,
@@ -36,24 +37,17 @@ function toEntry(profile: ProfileConfig): DirectoryEntry {
   };
 }
 
-function StatusDot({ status }: { status: "available" | "building" | "away" }) {
-  const styles = {
-    available: "bg-emerald-500",
-    building: "bg-amber-500",
-    away: "bg-zinc-500",
-  };
+function StatusLabel({ status }: { status: "available" | "building" | "away" }) {
   const labels = {
     available: "Available",
     building: "Building",
     away: "Away",
-  };
+  } as const;
   return (
-    <span
-      role="img"
-      className={`inline-block w-2.5 h-2.5 rounded-full ${styles[status]} ring-2 ring-white dark:ring-[#0a0a0f]`}
-      title={labels[status]}
-      aria-label={labels[status]}
-    />
+    <span className="directory-card-status">
+      <span className="directory-card-status__dot" data-status={status} aria-hidden="true" />
+      {labels[status]}
+    </span>
   );
 }
 
@@ -90,7 +84,8 @@ function SocialLinks({
           href={link.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="relative z-10 inline-flex items-center justify-center min-w-6 min-h-6 p-1.5 text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
+          className="relative z-10 inline-flex min-h-6 min-w-6 items-center justify-center rounded-md p-1.5 text-[color:var(--dir-text-muted)] transition-[opacity] duration-150 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+          style={{ opacity: 0.85 }}
           title={link.label}
           aria-label={link.label}
         >
@@ -110,13 +105,13 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-white/80 dark:bg-white/10 backdrop-blur-sm border border-gray-200 dark:border-white/10 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/20 transition-colors"
+      className="directory-glass-btn fixed top-4 right-4 z-50 p-2.5 text-[color:var(--dir-text-muted)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDark ? (
         <svg
-          className="w-5 h-5"
+          className="h-5 w-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -131,7 +126,7 @@ function ThemeToggle() {
         </svg>
       ) : (
         <svg
-          className="w-5 h-5"
+          className="h-5 w-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -162,33 +157,27 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
     .slice(0, 2);
   const gradient = profile.avatarGradient ?? "from-violet-500 to-fuchsia-500";
   const expYears = getExperienceYearsDisplay(profile);
+  const role = profile.role ?? "Professional Portfolio";
 
   return (
-    <li className={`group relative mb-6 h-full rounded-2xl ${subgridLi}`}>
-      <div
-        className="pointer-events-none absolute -inset-[2px] rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:[animation:gradient-border-sweep_3s_linear_infinite]"
-        style={{
-          background: "conic-gradient(from 0deg, #06b6d4, #a855f7, #ec4899, #06b6d4)",
-        }}
-        aria-hidden="true"
-      />
-
-      <article
-        className={`relative m-[2px] flex h-full flex-col rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-lg backdrop-blur-xl transition-colors focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 focus-within:ring-offset-white dark:border-white/8 dark:bg-white/6 dark:focus-within:ring-offset-[#0a0a0f] ${subgridArticle}`}
-      >
-        <div className="flex min-w-0 items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <div
-              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-linear-to-br text-xl font-bold text-white shadow-lg transition-transform group-hover:scale-105 ${gradient}`}
-            >
-              {initials}
+    <li className={`group relative mb-6 h-full ${subgridLi}`}>
+      <article data-dir-card className={`directory-card p-[1.35rem] ${subgridArticle}`}>
+        <div className="directory-card__spot" aria-hidden="true" />
+        <div className="relative z-10 flex min-w-0 items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="directory-avatar">
+              <div
+                className={`directory-avatar__glow bg-linear-to-br ${gradient}`}
+                aria-hidden="true"
+              />
+              <div className="directory-avatar__face">{initials}</div>
             </div>
             <div className="min-w-0">
-              <h3 className="line-clamp-2 break-words text-xl font-semibold text-gray-900 dark:text-white">
+              <h3 className="directory-card-name line-clamp-2 break-words">
                 <Link
                   to={`/${profile.slug}`}
                   title={profile.displayName}
-                  className="text-inherit no-underline transition-colors after:absolute after:inset-0 after:z-0 after:rounded-2xl after:content-[''] group-hover:text-cyan-600 focus-visible:outline-none dark:group-hover:text-cyan-400"
+                  className="text-inherit no-underline after:absolute after:inset-0 after:z-0 after:rounded-[20px] after:content-[''] focus-visible:outline-none"
                 >
                   <span className="relative z-10">{profile.displayName}</span>
                 </Link>
@@ -196,44 +185,36 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
             </div>
           </div>
           {profile.status ? (
-            <div className="relative z-10 shrink-0 pt-1.5">
-              <StatusDot status={profile.status} />
+            <div className="relative z-10 shrink-0 pt-1">
+              <StatusLabel status={profile.status} />
             </div>
-          ) : (
-            <span className="w-2.5 shrink-0" aria-hidden="true" />
-          )}
-        </div>
-
-        <div className="mt-2 min-h-[2.5rem] min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="line-clamp-2 text-sm text-gray-500 dark:text-zinc-400">
-              {profile.role ?? "Professional Portfolio"}
-            </p>
-            {expYears ? (
-              <span
-                className="inline-flex h-5 min-w-8 items-center justify-center rounded-full bg-cyan-500/15 px-2 text-xs font-semibold text-cyan-700 dark:bg-cyan-400/20 dark:text-cyan-300"
-                title={`${expYears.replace("+", "")} years of experience`}
-              >
-                {expYears}
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-4 min-h-[3.75rem]">
-          {profile.cardSummary ? (
-            <p className="line-clamp-3 text-sm text-gray-600 dark:text-zinc-400">
-              {profile.cardSummary}
-            </p>
           ) : null}
         </div>
 
-        <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-4 dark:border-white/8">
+        <div className="relative z-10 mt-2 min-h-[1.5rem] min-w-0">
+          <p className="directory-card-role flex flex-wrap items-baseline gap-x-1.5">
+            <span className="min-w-0">{role}</span>
+            {expYears ? (
+              <span
+                className="directory-card-exp shrink-0"
+                title={`${expYears.replace("+", "")} years of experience`}
+              >
+                <span aria-hidden="true">· </span>
+                {expYears} yrs
+              </span>
+            ) : null}
+          </p>
+        </div>
+
+        <div className="relative z-10 mt-3 min-h-[3.6rem]">
+          {profile.cardSummary ? (
+            <p className="directory-card-summary line-clamp-3">{profile.cardSummary}</p>
+          ) : null}
+        </div>
+
+        <div className="directory-card-footer relative z-10">
           <SocialLinks socials={profile.socials} />
-          <span
-            className="pointer-events-none relative z-10 inline-flex text-gray-400 transition-all group-hover:translate-x-0.5 group-hover:text-cyan-600 dark:text-zinc-500 dark:group-hover:text-cyan-400"
-            aria-hidden="true"
-          >
+          <span className="directory-card-arrow pointer-events-none" aria-hidden="true">
             <svg
               className="h-5 w-5"
               fill="none"
@@ -292,7 +273,7 @@ function Pagination({
     <nav aria-label="Pagination" className="mt-10 flex flex-wrap items-center justify-center gap-2">
       <button
         type="button"
-        className="px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/15 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
+        className="directory-glass-btn px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
         disabled={page <= 1}
         onClick={() => onPage(page - 1)}
       >
@@ -303,7 +284,7 @@ function Pagination({
           <span
             // biome-ignore lint/suspicious/noArrayIndexKey: ellipsis positions are stable in the window
             key={`e-${i}`}
-            className="px-1 text-gray-400 dark:text-zinc-500"
+            className="px-1 text-[color:var(--dir-text-muted)]"
             aria-hidden="true"
           >
             …
@@ -313,11 +294,7 @@ function Pagination({
             key={item}
             type="button"
             aria-current={item === page ? "page" : undefined}
-            className={`min-w-9 px-3 py-1.5 rounded-lg text-sm font-medium border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500 ${
-              item === page
-                ? "border-cyan-500 bg-cyan-500/15 text-cyan-800 dark:text-cyan-200"
-                : "border-gray-200 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
-            }`}
+            className="directory-glass-btn min-w-9 px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
             onClick={() => onPage(item)}
           >
             {item}
@@ -326,7 +303,7 @@ function Pagination({
       )}
       <button
         type="button"
-        className="px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/15 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
+        className="directory-glass-btn px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
         disabled={page >= pageCount}
         onClick={() => onPage(page + 1)}
       >
@@ -348,10 +325,41 @@ export function HomePage() {
   const searchId = useId();
   const resultsLineRef = useRef<HTMLParagraphElement>(null);
   const listTopRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     setQDraft(params.q);
   }, [params.q]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const editable =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target?.isContentEditable === true;
+
+      if (event.key === "/" && !editable) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if (
+        event.key === "Escape" &&
+        document.activeElement === searchInputRef.current &&
+        searchInputRef.current
+      ) {
+        setQDraft("");
+        setSearchParams(toParams({ q: "", type: params.type, page: 1 }), { replace: true });
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [params.type, setSearchParams]);
 
   const typeCounts = useMemo(() => {
     const team = entries.filter((e) => e.affiliation === "team").length;
@@ -379,6 +387,49 @@ export function HomePage() {
   const pageProfiles = items
     .map((e) => bySlug.get(e.slug))
     .filter((p): p is ProfileConfig => Boolean(p));
+
+  useEffect(() => {
+    const listEl = listRef.current;
+    if (!listEl) {
+      return;
+    }
+    let raf = 0;
+    let lastCard: HTMLElement | null = null;
+
+    const onPointerMove = (event: PointerEvent) => {
+      const card = (event.target as Element | null)?.closest?.(
+        "[data-dir-card]"
+      ) as HTMLElement | null;
+      if (!card || !listEl.contains(card)) {
+        return;
+      }
+      const { clientX, clientY } = event;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty("--x", `${clientX - rect.left}px`);
+        card.style.setProperty("--y", `${clientY - rect.top}px`);
+        lastCard = card;
+      });
+    };
+
+    const onPointerLeave = () => {
+      if (lastCard) {
+        lastCard.style.removeProperty("--x");
+        lastCard.style.removeProperty("--y");
+        lastCard = null;
+      }
+    };
+
+    listEl.addEventListener("pointermove", onPointerMove, { passive: true });
+    listEl.addEventListener("pointerleave", onPointerLeave);
+    return () => {
+      cancelAnimationFrame(raf);
+      listEl.removeEventListener("pointermove", onPointerMove);
+      listEl.removeEventListener("pointerleave", onPointerLeave);
+    };
+    // biome-ignore lint/correctness/useExhaustiveDependencies: re-bind when the list remounts after empty results
+  }, [pageProfiles.length]);
 
   const hasActiveFilters = Boolean(qDraft.trim()) || params.type !== "all";
   const rangeStart = filtered.length === 0 ? 0 : (page - 1) * DIRECTORY_PAGE_SIZE + 1;
@@ -422,52 +473,45 @@ export function HomePage() {
     event.preventDefault();
   }
 
+  const typeOptions = [
+    ["all", "All", typeCounts.all],
+    ["team", "Team", typeCounts.team],
+    ["guest", "Guest", typeCounts.guest],
+  ] as const;
+
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0f] text-gray-900 dark:text-white transition-colors">
-      <ThemeToggle />
+    <div className="directory-shell">
+      <div className="directory-shell__bg" aria-hidden="true" />
+      <div className="directory-shell__content">
+        <ThemeToggle />
 
-      <div className="max-w-4xl mx-auto px-4 py-16 sm:py-24">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Phazeo Portfolios
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-zinc-400 max-w-2xl mx-auto">
-            Professional portfolios showcasing talented individuals and their work.
-          </p>
-        </div>
+        <div className="mx-auto max-w-4xl px-4 py-16 sm:py-24">
+          <div className="mb-12 text-center">
+            <h1 className="directory-hero-title mb-4 text-4xl font-bold sm:text-5xl">
+              Phazeo Portfolios
+            </h1>
+            <p className="mx-auto max-w-2xl text-lg text-[color:var(--dir-text-muted)]">
+              Professional portfolios showcasing talented individuals and their work.
+            </p>
+          </div>
 
-        <div ref={listTopRef} className="scroll-mt-8 space-y-6 mb-8">
-          <search className="block">
-            <form
-              onSubmit={onSearchSubmit}
-              className="flex flex-col sm:flex-row gap-3 sm:items-end"
-            >
-              <div className="flex-1 min-w-0">
-                <label
-                  htmlFor={searchId}
-                  className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5"
-                >
-                  Search name, role or skill
-                </label>
-                <div className="relative">
-                  <input
-                    id={searchId}
-                    type="search"
-                    value={qDraft}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 px-4 py-2.5 pr-10 text-gray-900 dark:text-white placeholder:text-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-                    placeholder="Search name, role or skill"
-                    autoComplete="off"
-                  />
-                  {qDraft ? (
-                    <button
-                      type="button"
-                      onClick={() => setQuery("")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-gray-500 hover:text-gray-800 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-                      aria-label="Clear search"
+          <div ref={listTopRef} className="mb-8 scroll-mt-8 space-y-3">
+            <search className="block">
+              <form
+                onSubmit={onSearchSubmit}
+                className="flex flex-col gap-3 sm:flex-row sm:items-stretch"
+              >
+                <div className="min-w-0 flex-1">
+                  <label htmlFor={searchId} className="sr-only">
+                    Search name, role or skill
+                  </label>
+                  <div className="directory-toolbar-field relative flex items-center">
+                    <span
+                      className="pointer-events-none absolute left-3 text-[color:var(--dir-text-muted)]"
+                      aria-hidden="true"
                     >
                       <svg
-                        className="w-4 h-4"
+                        className="h-4 w-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -477,84 +521,113 @@ export function HomePage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
+                          d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z"
                         />
                       </svg>
-                    </button>
-                  ) : null}
+                    </span>
+                    <input
+                      ref={searchInputRef}
+                      id={searchId}
+                      type="search"
+                      value={qDraft}
+                      onChange={(e) => setQuery(e.target.value)}
+                      className="w-full rounded-[14px] py-2.5 pr-16 pl-10 text-[color:var(--dir-text-name)] placeholder:text-[color:var(--dir-text-placeholder)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                      placeholder="Search name, role or skill"
+                      autoComplete="off"
+                    />
+                    {!qDraft ? (
+                      <span
+                        className="directory-keyhint pointer-events-none absolute right-3 items-center rounded-md border border-[color:var(--dir-card-border)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--dir-text-muted)]"
+                        aria-hidden="true"
+                      >
+                        /
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setQuery("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-[color:var(--dir-text-muted)] hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                        aria-label="Clear search"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </form>
-          </search>
 
-          <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="sr-only">Filter by type</legend>
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  ["all", "All", typeCounts.all],
-                  ["team", "Team", typeCounts.team],
-                  ["guest", "Guest", typeCounts.guest],
-                ] as const
-              ).map(([value, label, count]) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={params.type === value}
-                  onClick={() => setType(value)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500 ${
-                    params.type === value
-                      ? "border-cyan-500 bg-cyan-500/15 text-cyan-800 dark:text-cyan-200"
-                      : "border-gray-200 dark:border-white/15 text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-white/5"
-                  }`}
-                >
-                  {label}
-                  <span className="ml-1.5 text-gray-500 dark:text-zinc-400 tabular-nums">
-                    {count}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </fieldset>
+                <fieldset className="m-0 min-w-0 border-0 p-0">
+                  <legend className="sr-only">Filter by type</legend>
+                  <div className="directory-segment">
+                    {typeOptions.map(([value, label, count]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={params.type === value}
+                        disabled={count === 0}
+                        onClick={() => setType(value)}
+                        className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                      >
+                        {label}
+                        <span className="ml-1.5 tabular-nums opacity-80">{count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              </form>
+            </search>
 
-          <p
-            ref={resultsLineRef}
-            tabIndex={-1}
-            className="text-sm text-gray-500 dark:text-zinc-500 outline-none"
-            aria-live="polite"
-          >
-            {resultsLabel}
-          </p>
-        </div>
-
-        <h2 className="sr-only">People</h2>
-
-        {pageProfiles.length > 0 ? (
-          <ul className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
-            {pageProfiles.map((profile) => (
-              <ProfileCard key={profile.slug} profile={profile} />
-            ))}
-          </ul>
-        ) : (
-          <div className="text-center py-12 space-y-4">
-            <p className="text-gray-500 dark:text-zinc-500">
-              {entries.length === 0
-                ? "No portfolios available yet."
-                : "No people match these filters."}
+            <p
+              ref={resultsLineRef}
+              tabIndex={-1}
+              className="directory-results outline-none sm:text-right"
+              aria-live="polite"
+            >
+              {resultsLabel}
             </p>
-            {hasActiveFilters ? (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="inline-flex px-4 py-2 rounded-xl text-sm font-medium bg-cyan-600 text-white hover:bg-cyan-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-              >
-                Clear filters
-              </button>
-            ) : null}
           </div>
-        )}
 
-        <Pagination page={page} pageCount={pageCount} onPage={goPage} />
+          <h2 className="sr-only">People</h2>
+
+          {pageProfiles.length > 0 ? (
+            <ul ref={listRef} className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
+              {pageProfiles.map((profile) => (
+                <ProfileCard key={profile.slug} profile={profile} />
+              ))}
+            </ul>
+          ) : (
+            <div className="space-y-4 py-12 text-center">
+              <p className="text-[color:var(--dir-text-muted)]">
+                {entries.length === 0
+                  ? "No portfolios available yet."
+                  : "No people match these filters."}
+              </p>
+              {hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="directory-glass-btn inline-flex px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                >
+                  Clear filters
+                </button>
+              ) : null}
+            </div>
+          )}
+
+          <Pagination page={page} pageCount={pageCount} onPage={goPage} />
+        </div>
       </div>
     </div>
   );
