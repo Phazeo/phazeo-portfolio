@@ -136,6 +136,11 @@ function proveWriteHeadersRejectsHandlers(): void {
       readFileSync(join(ROOT, "tools/build/write-headers.ts"), "utf8"),
       "utf8"
     );
+    writeFileSync(
+      join(tmp, "tools/build/headers-merge.ts"),
+      readFileSync(join(ROOT, "tools/build/headers-merge.ts"), "utf8"),
+      "utf8"
+    );
     const result = spawnSync(process.execPath, ["tools/build/write-headers.ts"], {
       cwd: tmp,
       encoding: "utf8",
@@ -339,7 +344,7 @@ async function main(): Promise<void> {
     const before = await evaluate<boolean>(page.send, `document.documentElement.classList.contains('dark')`);
     await evaluate(
       page.send,
-      `document.querySelector('[aria-label*="Switch to"]')?.click(); true`
+      `document.querySelector('.theme-switch, [aria-label="Dark mode"], [aria-label*="Switch to"]')?.click(); true`
     );
     await sleep(400);
     const after = await evaluate<boolean>(page.send, `document.documentElement.classList.contains('dark')`);

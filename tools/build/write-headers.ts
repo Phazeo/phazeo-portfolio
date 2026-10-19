@@ -2,11 +2,19 @@
 /**
  * Write (or --check) dist/_headers with a hashed CSP for the static host.
  * Hashes are computed from dist/index.html - never hard-coded.
+ *
+ * Path blocks are structured so static host merge does not duplicate header names:
+ * /* carries security headers; /assets/* only adds Cache-Control.
  */
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  ASSETS_CACHE_VALUE,
+  assertHeadersMerge,
+  parseHeadersFile,
+} from "./headers-merge.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const DIST = join(ROOT, "dist");
@@ -18,6 +26,8 @@ const INLINE_HANDLER = /<[^>]+\son[a-z]+\s*=/i;
 
 const STYLE_BLOCK = /<style\b[^>]*>/i;
 const STYLE_ATTR = /\sstyle\s*=/i;
+
+const ASSETS_CACHE = `Cache-Control: ${ASSETS_CACHE_VALUE}`;
 
 function fail(msg: string): never {
   console.error(`write-headers: ${msg}`);
@@ -85,10 +95,8 @@ function buildCsp(html: string): string {
   ].join("; ");
 }
 
-function buildHeadersFile(html: string): string {
-  const csp = buildCsp(html);
-  const lines = [
-    "/*",
+function securityHeaderLines(csp: string): string[] {
+  return [
     `  Content-Security-Policy: ${csp}`,
     "  X-Content-Type-Options: nosniff",
     "  Referrer-Policy: strict-origin-when-cross-origin",
@@ -96,9 +104,35 @@ function buildHeadersFile(html: string): string {
     "  Cross-Origin-Opener-Policy: same-origin",
     "  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
     "  Strict-Transport-Security: max-age=31536000",
-    "",
   ];
+}
+
+function buildHeadersFile(html: string): string {
+  const csp = buildCsp(html);
+  const sec = securityHeaderLines(csp);
+  const lines = ["/*", ...sec, "", "/assets/*", `  ${ASSETS_CACHE}`, ""];
   return lines.join("\n");
+}
+
+function assertHeadersPolicy(headersText: string): void {
+  if (/(^|\n)\/index\.html(\n|$)/.test(headersText)) {
+    fail("/index.html path block must not be present");
+  }
+  const blocks = parseHeadersFile(headersText);
+  const assets = blocks.find((b) => b.pattern === "/assets/*");
+  if (!assets) {
+    fail("missing /assets/* block");
+  }
+  if (assets.headers.size !== 1 || !assets.headers.has("Cache-Control")) {
+    fail("/assets/* must contain only Cache-Control");
+  }
+  if (assets.headers.get("Cache-Control") !== ASSETS_CACHE_VALUE) {
+    fail(`/assets/* must include ${ASSETS_CACHE}`);
+  }
+  const issues = assertHeadersMerge(headersText);
+  if (issues.length > 0) {
+    fail(`static host merge checks failed:\n${issues.join("\n")}`);
+  }
 }
 
 function main(): void {
@@ -117,6 +151,7 @@ function main(): void {
     if (actual !== expected) {
       fail("dist/_headers does not match current dist/index.html hashes");
     }
+    assertHeadersPolicy(actual);
     console.log("write-headers: --check OK");
     return;
   }

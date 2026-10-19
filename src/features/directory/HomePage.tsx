@@ -1,6 +1,7 @@
 import {
   type ComponentType,
   type FormEvent,
+  useCallback,
   useDeferredValue,
   useEffect,
   useId,
@@ -10,50 +11,32 @@ import {
 } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { ProfileConfig } from "#kit";
-import { useTheme } from "../../app/providers/ThemeProvider";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon, XIcon } from "../../components/SocialIcons";
-import { getListedProfiles } from "../../registry";
+import { ThemeSwitch } from "../../components/ThemeSwitch";
+import "./directory.css";
+import { DIRECTORY_BY_SLUG, DIRECTORY_INDEX, DIRECTORY_TYPE_COUNTS } from "./directory-data";
 import { getExperienceYearsDisplay } from "./experience";
 import {
   DIRECTORY_PAGE_SIZE,
-  type DirectoryEntry,
   type DirectoryTypeFilter,
-  filterByType,
-  matches,
+  filterDirectory,
+  initialsFromName,
   paginate,
   parseParams,
-  sortByDisplayName,
   toParams,
 } from "./query";
 
-function toEntry(profile: ProfileConfig): DirectoryEntry {
-  return {
-    slug: profile.slug,
-    displayName: profile.displayName,
-    role: profile.role,
-    affiliation: profile.affiliation,
-    skills: profile.skills?.map((s) => s.name),
-  };
-}
-
-function StatusDot({ status }: { status: "available" | "building" | "away" }) {
-  const styles = {
-    available: "bg-emerald-500",
-    building: "bg-amber-500",
-    away: "bg-zinc-500",
-  };
+function StatusLabel({ status }: { status: "available" | "building" | "away" }) {
   const labels = {
     available: "Available",
     building: "Building",
     away: "Away",
-  };
+  } as const;
   return (
-    <span
-      role="img"
-      className={`inline-block w-2.5 h-2.5 rounded-full ${styles[status]} ring-2 ring-white dark:ring-[#0a0a0f]`}
-      title={labels[status]}
-      aria-label={labels[status]}
-    />
+    <span className="directory-card-status">
+      <span className="directory-card-status__dot" data-status={status} aria-hidden="true" />
+      {labels[status]}
+    </span>
   );
 }
 
@@ -90,7 +73,7 @@ function SocialLinks({
           href={link.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="relative z-10 inline-flex items-center justify-center min-w-6 min-h-6 p-1.5 text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
+          className="relative z-10 inline-flex min-h-6 min-w-6 items-center justify-center rounded-md p-1.5 text-[color:var(--dir-text-muted)] transition-colors duration-150 hover:text-[color:var(--dir-text-name)] focus-visible:text-[color:var(--dir-text-name)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
           title={link.label}
           aria-label={link.label}
         >
@@ -102,93 +85,38 @@ function SocialLinks({
   );
 }
 
-function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
-
-  return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-white/80 dark:bg-white/10 backdrop-blur-sm border border-gray-200 dark:border-white/10 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/20 transition-colors"
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-    >
-      {isDark ? (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      ) : (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-          />
-        </svg>
-      )}
-    </button>
-  );
-}
-
 const subgridLi =
   "[@supports(grid-template-rows:subgrid)]:row-span-4 [@supports(grid-template-rows:subgrid)]:grid [@supports(grid-template-rows:subgrid)]:grid-rows-subgrid [@supports(grid-template-rows:subgrid)]:gap-0";
 const subgridArticle =
   "[@supports(grid-template-rows:subgrid)]:row-span-4 [@supports(grid-template-rows:subgrid)]:grid [@supports(grid-template-rows:subgrid)]:grid-rows-subgrid [@supports(grid-template-rows:subgrid)]:gap-0";
 
 function ProfileCard({ profile }: { profile: ProfileConfig }) {
-  const initials = profile.displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2);
+  const initials = initialsFromName(profile.displayName);
   const gradient = profile.avatarGradient ?? "from-violet-500 to-fuchsia-500";
   const expYears = getExperienceYearsDisplay(profile);
+  const role = profile.role ?? "Professional Portfolio";
 
   return (
-    <li className={`group relative mb-6 h-full rounded-2xl ${subgridLi}`}>
-      <div
-        className="pointer-events-none absolute -inset-[2px] rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:[animation:gradient-border-sweep_3s_linear_infinite]"
-        style={{
-          background: "conic-gradient(from 0deg, #06b6d4, #a855f7, #ec4899, #06b6d4)",
-        }}
-        aria-hidden="true"
-      />
-
-      <article
-        className={`relative m-[2px] flex h-full flex-col rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-lg backdrop-blur-xl transition-colors focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 focus-within:ring-offset-white dark:border-white/8 dark:bg-white/6 dark:focus-within:ring-offset-[#0a0a0f] ${subgridArticle}`}
-      >
-        <div className="flex min-w-0 items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <div
-              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-linear-to-br text-xl font-bold text-white shadow-lg transition-transform group-hover:scale-105 ${gradient}`}
-            >
-              {initials}
+    <li className={`group relative mb-6 h-full ${subgridLi}`}>
+      <article data-dir-card className={`directory-card p-[1.35rem] ${subgridArticle}`}>
+        <div className="directory-card__specular" aria-hidden="true" />
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="directory-avatar">
+              <div
+                className={`directory-avatar__glow bg-linear-to-br ${gradient}`}
+                aria-hidden="true"
+              />
+              <div className="directory-avatar__face">
+                <span className="relative z-10">{initials}</span>
+              </div>
             </div>
             <div className="min-w-0">
-              <h3 className="line-clamp-2 break-words text-xl font-semibold text-gray-900 dark:text-white">
+              <h3 className="directory-card-name line-clamp-2 break-words">
                 <Link
                   to={`/${profile.slug}`}
                   title={profile.displayName}
-                  className="text-inherit no-underline transition-colors after:absolute after:inset-0 after:z-0 after:rounded-2xl after:content-[''] group-hover:text-cyan-600 focus-visible:outline-none dark:group-hover:text-cyan-400"
+                  className="text-inherit no-underline after:absolute after:inset-0 after:z-0 after:rounded-[24px] after:content-[''] focus-visible:outline-none"
                 >
                   <span className="relative z-10">{profile.displayName}</span>
                 </Link>
@@ -196,44 +124,36 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
             </div>
           </div>
           {profile.status ? (
-            <div className="relative z-10 shrink-0 pt-1.5">
-              <StatusDot status={profile.status} />
+            <div className="relative z-10 shrink-0 pt-1">
+              <StatusLabel status={profile.status} />
             </div>
-          ) : (
-            <span className="w-2.5 shrink-0" aria-hidden="true" />
-          )}
-        </div>
-
-        <div className="mt-2 min-h-[2.5rem] min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="line-clamp-2 text-sm text-gray-500 dark:text-zinc-400">
-              {profile.role ?? "Professional Portfolio"}
-            </p>
-            {expYears ? (
-              <span
-                className="inline-flex h-5 min-w-8 items-center justify-center rounded-full bg-cyan-500/15 px-2 text-xs font-semibold text-cyan-700 dark:bg-cyan-400/20 dark:text-cyan-300"
-                title={`${expYears.replace("+", "")} years of experience`}
-              >
-                {expYears}
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-4 min-h-[3.75rem]">
-          {profile.cardSummary ? (
-            <p className="line-clamp-3 text-sm text-gray-600 dark:text-zinc-400">
-              {profile.cardSummary}
-            </p>
           ) : null}
         </div>
 
-        <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-4 dark:border-white/8">
+        <div className="mt-2 min-h-[1.5rem] min-w-0">
+          <p className="directory-card-role flex flex-wrap items-baseline gap-x-1.5">
+            <span className="min-w-0">{role}</span>
+            {expYears ? (
+              <span
+                className="directory-card-exp shrink-0"
+                title={`${expYears.replace("+", "")} years of experience`}
+              >
+                <span aria-hidden="true">· </span>
+                {expYears} yrs
+              </span>
+            ) : null}
+          </p>
+        </div>
+
+        <div className="mt-3 min-h-[3.6rem]">
+          {profile.cardSummary ? (
+            <p className="directory-card-summary line-clamp-3">{profile.cardSummary}</p>
+          ) : null}
+        </div>
+
+        <div className="directory-card-footer">
           <SocialLinks socials={profile.socials} />
-          <span
-            className="pointer-events-none relative z-10 inline-flex text-gray-400 transition-all group-hover:translate-x-0.5 group-hover:text-cyan-600 dark:text-zinc-500 dark:group-hover:text-cyan-400"
-            aria-hidden="true"
-          >
+          <span className="directory-card-arrow pointer-events-none" aria-hidden="true">
             <svg
               className="h-5 w-5"
               fill="none"
@@ -292,7 +212,7 @@ function Pagination({
     <nav aria-label="Pagination" className="mt-10 flex flex-wrap items-center justify-center gap-2">
       <button
         type="button"
-        className="px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/15 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
+        className="directory-glass-btn px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
         disabled={page <= 1}
         onClick={() => onPage(page - 1)}
       >
@@ -303,7 +223,7 @@ function Pagination({
           <span
             // biome-ignore lint/suspicious/noArrayIndexKey: ellipsis positions are stable in the window
             key={`e-${i}`}
-            className="px-1 text-gray-400 dark:text-zinc-500"
+            className="px-1 text-[color:var(--dir-text-muted)]"
             aria-hidden="true"
           >
             …
@@ -313,11 +233,7 @@ function Pagination({
             key={item}
             type="button"
             aria-current={item === page ? "page" : undefined}
-            className={`min-w-9 px-3 py-1.5 rounded-lg text-sm font-medium border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500 ${
-              item === page
-                ? "border-cyan-500 bg-cyan-500/15 text-cyan-800 dark:text-cyan-200"
-                : "border-gray-200 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
-            }`}
+            className="directory-glass-btn min-w-9 px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
             onClick={() => onPage(item)}
           >
             {item}
@@ -326,7 +242,7 @@ function Pagination({
       )}
       <button
         type="button"
-        className="px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/15 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
+        className="directory-glass-btn px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
         disabled={page >= pageCount}
         onClick={() => onPage(page + 1)}
       >
@@ -336,11 +252,9 @@ function Pagination({
   );
 }
 
-export function HomePage() {
-  const profiles = getListedProfiles();
-  const bySlug = useMemo(() => new Map(profiles.map((p) => [p.slug, p])), [profiles]);
-  const entries = useMemo(() => profiles.map(toEntry), [profiles]);
+const URL_Q_DEBOUNCE_MS = 300;
 
+export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const params = useMemo(() => parseParams(searchParams), [searchParams]);
   const [qDraft, setQDraft] = useState(params.q);
@@ -348,36 +262,182 @@ export function HomePage() {
   const searchId = useId();
   const resultsLineRef = useRef<HTMLParagraphElement>(null);
   const listTopRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const lastWrittenQRef = useRef(params.q);
+  const qDraftRef = useRef(qDraft);
+  const urlWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const paramsTypeRef = useRef(params.type);
+  paramsTypeRef.current = params.type;
+
+  const clearUrlWriteTimer = useCallback(() => {
+    if (urlWriteTimerRef.current != null) {
+      clearTimeout(urlWriteTimerRef.current);
+      urlWriteTimerRef.current = null;
+    }
+  }, []);
+
+  const writeQToUrl = useCallback(
+    (q: string, opts: { type?: DirectoryTypeFilter; page?: number; replace?: boolean } = {}) => {
+      lastWrittenQRef.current = q;
+      setSearchParams(
+        toParams({
+          q,
+          type: opts.type ?? paramsTypeRef.current,
+          page: opts.page ?? 1,
+        }),
+        { replace: opts.replace ?? true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  const flushQToUrl = useCallback(
+    (opts: { type?: DirectoryTypeFilter; page?: number; replace?: boolean } = {}) => {
+      clearUrlWriteTimer();
+      writeQToUrl(qDraftRef.current, opts);
+    },
+    [clearUrlWriteTimer, writeQToUrl]
+  );
+
+  const scheduleQToUrl = useCallback(
+    (q: string) => {
+      clearUrlWriteTimer();
+      urlWriteTimerRef.current = setTimeout(() => {
+        urlWriteTimerRef.current = null;
+        if (qDraftRef.current === q) {
+          writeQToUrl(q, { page: 1 });
+        }
+      }, URL_Q_DEBOUNCE_MS);
+    },
+    [clearUrlWriteTimer, writeQToUrl]
+  );
+
+  const listSpotlightRef = useCallback((listEl: HTMLUListElement | null) => {
+    if (!listEl) {
+      return;
+    }
+    let raf = 0;
+    let lastCard: HTMLElement | null = null;
+
+    const onPointerMove = (event: PointerEvent) => {
+      const card = (event.target as Element | null)?.closest?.(
+        "[data-dir-card]"
+      ) as HTMLElement | null;
+      if (!card || !listEl.contains(card)) {
+        return;
+      }
+      const { clientX, clientY } = event;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty("--x", `${clientX - rect.left}px`);
+        card.style.setProperty("--y", `${clientY - rect.top}px`);
+        lastCard = card;
+      });
+    };
+
+    const onPointerLeave = () => {
+      if (lastCard) {
+        lastCard.style.removeProperty("--x");
+        lastCard.style.removeProperty("--y");
+        lastCard = null;
+      }
+    };
+
+    listEl.addEventListener("pointermove", onPointerMove, { passive: true });
+    listEl.addEventListener("pointerleave", onPointerLeave);
+    return () => {
+      cancelAnimationFrame(raf);
+      listEl.removeEventListener("pointermove", onPointerMove);
+      listEl.removeEventListener("pointerleave", onPointerLeave);
+    };
+  }, []);
 
   useEffect(() => {
-    setQDraft(params.q);
+    qDraftRef.current = qDraft;
+  }, [qDraft]);
+
+  useEffect(() => {
+    if (params.q !== lastWrittenQRef.current) {
+      setQDraft(params.q);
+      lastWrittenQRef.current = params.q;
+    }
   }, [params.q]);
 
-  const typeCounts = useMemo(() => {
-    const team = entries.filter((e) => e.affiliation === "team").length;
-    const guest = entries.filter((e) => e.affiliation === "guest").length;
-    return { all: entries.length, team, guest };
-  }, [entries]);
+  useEffect(() => {
+    return () => {
+      clearUrlWriteTimer();
+    };
+  }, [clearUrlWriteTimer]);
 
-  const filtered = useMemo(() => {
-    const typed = filterByType(entries, params.type);
-    const matched = typed.filter((e) => matches(e, deferredQ));
-    return sortByDisplayName(matched);
-  }, [entries, params.type, deferredQ]);
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const editable =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target?.isContentEditable === true;
+
+      if (
+        event.key === "/" &&
+        !editable &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        !event.isComposing
+      ) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if (
+        event.key === "Escape" &&
+        document.activeElement === searchInputRef.current &&
+        searchInputRef.current
+      ) {
+        clearUrlWriteTimer();
+        setQDraft("");
+        qDraftRef.current = "";
+        writeQToUrl("", { type: paramsTypeRef.current, page: 1 });
+        searchInputRef.current.focus();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [clearUrlWriteTimer, writeQToUrl]);
+
+  const typeCounts = DIRECTORY_TYPE_COUNTS;
+
+  const filtered = useMemo(
+    () => filterDirectory(DIRECTORY_INDEX, params.type, deferredQ),
+    [params.type, deferredQ]
+  );
+
+  const qAheadOfUrl = qDraft !== params.q;
+  const pageForDisplay = qAheadOfUrl ? 1 : params.page;
 
   const { items, page, pageCount } = useMemo(
-    () => paginate(filtered, params.page, DIRECTORY_PAGE_SIZE),
-    [filtered, params.page]
+    () => paginate(filtered, pageForDisplay, DIRECTORY_PAGE_SIZE),
+    [filtered, pageForDisplay]
   );
 
   useEffect(() => {
-    if (params.page !== page) {
-      setSearchParams(toParams({ q: qDraft, type: params.type, page }), { replace: true });
+    if (urlWriteTimerRef.current != null) {
+      return;
     }
-  }, [page, params.page, params.type, qDraft, setSearchParams]);
+    if (qDraft !== params.q) {
+      return;
+    }
+    if (params.page !== page) {
+      setSearchParams(toParams({ q: params.q, type: params.type, page }), { replace: true });
+    }
+  }, [page, params.page, params.q, params.type, qDraft, setSearchParams]);
 
   const pageProfiles = items
-    .map((e) => bySlug.get(e.slug))
+    .map((e) => DIRECTORY_BY_SLUG.get(e.slug))
     .filter((p): p is ProfileConfig => Boolean(p));
 
   const hasActiveFilters = Boolean(qDraft.trim()) || params.type !== "all";
@@ -385,25 +445,36 @@ export function HomePage() {
   const rangeEnd = Math.min(page * DIRECTORY_PAGE_SIZE, filtered.length);
 
   let resultsLabel: string;
-  if (hasActiveFilters) {
-    resultsLabel = `${filtered.length} of ${entries.length} match`;
+  if (hasActiveFilters && pageCount > 1) {
+    resultsLabel = `Showing ${rangeStart} to ${rangeEnd} of ${filtered.length} matches`;
+  } else if (hasActiveFilters) {
+    resultsLabel = `${filtered.length} of ${DIRECTORY_INDEX.length} match`;
   } else if (pageCount > 1 && filtered.length > 0) {
     resultsLabel = `Showing ${rangeStart} to ${rangeEnd} of ${filtered.length}`;
   } else {
-    resultsLabel = `${entries.length} ${entries.length === 1 ? "person" : "people"}`;
+    resultsLabel = `${DIRECTORY_INDEX.length} ${DIRECTORY_INDEX.length === 1 ? "person" : "people"}`;
   }
 
   function setQuery(next: string) {
     setQDraft(next);
-    setSearchParams(toParams({ q: next, type: params.type, page: 1 }), { replace: true });
+    qDraftRef.current = next;
+    scheduleQToUrl(next);
+  }
+
+  function clearSearchImmediate() {
+    clearUrlWriteTimer();
+    setQDraft("");
+    qDraftRef.current = "";
+    writeQToUrl("", { type: paramsTypeRef.current, page: 1 });
+    searchInputRef.current?.focus();
   }
 
   function setType(type: DirectoryTypeFilter) {
-    setSearchParams(toParams({ q: qDraft, type, page: 1 }), { replace: true });
+    flushQToUrl({ type, page: 1 });
   }
 
   function goPage(n: number) {
-    setSearchParams(toParams({ q: qDraft, type: params.type, page: n }), { replace: false });
+    flushQToUrl({ page: n, replace: false });
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -414,147 +485,192 @@ export function HomePage() {
   }
 
   function clearFilters() {
+    clearUrlWriteTimer();
     setQDraft("");
-    setSearchParams(toParams({ q: "", type: "all", page: 1 }), { replace: true });
+    qDraftRef.current = "";
+    writeQToUrl("", { type: "all", page: 1 });
   }
 
   function onSearchSubmit(event: FormEvent) {
     event.preventDefault();
+    flushQToUrl({ page: 1 });
   }
 
+  function onSearchBlur() {
+    const pending = urlWriteTimerRef.current != null;
+    if (!pending && qDraftRef.current === lastWrittenQRef.current) {
+      return;
+    }
+    flushQToUrl({ page: 1 });
+  }
+
+  const typeOptions = [
+    ["all", "All", typeCounts.all],
+    ["team", "Team", typeCounts.team],
+    ["guest", "Guest", typeCounts.guest],
+  ] as const;
+
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0f] text-gray-900 dark:text-white transition-colors">
-      <ThemeToggle />
+    <div className="directory-shell">
+      <div className="directory-shell__bg" aria-hidden="true">
+        <div className="directory-shell__shape directory-shell__shape--violet" />
+        <div className="directory-shell__shape directory-shell__shape--fuchsia" />
+        <div className="directory-shell__shape directory-shell__shape--cyan" />
+        <div className="directory-shell__shape directory-shell__shape--amber" />
+        <div className="directory-shell__grain" />
+      </div>
+      <div className="directory-shell__content">
+        <ThemeSwitch />
 
-      <div className="max-w-4xl mx-auto px-4 py-16 sm:py-24">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Phazeo Portfolios
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-zinc-400 max-w-2xl mx-auto">
-            Professional portfolios showcasing talented individuals and their work.
-          </p>
-        </div>
-
-        <div ref={listTopRef} className="scroll-mt-8 space-y-6 mb-8">
-          <search className="block">
-            <form
-              onSubmit={onSearchSubmit}
-              className="flex flex-col sm:flex-row gap-3 sm:items-end"
-            >
-              <div className="flex-1 min-w-0">
-                <label
-                  htmlFor={searchId}
-                  className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5"
-                >
-                  Search name, role or skill
-                </label>
-                <div className="relative">
-                  <input
-                    id={searchId}
-                    type="search"
-                    value={qDraft}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 px-4 py-2.5 pr-10 text-gray-900 dark:text-white placeholder:text-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-                    placeholder="Search name, role or skill"
-                    autoComplete="off"
-                  />
-                  {qDraft ? (
-                    <button
-                      type="button"
-                      onClick={() => setQuery("")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-gray-500 hover:text-gray-800 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-                      aria-label="Clear search"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            </form>
-          </search>
-
-          <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="sr-only">Filter by type</legend>
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  ["all", "All", typeCounts.all],
-                  ["team", "Team", typeCounts.team],
-                  ["guest", "Guest", typeCounts.guest],
-                ] as const
-              ).map(([value, label, count]) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={params.type === value}
-                  onClick={() => setType(value)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500 ${
-                    params.type === value
-                      ? "border-cyan-500 bg-cyan-500/15 text-cyan-800 dark:text-cyan-200"
-                      : "border-gray-200 dark:border-white/15 text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-white/5"
-                  }`}
-                >
-                  {label}
-                  <span className="ml-1.5 text-gray-500 dark:text-zinc-400 tabular-nums">
-                    {count}
-                  </span>
-                </button>
-              ))}
+        <div className="directory-page mx-auto max-w-4xl px-4">
+          <header className="directory-hero">
+            <div className="directory-hero__glow" aria-hidden="true" />
+            <div className="directory-eyebrow" data-dir-eyebrow>
+              <span className="directory-eyebrow__dot" aria-hidden="true" />
+              <span>
+                {DIRECTORY_INDEX.length === 1
+                  ? "1 portfolio"
+                  : `${DIRECTORY_INDEX.length} portfolios`}
+              </span>
             </div>
-          </fieldset>
-
-          <p
-            ref={resultsLineRef}
-            tabIndex={-1}
-            className="text-sm text-gray-500 dark:text-zinc-500 outline-none"
-            aria-live="polite"
-          >
-            {resultsLabel}
-          </p>
-        </div>
-
-        <h2 className="sr-only">People</h2>
-
-        {pageProfiles.length > 0 ? (
-          <ul className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
-            {pageProfiles.map((profile) => (
-              <ProfileCard key={profile.slug} profile={profile} />
-            ))}
-          </ul>
-        ) : (
-          <div className="text-center py-12 space-y-4">
-            <p className="text-gray-500 dark:text-zinc-500">
-              {entries.length === 0
-                ? "No portfolios available yet."
-                : "No people match these filters."}
+            <h1 className="directory-hero-title text-4xl font-bold sm:text-5xl">
+              Phazeo Portfolios
+            </h1>
+            <p data-dir-hero-subtitle className="directory-hero-subtitle">
+              Professional portfolios showcasing talented individuals and their work.
             </p>
-            {hasActiveFilters ? (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="inline-flex px-4 py-2 rounded-xl text-sm font-medium bg-cyan-600 text-white hover:bg-cyan-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-              >
-                Clear filters
-              </button>
-            ) : null}
-          </div>
-        )}
 
-        <Pagination page={page} pageCount={pageCount} onPage={goPage} />
+            <div className="directory-toolbar">
+              <search className="directory-toolbar__search-wrap">
+                <form onSubmit={onSearchSubmit} className="directory-toolbar__form">
+                  <div className="directory-toolbar__search">
+                    <label htmlFor={searchId} className="sr-only">
+                      Search name, role or skill
+                    </label>
+                    <div className="directory-toolbar-field">
+                      <span className="directory-search-icon" aria-hidden="true">
+                        <svg
+                          width="18"
+                          height="18"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z"
+                          />
+                        </svg>
+                      </span>
+                      <input
+                        ref={searchInputRef}
+                        id={searchId}
+                        type="search"
+                        value={qDraft}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onBlur={onSearchBlur}
+                        className="directory-toolbar-field__input"
+                        placeholder="Search name, role or skill"
+                        autoComplete="off"
+                      />
+                      {!qDraft ? (
+                        <span className="directory-keyhint" aria-hidden="true">
+                          /
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={clearSearchImmediate}
+                          className="directory-search-clear"
+                          aria-label="Clear search"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <fieldset className="directory-toolbar__filters">
+                    <legend className="sr-only">Filter by type</legend>
+                    <div className="directory-segment">
+                      {typeOptions.map(([value, label, count]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          aria-pressed={params.type === value}
+                          disabled={count === 0}
+                          onClick={() => setType(value)}
+                          className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                        >
+                          {label}
+                          <span className="directory-segment__count">{count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                </form>
+              </search>
+            </div>
+          </header>
+
+          <div ref={listTopRef} className="directory-results-header scroll-mt-8">
+            <p
+              ref={resultsLineRef}
+              tabIndex={-1}
+              className="directory-results outline-none"
+              aria-live="polite"
+            >
+              {resultsLabel}
+            </p>
+            <span className="directory-results-sort">A to Z</span>
+          </div>
+
+          <h2 className="sr-only">People</h2>
+
+          {pageProfiles.length > 0 ? (
+            <ul ref={listSpotlightRef} className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
+              {pageProfiles.map((profile) => (
+                <ProfileCard key={profile.slug} profile={profile} />
+              ))}
+            </ul>
+          ) : (
+            <div className="space-y-4 py-12 text-center">
+              <p className="text-[color:var(--dir-text-muted)]">
+                {DIRECTORY_INDEX.length === 0
+                  ? "No portfolios available yet."
+                  : "No people match these filters."}
+              </p>
+              {hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="directory-glass-btn inline-flex px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                >
+                  Clear filters
+                </button>
+              ) : null}
+            </div>
+          )}
+
+          <Pagination page={page} pageCount={pageCount} onPage={goPage} />
+        </div>
       </div>
     </div>
   );
