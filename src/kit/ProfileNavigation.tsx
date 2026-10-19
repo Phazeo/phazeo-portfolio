@@ -9,12 +9,18 @@ export type ProfileNavigationProps = {
   brandInitial: string;
   brandLabel?: string;
   items: ProfileNavItem[];
+  /**
+   * When true, the bar also styles for dark mode (html.dark). Default false keeps
+   * the existing light-only classes so team profiles look unchanged.
+   */
+  adaptToColorScheme?: boolean;
 };
 
 export function ProfileNavigation({
   brandInitial,
   brandLabel = "Portfolio",
   items,
+  adaptToColorScheme = false,
 }: ProfileNavigationProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,13 +55,29 @@ export function ProfileNavigation({
     };
   }, [items]);
 
+  const navSurface = isScrolled
+    ? `bg-white/95 backdrop-blur-md shadow-lg border-b border-(--color-secondary)/30${
+        adaptToColorScheme ? " dark:bg-zinc-950/95 dark:border-white/10" : ""
+      }`
+    : `bg-white/80 backdrop-blur-md${adaptToColorScheme ? " dark:bg-zinc-950/80" : ""}`;
+
+  const brandLabelClass = `hidden sm:block text-(--color-primary) font-display${
+    adaptToColorScheme ? " dark:text-zinc-100" : ""
+  }`;
+
+  const inactiveLink = `text-gray-700 hover:bg-(--color-secondary)/20${
+    adaptToColorScheme ? " dark:text-zinc-200 dark:hover:bg-white/10" : ""
+  }`;
+
+  const menuButton = `md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors${
+    adaptToColorScheme ? " dark:hover:bg-white/10" : ""
+  }`;
+
+  const menuIcon = `w-6 h-6 text-gray-700${adaptToColorScheme ? " dark:text-zinc-200" : ""}`;
+
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-white/95 backdrop-blur-md shadow-lg border-b border-(--color-secondary)/30"
-          : "bg-white/80 backdrop-blur-md"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navSurface}`}
       aria-label="Profile"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,9 +92,7 @@ export function ProfileNavigation({
                 {brandInitial}
               </div>
             </div>
-            <span className="hidden sm:block text-(--color-primary) font-display">
-              {brandLabel}
-            </span>
+            <span className={brandLabelClass}>{brandLabel}</span>
           </a>
 
           <div className="hidden md:flex items-center space-x-1">
@@ -85,9 +105,7 @@ export function ProfileNavigation({
                   href={item.href}
                   aria-current={isActive ? "true" : undefined}
                   className={`px-4 py-2 rounded-lg font-display font-medium text-sm transition-all duration-300 ${
-                    isActive
-                      ? "bg-(--color-primary) text-white shadow-lg"
-                      : "text-gray-700 hover:bg-(--color-secondary)/20"
+                    isActive ? "bg-(--color-primary) text-white shadow-lg" : inactiveLink
                   }`}
                 >
                   {item.label}
@@ -98,14 +116,14 @@ export function ProfileNavigation({
 
           <button
             type="button"
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className={menuButton}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
             aria-expanded={isMobileMenuOpen}
             aria-controls={menuId}
           >
             <svg
-              className="w-6 h-6 text-gray-700"
+              className={menuIcon}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -134,9 +152,7 @@ export function ProfileNavigation({
                   href={item.href}
                   aria-current={isActive ? "true" : undefined}
                   className={`block px-4 py-3 rounded-lg transition-all duration-300 font-display ${
-                    isActive
-                      ? "bg-(--color-primary) text-white shadow-lg"
-                      : "text-gray-700 hover:bg-(--color-secondary)/20"
+                    isActive ? "bg-(--color-primary) text-white shadow-lg" : inactiveLink
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >

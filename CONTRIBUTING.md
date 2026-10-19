@@ -14,6 +14,8 @@ Guests must be invited by the repository owner first (approved GitHub account). 
 4. **Optionally add** `public/profiles/<your-slug>/photo.jpg` (strip image metadata first) and `public/profiles/<your-slug>/resume.pdf` (no phone numbers - scanners will block the PR)
 5. **Open a PR** from your approved account
 
+Guests can preview their own profile with `pnpm dev` at `/<their-slug>`.
+
 Use either a React profile (`meta.ts` plus `v1/`) **or** a data-first `profile.json`, never both in the same slug folder.
 
 ## Team React profile

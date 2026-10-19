@@ -4,9 +4,7 @@
  * No dependencies. Used by tests/prove/prove-csp.ts.
  *
  * Usage: node tools/build/serve-dist.ts [--port 4173] [--dir <dist-folder>]
- * --dir defaults to this repo's dist/; tests/prove/visual-parity.ts uses it to
- * serve builds of other commits with this one server.
- * Prints LISTEN <port> when ready.
+ * --dir defaults to this repo's dist/. Prints LISTEN <port> when ready.
  */
 import { existsSync, readFileSync, statSync } from "node:fs";
 import type { Stats } from "node:fs";

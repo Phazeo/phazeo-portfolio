@@ -1,6 +1,6 @@
 /**
  * Minimal Chrome DevTools Protocol helpers over the built-in WebSocket.
- * No dependencies. Shared by tests/prove/prove-csp.ts and tests/prove/visual-parity.ts.
+ * No dependencies. Used by tests/prove/prove-csp.ts.
  */
 import { existsSync, readdirSync } from "node:fs";
 import { createServer } from "node:http";

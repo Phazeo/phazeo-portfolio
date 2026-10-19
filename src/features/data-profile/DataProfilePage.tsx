@@ -211,6 +211,7 @@ export function DataProfileView({ slug, data }: { slug: string; data: DataProfil
         brandInitial={brandInitial}
         brandLabel={basics.name.split(/\s+/)[0] ?? "Portfolio"}
         items={navItems}
+        adaptToColorScheme
       />
       <ThemeToggle />
 
