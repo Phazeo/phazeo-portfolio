@@ -6,6 +6,7 @@ import {
   useId,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { ProfileConfig } from "#kit";
@@ -148,6 +149,11 @@ function ThemeToggle() {
   );
 }
 
+const subgridLi =
+  "[@supports(grid-template-rows:subgrid)]:row-span-4 [@supports(grid-template-rows:subgrid)]:grid [@supports(grid-template-rows:subgrid)]:grid-rows-subgrid [@supports(grid-template-rows:subgrid)]:gap-0";
+const subgridArticle =
+  "[@supports(grid-template-rows:subgrid)]:row-span-4 [@supports(grid-template-rows:subgrid)]:grid [@supports(grid-template-rows:subgrid)]:grid-rows-subgrid [@supports(grid-template-rows:subgrid)]:gap-0";
+
 function ProfileCard({ profile }: { profile: ProfileConfig }) {
   const initials = profile.displayName
     .split(" ")
@@ -158,7 +164,7 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
   const expYears = getExperienceYearsDisplay(profile);
 
   return (
-    <li className="group relative h-full rounded-2xl [@supports(grid-template-rows:subgrid)]:row-span-4 [@supports(grid-template-rows:subgrid)]:grid [@supports(grid-template-rows:subgrid)]:grid-rows-subgrid">
+    <li className={`group relative mb-6 h-full rounded-2xl ${subgridLi}`}>
       <div
         className="pointer-events-none absolute -inset-[2px] rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:[animation:gradient-border-sweep_3s_linear_infinite]"
         style={{
@@ -167,8 +173,9 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
         aria-hidden="true"
       />
 
-      <article className="relative m-[2px] flex h-full flex-col rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-lg backdrop-blur-xl transition-colors focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 focus-within:ring-offset-white dark:border-white/8 dark:bg-white/6 dark:focus-within:ring-offset-[#0a0a0f] [@supports(grid-template-rows:subgrid)]:col-span-full [@supports(grid-template-rows:subgrid)]:row-span-4 [@supports(grid-template-rows:subgrid)]:grid [@supports(grid-template-rows:subgrid)]:grid-rows-subgrid [@supports(grid-template-rows:subgrid)]:gap-0">
-        {/* Header: avatar, name, badge */}
+      <article
+        className={`relative m-[2px] flex h-full flex-col rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-lg backdrop-blur-xl transition-colors focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 focus-within:ring-offset-white dark:border-white/8 dark:bg-white/6 dark:focus-within:ring-offset-[#0a0a0f] ${subgridArticle}`}
+      >
         <div className="flex min-w-0 items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
             <div
@@ -177,14 +184,15 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
               {initials}
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-xl font-semibold text-gray-900 dark:text-white">
+              <h3 className="line-clamp-2 break-words text-xl font-semibold text-gray-900 dark:text-white">
                 <Link
                   to={`/${profile.slug}`}
+                  title={profile.displayName}
                   className="text-inherit no-underline transition-colors after:absolute after:inset-0 after:z-0 after:rounded-2xl after:content-[''] group-hover:text-cyan-600 focus-visible:outline-none dark:group-hover:text-cyan-400"
                 >
                   <span className="relative z-10">{profile.displayName}</span>
                 </Link>
-              </h2>
+              </h3>
             </div>
           </div>
           {profile.status ? (
@@ -196,7 +204,6 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
           )}
         </div>
 
-        {/* Role */}
         <div className="mt-2 min-h-[2.5rem] min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="line-clamp-2 text-sm text-gray-500 dark:text-zinc-400">
@@ -213,7 +220,6 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
           </div>
         </div>
 
-        {/* Summary (empty row keeps alignment when missing) */}
         <div className="mt-4 min-h-[3.75rem]">
           {profile.cardSummary ? (
             <p className="line-clamp-3 text-sm text-gray-600 dark:text-zinc-400">
@@ -222,7 +228,6 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
           ) : null}
         </div>
 
-        {/* Footer */}
         <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-4 dark:border-white/8">
           <SocialLinks socials={profile.socials} />
           <span
@@ -338,10 +343,15 @@ export function HomePage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const params = useMemo(() => parseParams(searchParams), [searchParams]);
-  const deferredQ = useDeferredValue(params.q);
+  const [qDraft, setQDraft] = useState(params.q);
+  const deferredQ = useDeferredValue(qDraft);
   const searchId = useId();
-  const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const resultsLineRef = useRef<HTMLParagraphElement>(null);
   const listTopRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setQDraft(params.q);
+  }, [params.q]);
 
   const typeCounts = useMemo(() => {
     const team = entries.filter((e) => e.affiliation === "team").length;
@@ -362,39 +372,49 @@ export function HomePage() {
 
   useEffect(() => {
     if (params.page !== page) {
-      setSearchParams(toParams({ ...params, page }), { replace: true });
+      setSearchParams(toParams({ q: qDraft, type: params.type, page }), { replace: true });
     }
-  }, [page, params, setSearchParams]);
+  }, [page, params.page, params.type, qDraft, setSearchParams]);
 
   const pageProfiles = items
     .map((e) => bySlug.get(e.slug))
     .filter((p): p is ProfileConfig => Boolean(p));
 
-  const hasActiveFilters = Boolean(params.q.trim()) || params.type !== "all";
-  const countLabel = hasActiveFilters
-    ? `${filtered.length} of ${entries.length} match`
-    : `${entries.length} ${entries.length === 1 ? "person" : "people"}`;
+  const hasActiveFilters = Boolean(qDraft.trim()) || params.type !== "all";
+  const rangeStart = filtered.length === 0 ? 0 : (page - 1) * DIRECTORY_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * DIRECTORY_PAGE_SIZE, filtered.length);
+
+  let resultsLabel: string;
+  if (hasActiveFilters) {
+    resultsLabel = `${filtered.length} of ${entries.length} match`;
+  } else if (pageCount > 1 && filtered.length > 0) {
+    resultsLabel = `Showing ${rangeStart} to ${rangeEnd} of ${filtered.length}`;
+  } else {
+    resultsLabel = `${entries.length} ${entries.length === 1 ? "person" : "people"}`;
+  }
 
   function setQuery(next: string) {
+    setQDraft(next);
     setSearchParams(toParams({ q: next, type: params.type, page: 1 }), { replace: true });
   }
 
   function setType(type: DirectoryTypeFilter) {
-    setSearchParams(toParams({ q: params.q, type, page: 1 }), { replace: true });
+    setSearchParams(toParams({ q: qDraft, type, page: 1 }), { replace: true });
   }
 
   function goPage(n: number) {
-    setSearchParams(toParams({ q: params.q, type: params.type, page: n }), { replace: false });
+    setSearchParams(toParams({ q: qDraft, type: params.type, page: n }), { replace: false });
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     listTopRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
     window.requestAnimationFrame(() => {
-      resultsHeadingRef.current?.focus();
+      resultsLineRef.current?.focus();
     });
   }
 
   function clearFilters() {
+    setQDraft("");
     setSearchParams(toParams({ q: "", type: "all", page: 1 }), { replace: true });
   }
 
@@ -417,50 +437,55 @@ export function HomePage() {
         </div>
 
         <div ref={listTopRef} className="scroll-mt-8 space-y-6 mb-8">
-          <form onSubmit={onSearchSubmit} className="flex flex-col sm:flex-row gap-3 sm:items-end">
-            <div className="flex-1 min-w-0">
-              <label
-                htmlFor={searchId}
-                className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5"
-              >
-                Search name, role or skill
-              </label>
-              <div className="relative">
-                <input
-                  id={searchId}
-                  type="search"
-                  value={params.q}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 px-4 py-2.5 pr-10 text-gray-900 dark:text-white placeholder:text-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-                  placeholder="Search name, role or skill"
-                  autoComplete="off"
-                />
-                {params.q ? (
-                  <button
-                    type="button"
-                    onClick={() => setQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-gray-500 hover:text-gray-800 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-                    aria-label="Clear search"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
+          <search className="block">
+            <form
+              onSubmit={onSearchSubmit}
+              className="flex flex-col sm:flex-row gap-3 sm:items-end"
+            >
+              <div className="flex-1 min-w-0">
+                <label
+                  htmlFor={searchId}
+                  className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5"
+                >
+                  Search name, role or skill
+                </label>
+                <div className="relative">
+                  <input
+                    id={searchId}
+                    type="search"
+                    value={qDraft}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 dark:border-white/15 bg-white dark:bg-white/5 px-4 py-2.5 pr-10 text-gray-900 dark:text-white placeholder:text-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
+                    placeholder="Search name, role or skill"
+                    autoComplete="off"
+                  />
+                  {qDraft ? (
+                    <button
+                      type="button"
+                      onClick={() => setQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-gray-500 hover:text-gray-800 dark:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
+                      aria-label="Clear search"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                ) : null}
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </search>
 
           <fieldset className="m-0 min-w-0 border-0 p-0">
             <legend className="sr-only">Filter by type</legend>
@@ -492,21 +517,20 @@ export function HomePage() {
             </div>
           </fieldset>
 
-          <div className="text-sm text-gray-500 dark:text-zinc-500" aria-live="polite">
-            {countLabel}
-          </div>
+          <p
+            ref={resultsLineRef}
+            tabIndex={-1}
+            className="text-sm text-gray-500 dark:text-zinc-500 outline-none"
+            aria-live="polite"
+          >
+            {resultsLabel}
+          </p>
         </div>
 
-        <h2
-          ref={resultsHeadingRef}
-          tabIndex={-1}
-          className="sr-only focus:not-sr-only focus:outline-none focus:mb-4 focus:text-lg focus:font-semibold"
-        >
-          Directory results
-        </h2>
+        <h2 className="sr-only">People</h2>
 
         {pageProfiles.length > 0 ? (
-          <ul className="grid gap-6 sm:grid-cols-2 [@supports(grid-template-rows:subgrid)]:grid-flow-dense">
+          <ul className="grid gap-x-6 gap-y-0 sm:grid-cols-2">
             {pageProfiles.map((profile) => (
               <ProfileCard key={profile.slug} profile={profile} />
             ))}
