@@ -6,6 +6,7 @@ import {
   gapY,
   near,
   styleMap,
+  textLineStats,
 } from "./helpers/geometry.ts";
 import { directoryWidths } from "./helpers/scope.ts";
 import { openWithTheme } from "./helpers/theme.ts";
@@ -108,6 +109,54 @@ test.describe("directory demo", () => {
     await page.getByRole("button", { name: "Clear search" }).click();
     await expect(search).toHaveValue("");
     await expect(page).not.toHaveURL(/[?&]q=/);
+    await context.close();
+  });
+
+  test("search polish: native clear hidden, one Clear search, balanced subtitle", async ({
+    browser,
+    baseURL,
+  }) => {
+    const { context, page } = await openWithTheme(browser, baseURL, "light");
+
+    for (const width of [390, 1024, 1440]) {
+      await setViewport(page, width);
+      await page.goto("/");
+      const subtitle = page.locator("[data-dir-hero-subtitle]");
+      await expect(subtitle).toBeVisible();
+      const stats = await textLineStats(subtitle);
+      expect(stats.lineCount, `width ${width} lineCount`).toBeLessThanOrEqual(2);
+      expect(stats.lastLineWords, `width ${width} lastLineWords`).toBeGreaterThan(1);
+    }
+
+    await setViewport(page, 1280);
+    const search = page.getByRole("searchbox", { name: /search name/i });
+    await search.fill("portfolio");
+    const nativeClearDisplay = await search.evaluate((el) => {
+      const computed = getComputedStyle(el, "::-webkit-search-cancel-button").display;
+      if (computed === "none") return computed;
+      // Chromium often mirrors the host for this pseudo; confirm the author hide rule.
+      for (const sheet of document.styleSheets) {
+        let rules: CSSRuleList;
+        try {
+          rules = sheet.cssRules;
+        } catch {
+          continue;
+        }
+        for (const rule of rules) {
+          if (!(rule instanceof CSSStyleRule)) continue;
+          if (
+            rule.selectorText.includes("::-webkit-search-cancel-button") &&
+            rule.style.display === "none"
+          ) {
+            return "none";
+          }
+        }
+      }
+      return computed;
+    });
+    expect(nativeClearDisplay).toBe("none");
+    await expect(page.getByRole("button", { name: "Clear search" })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Clear search" })).toBeVisible();
     await context.close();
   });
 

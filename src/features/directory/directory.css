@@ -444,6 +444,7 @@
   background-clip: text;
   color: transparent;
   letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 
 .directory-hero-subtitle {
@@ -452,6 +453,7 @@
   color: var(--dir-text-muted);
   font-size: 1.125rem;
   line-height: 1.55;
+  text-wrap: balance;
 }
 
 .directory-glass-btn {
@@ -1261,4 +1263,12 @@
       linear-gradient(var(--dir-card-fill-touch), var(--dir-card-fill-touch));
   }
 }
+}
+
+/* Unlayered so these beat the UA search chrome (keep type="search"). */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  appearance: none;
+  -webkit-appearance: none;
+  display: none;
 }

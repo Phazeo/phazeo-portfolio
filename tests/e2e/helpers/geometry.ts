@@ -69,3 +69,46 @@ export function centresAligned(values: number[], tolerance = 1): boolean {
 export function near(actual: number, expected: number, tol = 2): boolean {
   return Math.abs(actual - expected) <= tol;
 }
+
+/** Line count and last-line word count for a single text element (no nested markup). */
+export async function textLineStats(
+  locator: Locator
+): Promise<{ lineCount: number; lastLineWords: number }> {
+  return locator.evaluate((el) => {
+    const text = el.textContent ?? "";
+    const trimmed = text.trim();
+    if (!trimmed) return { lineCount: 0, lastLineWords: 0 };
+
+    let textNode: Text | null = null;
+    const walk = (node: Node) => {
+      if (textNode) return;
+      if (node.nodeType === Node.TEXT_NODE && (node.textContent ?? "").trim()) {
+        textNode = node as Text;
+        return;
+      }
+      for (const child of node.childNodes) walk(child);
+    };
+    walk(el);
+    if (!textNode) return { lineCount: 1, lastLineWords: trimmed.split(/\s+/).length };
+
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    const lineMap = new Map<number, number>();
+    let searchFrom = 0;
+    for (const word of words) {
+      const idx = text.indexOf(word, searchFrom);
+      if (idx < 0) continue;
+      searchFrom = idx + word.length;
+      const range = document.createRange();
+      range.setStart(textNode, idx);
+      range.setEnd(textNode, idx + word.length);
+      const top = Math.round(range.getBoundingClientRect().top);
+      lineMap.set(top, (lineMap.get(top) ?? 0) + 1);
+    }
+    const tops = [...lineMap.keys()].sort((a, b) => a - b);
+    const lastTop = tops[tops.length - 1];
+    return {
+      lineCount: tops.length,
+      lastLineWords: lastTop == null ? 0 : (lineMap.get(lastTop) ?? 0),
+    };
+  });
+}
