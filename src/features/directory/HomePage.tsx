@@ -11,8 +11,8 @@ import {
 } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { ProfileConfig } from "#kit";
-import { useTheme } from "../../app/providers/ThemeProvider";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon, XIcon } from "../../components/SocialIcons";
+import { ThemeSwitch } from "../../components/ThemeSwitch";
 import "./directory.css";
 import { DIRECTORY_BY_SLUG, DIRECTORY_INDEX, DIRECTORY_TYPE_COUNTS } from "./directory-data";
 import { getExperienceYearsDisplay } from "./experience";
@@ -82,53 +82,6 @@ function SocialLinks({
         </a>
       ))}
     </div>
-  );
-}
-
-function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
-
-  return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      className="directory-glass-btn fixed top-4 right-4 z-50 p-2.5 text-[color:var(--dir-text-muted)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-    >
-      {isDark ? (
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      ) : (
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-          />
-        </svg>
-      )}
-    </button>
   );
 }
 
@@ -570,25 +523,25 @@ export function HomePage() {
         <div className="directory-shell__grain" />
       </div>
       <div className="directory-shell__content">
-        <ThemeToggle />
+        <ThemeSwitch />
 
         <div className="mx-auto max-w-4xl px-4 py-16 sm:py-24">
           <div className="mb-12 text-center">
             <h1 className="directory-hero-title mb-4 text-4xl font-bold sm:text-5xl">
               Phazeo Portfolios
             </h1>
-            <p className="mx-auto max-w-2xl text-lg text-[color:var(--dir-text-muted)]">
+            <p
+              data-dir-hero-subtitle
+              className="mx-auto max-w-2xl text-lg text-[color:var(--dir-text-muted)]"
+            >
               Professional portfolios showcasing talented individuals and their work.
             </p>
           </div>
 
-          <div ref={listTopRef} className="mb-8 scroll-mt-8 space-y-3">
+          <div ref={listTopRef} className="directory-toolbar mb-8 scroll-mt-8">
             <search className="block">
-              <form
-                onSubmit={onSearchSubmit}
-                className="flex flex-col gap-3 sm:flex-row sm:items-stretch"
-              >
-                <div className="min-w-0 flex-1">
+              <form onSubmit={onSearchSubmit} className="flex flex-col gap-3">
+                <div className="directory-toolbar__search">
                   <label htmlFor={searchId} className="sr-only">
                     Search name, role or skill
                   </label>
@@ -656,35 +609,37 @@ export function HomePage() {
                   </div>
                 </div>
 
-                <fieldset className="m-0 min-w-0 border-0 p-0">
-                  <legend className="sr-only">Filter by type</legend>
-                  <div className="directory-segment">
-                    {typeOptions.map(([value, label, count]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        aria-pressed={params.type === value}
-                        disabled={count === 0}
-                        onClick={() => setType(value)}
-                        className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
-                      >
-                        {label}
-                        <span className="ml-1.5 tabular-nums opacity-80">{count}</span>
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
+                <div className="directory-toolbar__meta">
+                  <fieldset>
+                    <legend className="sr-only">Filter by type</legend>
+                    <div className="directory-segment">
+                      {typeOptions.map(([value, label, count]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          aria-pressed={params.type === value}
+                          disabled={count === 0}
+                          onClick={() => setType(value)}
+                          className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                        >
+                          {label}
+                          <span className="directory-segment__count">{count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <p
+                    ref={resultsLineRef}
+                    tabIndex={-1}
+                    className="directory-results outline-none"
+                    aria-live="polite"
+                  >
+                    {resultsLabel}
+                  </p>
+                </div>
               </form>
             </search>
-
-            <p
-              ref={resultsLineRef}
-              tabIndex={-1}
-              className="directory-results outline-none sm:text-right"
-              aria-live="polite"
-            >
-              {resultsLabel}
-            </p>
           </div>
 
           <h2 className="sr-only">People</h2>

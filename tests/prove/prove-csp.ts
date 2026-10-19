@@ -344,7 +344,7 @@ async function main(): Promise<void> {
     const before = await evaluate<boolean>(page.send, `document.documentElement.classList.contains('dark')`);
     await evaluate(
       page.send,
-      `document.querySelector('[aria-label*="Switch to"]')?.click(); true`
+      `document.querySelector('.theme-switch, [aria-label="Dark mode"], [aria-label*="Switch to"]')?.click(); true`
     );
     await sleep(400);
     const after = await evaluate<boolean>(page.send, `document.documentElement.classList.contains('dark')`);
