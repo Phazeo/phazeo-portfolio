@@ -106,12 +106,14 @@ export function parseParams(search: URLSearchParams | Record<string, string>): D
   return { q, type, page };
 }
 
-/** Serialize params; omit defaults (empty q, type=all, page=1). */
+/**
+ * Serialize params; omit defaults (blank q after trim, type=all, page=1).
+ * Write q untrimmed so spaces while typing are preserved in the URL.
+ */
 export function toParams(params: DirectoryParams): URLSearchParams {
   const out = new URLSearchParams();
-  const q = params.q.trim();
-  if (q) {
-    out.set("q", q);
+  if (params.q.trim()) {
+    out.set("q", params.q);
   }
   if (params.type !== "all") {
     out.set("type", params.type);

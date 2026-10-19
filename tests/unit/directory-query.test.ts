@@ -139,6 +139,16 @@ describe("parseParams / toParams", () => {
 
   it("omits defaults from the URL", () => {
     assert.equal(toParams({ q: "", type: "all", page: 1 }).toString(), "");
-    assert.equal(toParams({ q: "  hi ", type: "guest", page: 3 }).toString(), "q=hi&type=guest&page=3");
+    assert.equal(toParams({ q: "   ", type: "all", page: 1 }).toString(), "");
+    assert.equal(
+      toParams({ q: "  hi ", type: "guest", page: 3 }).toString(),
+      "q=++hi+&type=guest&page=3"
+    );
+  });
+
+  it("keeps trailing spaces through toParams then parseParams", () => {
+    const q = "ada react ";
+    const roundTrip = parseParams(toParams({ q, type: "all", page: 1 }));
+    assert.equal(roundTrip.q, q);
   });
 });
