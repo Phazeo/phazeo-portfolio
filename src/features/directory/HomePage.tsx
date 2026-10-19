@@ -447,6 +447,7 @@ export function HomePage() {
         setQDraft("");
         qDraftRef.current = "";
         writeQToUrl("", { type: paramsTypeRef.current, page: 1 });
+        searchInputRef.current.focus();
       }
     }
     window.addEventListener("keydown", onKeyDown);
@@ -460,16 +461,25 @@ export function HomePage() {
     [params.type, deferredQ]
   );
 
+  const qAheadOfUrl = qDraft !== params.q;
+  const pageForDisplay = qAheadOfUrl ? 1 : params.page;
+
   const { items, page, pageCount } = useMemo(
-    () => paginate(filtered, params.page, DIRECTORY_PAGE_SIZE),
-    [filtered, params.page]
+    () => paginate(filtered, pageForDisplay, DIRECTORY_PAGE_SIZE),
+    [filtered, pageForDisplay]
   );
 
   useEffect(() => {
+    if (urlWriteTimerRef.current != null) {
+      return;
+    }
+    if (qDraft !== params.q) {
+      return;
+    }
     if (params.page !== page) {
       setSearchParams(toParams({ q: params.q, type: params.type, page }), { replace: true });
     }
-  }, [page, params.page, params.q, params.type, setSearchParams]);
+  }, [page, params.page, params.q, params.type, qDraft, setSearchParams]);
 
   const pageProfiles = items
     .map((e) => DIRECTORY_BY_SLUG.get(e.slug))
@@ -494,6 +504,14 @@ export function HomePage() {
     setQDraft(next);
     qDraftRef.current = next;
     scheduleQToUrl(next);
+  }
+
+  function clearSearchImmediate() {
+    clearUrlWriteTimer();
+    setQDraft("");
+    qDraftRef.current = "";
+    writeQToUrl("", { type: paramsTypeRef.current, page: 1 });
+    searchInputRef.current?.focus();
   }
 
   function setType(type: DirectoryTypeFilter) {
@@ -524,6 +542,10 @@ export function HomePage() {
   }
 
   function onSearchBlur() {
+    const pending = urlWriteTimerRef.current != null;
+    if (!pending && qDraftRef.current === lastWrittenQRef.current) {
+      return;
+    }
     flushQToUrl({ page: 1 });
   }
 
@@ -600,7 +622,7 @@ export function HomePage() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => setQuery("")}
+                        onClick={clearSearchImmediate}
                         className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-[color:var(--dir-text-muted)] hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
                         aria-label="Clear search"
                       >
