@@ -54,6 +54,33 @@ function composite(fg: Rgba, bg: Rgba): Rgba {
   };
 }
 
+function srgbToLin(c: number): number {
+  const s = c / 255;
+  return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+}
+
+function linToSrgb(c: number): number {
+  const v = c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
+  return Math.min(255, Math.max(0, Math.round(v * 255)));
+}
+
+/**
+ * backdrop-filter brightness model (conservative):
+ * - Multiply channels in linear light, then encode back to sRGB. Linear multiply
+ *   darkens less than an sRGB-space multiply when factor < 1, so contrast claims
+ *   stay on the safer side for light text on darkened glass.
+ * - Blur is ignored (backdrop colour is treated as uniform).
+ * - Saturate is treated as luminance-preserving (no chroma change in this model).
+ */
+function applyBrightness(color: Rgba, factor: number): Rgba {
+  return {
+    r: linToSrgb(srgbToLin(color.r) * factor),
+    g: linToSrgb(srgbToLin(color.g) * factor),
+    b: linToSrgb(srgbToLin(color.b) * factor),
+    a: color.a,
+  };
+}
+
 function channel(c: number): number {
   const s = c / 255;
   return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
@@ -110,7 +137,6 @@ function requireVar(vars: Map<string, string>, name: string): string {
   return v;
 }
 
-/** Shape lightest point: light stop + white inner highlight at full strength. */
 function shapeLightest(vars: Map<string, string>, n: 1 | 2 | 3 | 4): Rgba {
   const light = parseColor(requireVar(vars, `--dir-shape-${n}-light`));
   const innerA = Number(requireVar(vars, "--dir-shape-inner-alpha"));
@@ -121,20 +147,31 @@ function shapeDarkest(vars: Map<string, string>, n: 1 | 2 | 3 | 4): Rgba {
   return parseColor(requireVar(vars, `--dir-shape-${n}-dark`));
 }
 
-/** Backdrops: plain base + each shape lightest/darkest at shape opacity over base. */
+/** Backdrops after brightness, before glass stack. */
 function backdrops(vars: Map<string, string>): Rgba[] {
   const base = { ...parseColor(requireVar(vars, "--dir-base")), a: 1 };
   const shapeOpacity = Number(requireVar(vars, "--dir-shape-opacity"));
-  const out: Rgba[] = [base];
+  const brightness = Number(requireVar(vars, "--dir-brightness"));
+  const out: Rgba[] = [applyBrightness(base, brightness)];
   for (const n of [1, 2, 3, 4] as const) {
-    out.push(composite({ ...shapeLightest(vars, n), a: shapeOpacity }, base));
-    out.push(composite({ ...shapeDarkest(vars, n), a: shapeOpacity }, base));
+    out.push(
+      applyBrightness(
+        composite({ ...shapeLightest(vars, n), a: shapeOpacity }, base),
+        brightness
+      )
+    );
+    out.push(
+      applyBrightness(
+        composite({ ...shapeDarkest(vars, n), a: shapeOpacity }, base),
+        brightness
+      )
+    );
   }
   return out;
 }
 
 /**
- * Full surface stack: fill, overlay (strong or weak), sheen max, spotlight max.
+ * Stack: fill, overlay strong|weak, sheen, spotlight, specular (all at max).
  * Both normal and touch fills.
  */
 function stackedSurfaces(vars: Map<string, string>): Rgba[] {
@@ -148,6 +185,7 @@ function stackedSurfaces(vars: Map<string, string>): Rgba[] {
   ];
   const sheen = parseColor(requireVar(vars, "--dir-card-sheen"));
   const spot = parseColor(requireVar(vars, "--dir-spotlight"));
+  const specular = parseColor(requireVar(vars, "--dir-specular"));
   const surfaces: Rgba[] = [];
   for (const bd of backdrops(vars)) {
     for (const fill of fills) {
@@ -156,6 +194,7 @@ function stackedSurfaces(vars: Map<string, string>): Rgba[] {
         s = composite(overlay, s);
         s = composite(sheen, s);
         s = composite(spot, s);
+        s = composite(specular, s);
         surfaces.push(s);
       }
     }
@@ -181,7 +220,7 @@ function assertTextContrast(vars: Map<string, string>, names: string[], min: num
   const worst = worstTextContrast(vars, names);
   for (const name of names) {
     const r = worst.get(name) ?? 0;
-    assert.ok(r >= min, `${name} worst-case: ${r.toFixed(2)} < ${min}`);
+    assert.ok(r + 1e-9 >= min, `${name} worst-case: ${r.toFixed(2)} < ${min}`);
   }
 }
 
@@ -192,7 +231,7 @@ function assertUiContrast(vars: Map<string, string>, token: string, min: number)
     const solid = { ...color, a: 1 };
     for (const [i, surface] of surfaces.entries()) {
       const r = contrastRatio(solid, surface);
-      assert.ok(r >= min, `${token} vs surface[${i}]: ${r.toFixed(2)} < ${min}`);
+      assert.ok(r + 1e-9 >= min, `${token} vs surface[${i}]: ${r.toFixed(2)} < ${min}`);
     }
     return;
   }
@@ -211,25 +250,30 @@ function assertSegmentActiveContrast(vars: Map<string, string>, min: number) {
     const activeSurface = composite(fill, surface);
     const r = contrastRatio(text, activeSurface);
     assert.ok(
-      r >= min,
+      r + 1e-9 >= min,
       `--dir-segment-active-text over active fill on surface[${i}]: ${r.toFixed(2)} < ${min}`
     );
   }
 }
 
-/** Panel (fill + overlay mid) vs base, and hairline vs base. */
 function glassVisibility(vars: Map<string, string>): { panel: number; edge: number } {
   const base = { ...parseColor(requireVar(vars, "--dir-base")), a: 1 };
+  const brightness = Number(requireVar(vars, "--dir-brightness"));
+  const litBase = applyBrightness(base, brightness);
   const fill = parseColor(requireVar(vars, "--dir-card-fill"));
   const mid = parseColor(requireVar(vars, "--dir-overlay-mid"));
-  let panel = composite(fill, base);
+  let panel = composite(fill, litBase);
   panel = composite(mid, panel);
   const hairline = parseColor(requireVar(vars, "--dir-card-hairline"));
-  const edge = composite(hairline, base);
+  const edge = composite(hairline, litBase);
   return {
-    panel: contrastRatio(panel, base),
-    edge: contrastRatio(edge, base),
+    panel: contrastRatio(panel, litBase),
+    edge: contrastRatio(edge, litBase),
   };
+}
+
+function fillAlpha(vars: Map<string, string>, name: string): number {
+  return parseColor(requireVar(vars, name)).a;
 }
 
 describe("directory contrast tokens", () => {
@@ -250,6 +294,25 @@ describe("directory contrast tokens", () => {
 
   const darkVis = glassVisibility(dark);
   const lightVis = glassVisibility(light);
+
+  it("meets translucency targets for card fills", () => {
+    assert.ok(
+      fillAlpha(dark, "--dir-card-fill") <= 0.45 + 1e-9,
+      `dark tint ${fillAlpha(dark, "--dir-card-fill")} > 0.45`
+    );
+    assert.ok(
+      fillAlpha(dark, "--dir-card-fill-touch") <= 0.55 + 1e-9,
+      `dark touch ${fillAlpha(dark, "--dir-card-fill-touch")} > 0.55`
+    );
+    assert.ok(
+      fillAlpha(light, "--dir-card-fill") <= 0.32 + 1e-9,
+      `light fill ${fillAlpha(light, "--dir-card-fill")} > 0.32`
+    );
+    assert.ok(
+      fillAlpha(light, "--dir-card-fill-touch") <= 0.42 + 1e-9,
+      `light touch ${fillAlpha(light, "--dir-card-fill-touch")} > 0.42`
+    );
+  });
 
   it("meets WCAG 4.5:1 full-stack text contrast in light theme", () => {
     assertTextContrast(light, textTokens, 4.5);
@@ -300,7 +363,6 @@ describe("directory contrast tokens", () => {
       lightVis.edge + 1e-9 >= darkVis.edge,
       `light edge ${lightVis.edge.toFixed(3)} < dark min ${darkVis.edge.toFixed(3)}`
     );
-    // Dark still meets the recorded minimums (identity / no regression).
     assert.ok(darkVis.panel + 1e-9 >= darkVis.panel);
     assert.ok(darkVis.edge + 1e-9 >= darkVis.edge);
   });
