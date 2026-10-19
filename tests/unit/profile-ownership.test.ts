@@ -105,7 +105,7 @@ describe("profile-ownership", () => {
     {
       authorId: 334465155,
       authorLogin: "phazeo-ci-bot",
-      changedPaths: ["src/pages/HomePage.tsx", "profiles/sriram-sm/meta.ts"],
+      changedPaths: ["src/features/directory/HomePage.tsx", "profiles/sriram-sm/meta.ts"],
     },
     true,
     "exception-author"
@@ -117,7 +117,7 @@ describe("profile-ownership", () => {
     {
       authorId: 13678035,
       authorLogin: "sowmipriya",
-      changedPaths: ["src/pages/HomePage.tsx"],
+      changedPaths: ["src/features/directory/HomePage.tsx"],
     },
     false,
     "non-profile-path"

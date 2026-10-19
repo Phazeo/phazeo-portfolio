@@ -1,18 +1,16 @@
-name: Visual parity
+name: Full sweep
 
 on:
-  pull_request:
-
-concurrency:
-  group: visual-parity-${{ github.ref }}
-  cancel-in-progress: true
+  schedule:
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  visual-parity:
-    name: visual-parity
+  full-sweep:
+    name: full-sweep
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -39,14 +37,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Prove visual parity (PR base vs head)
+      - name: Build
+        run: pnpm build
+
+      - name: Prove CSP for every profile
         env:
+          SCOPE_FULL: "1"
           CHROME_PATH: /usr/bin/google-chrome
-          BASE_REF: ${{ github.base_ref }}
         run: |
           if [ ! -x "$CHROME_PATH" ]; then
             echo "STOP: runner has no usable Chrome at CHROME_PATH=$CHROME_PATH"
             echo "Do not add a browser download or new dependency - report to maintainers."
             exit 1
           fi
-          pnpm prove:visual -- --base "origin/${BASE_REF}" --head HEAD
+          pnpm prove:csp

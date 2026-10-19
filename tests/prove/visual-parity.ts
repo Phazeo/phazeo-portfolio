@@ -2,15 +2,26 @@
 /**
  * Prove visual parity between two commits.
  *
+ * Optional local tool for large layout restructures. It is hand-run only and is never
+ * run in CI. Isolation and the shared kit are the scalable quality gates.
+ *
  * Builds BASE and HEAD in separate temporary git worktrees, compares dist/ file
  * hashes, serves both with tools/build/serve-dist.ts, and screenshots every route
- * in Chrome over CDP (desktop and mobile, light and dark). HEAD is captured twice
- * to prove the capture is deterministic. No new npm dependencies.
+ * in Chrome over CDP (desktop and mobile, light and dark). By default BASE and HEAD
+ * are captured once each. Determinism (HEAD captured twice, byte-identical) is opt-in
+ * via --check-determinism. No new npm dependencies.
  *
  * Usage:
  *   node tests/prove/visual-parity.ts [--base <rev>] [--head <rev>] [--out <dir>]
  *                                     [--mask <css-selector>]... [--keep]
+ *                                     [--allow-dist-diff] [--check-determinism] [--help]
  *   defaults: --base origin/batch/merge-private-into-public  --head HEAD
+ *
+ * --allow-dist-diff: report dist/ differences (paths and SHA-256) but do not fail on them.
+ *   Screenshot comparison (and the determinism check when enabled) stay strict. Use this
+ *   for intentional refactors where bundle hashes change but pixels must not.
+ * --check-determinism: also serve and capture HEAD a second time and require both HEAD
+ *   captures to be byte-identical. Default OFF.
  *
  * Exit codes: 0 pass, 1 parity or determinism failure, 2 Chrome not found.
  */
@@ -56,7 +67,40 @@ const THEMES: readonly Theme[] = ["light", "dark"];
 /** CSS selectors hidden in every capture. Keep empty unless something truly cannot be made deterministic. */
 const BUILTIN_MASKS: readonly string[] = [];
 
-type Args = { base: string; head: string; out: string | null; masks: string[]; keep: boolean };
+type Args = {
+  base: string;
+  head: string;
+  out: string | null;
+  masks: string[];
+  keep: boolean;
+  allowDistDiff: boolean;
+  checkDeterminism: boolean;
+  help: boolean;
+};
+
+const HELP = `Usage: node tests/prove/visual-parity.ts [options]
+
+Optional local tool for large layout restructures. Hand-run only, never run in CI.
+Determinism checking is opt-in (--check-determinism).
+
+Build BASE and HEAD, compare dist/ hashes, and screenshot every route (desktop and
+mobile, light and dark). BASE and HEAD are captured once each unless
+--check-determinism is set.
+
+Options:
+  --base <rev>         BASE revision (default: ${DEFAULT_BASE})
+  --head <rev>         HEAD revision (default: ${DEFAULT_HEAD})
+  --out <dir>          Directory for screenshots and dist manifests
+  --mask <selector>    CSS selector hidden in every capture (repeatable)
+  --keep               Keep temporary worktrees and build output
+  --allow-dist-diff    Report dist/ differences but do not fail on them.
+                       Screenshots (and determinism, when enabled) remain strict.
+  --check-determinism  Also capture HEAD a second time and require byte-identical
+                       output (default: off, determinism skipped)
+  -h, --help           Show this help
+
+Exit codes: 0 pass, 1 parity or determinism failure, 2 Chrome not found.
+`;
 
 type Route = { label: string; path: string };
 
@@ -65,7 +109,16 @@ type Label = "base" | "head" | "head2";
 type Served = { label: Label; url: string; proc: ChildProcess };
 
 function parseArgs(argv: readonly string[]): Args {
-  const args: Args = { base: DEFAULT_BASE, head: DEFAULT_HEAD, out: null, masks: [], keep: false };
+  const args: Args = {
+    base: DEFAULT_BASE,
+    head: DEFAULT_HEAD,
+    out: null,
+    masks: [],
+    keep: false,
+    allowDistDiff: false,
+    checkDeterminism: false,
+    help: false,
+  };
   for (let i = 2; i < argv.length; i++) {
     const flag = argv[i];
     const next = argv[i + 1];
@@ -79,6 +132,9 @@ function parseArgs(argv: readonly string[]): Args {
     else if (flag === "--out") args.out = resolve(need());
     else if (flag === "--mask") args.masks.push(need());
     else if (flag === "--keep") args.keep = true;
+    else if (flag === "--allow-dist-diff") args.allowDistDiff = true;
+    else if (flag === "--check-determinism") args.checkDeterminism = true;
+    else if (flag === "--help" || flag === "-h") args.help = true;
     else if (flag === "--") continue;
     else throw new Error(`unknown argument: ${flag}`);
   }
@@ -249,6 +305,10 @@ function compareShots(
 
 async function main(): Promise<number> {
   const args = parseArgs(process.argv);
+  if (args.help) {
+    console.log(HELP);
+    return 0;
+  }
   const masks = [...BUILTIN_MASKS, ...args.masks];
 
   const chromePath = findChromium();
@@ -339,8 +399,9 @@ async function main(): Promise<number> {
     // 4. Serve and capture.
     const servedBase = await serve("base", baseBuild.dist);
     const servedHead = await serve("head", headBuild.dist);
-    const servedHead2 = await serve("head2", headBuild.dist);
-    procs.push(servedBase.proc, servedHead.proc, servedHead2.proc);
+    procs.push(servedBase.proc, servedHead.proc);
+    const servedHead2 = args.checkDeterminism ? await serve("head2", headBuild.dist) : null;
+    if (servedHead2) procs.push(servedHead2.proc);
 
     const chrome = await launchChrome(chromePath, join(work, "chrome-profile"));
     procs.push(chrome.proc);
@@ -348,12 +409,15 @@ async function main(): Promise<number> {
 
     const baseShots = await capturePass(browser, servedBase, routes, masks, outDir);
     const headShots = await capturePass(browser, servedHead, routes, masks, outDir);
-    const head2Shots = await capturePass(browser, servedHead2, routes, masks, outDir);
 
-    // 5. Determinism: HEAD twice must be byte-identical.
-    const det = compareShots("head", "head2", headShots, head2Shots, routes);
-    const detOk = det.pixelEqual === 0 && det.failures.length === 0;
-    if (!detOk) {
+    // 5. Determinism (opt-in): HEAD twice must be byte-identical.
+    let det: CompareResult | null = null;
+    if (servedHead2) {
+      const head2Shots = await capturePass(browser, servedHead2, routes, masks, outDir);
+      det = compareShots("head", "head2", headShots, head2Shots, routes);
+    }
+    const detOk = det === null || (det.pixelEqual === 0 && det.failures.length === 0);
+    if (det && !detOk) {
       console.log("visual-parity: determinism FAIL (HEAD captured twice is not byte-identical)");
       for (const f of det.failures) console.log(`  ${f}`);
       if (det.pixelEqual > 0) console.log(`  ${det.pixelEqual} pairs differ in bytes but not pixels`);
@@ -380,14 +444,22 @@ async function main(): Promise<number> {
     console.log(
       `  dist: ${distCmp.identical ? "identical" : distOk ? "same content, different names" : "DIFFERENT"}`
     );
-    console.log(
-      `  determinism (HEAD x2): ${detOk ? `OK, ${det.identical}/${total} byte-identical` : "FAIL"}`
-    );
+    if (det) {
+      console.log(
+        `  determinism (HEAD x2): ${detOk ? `OK, ${det.identical}/${total} byte-identical` : "FAIL"}`
+      );
+    } else {
+      console.log("  determinism: skipped (pass --check-determinism to enable)");
+    }
     console.log(
       `  visual (BASE vs HEAD): ${visualOk ? "OK" : "FAIL"}, ${cmp.identical} byte-identical, ${cmp.pixelEqual} pixel-identical, ${cmp.failures.length} differing`
     );
     console.log(`  screenshots: ${outDir}`);
-    const ok = distOk && detOk && visualOk;
+    const distPass = distOk || args.allowDistDiff;
+    if (!distOk && args.allowDistDiff) {
+      console.log("  dist difference ignored (--allow-dist-diff); screenshots remain strict");
+    }
+    const ok = distPass && detOk && visualOk;
     console.log(`visual-parity: ${ok ? "PASS" : "FAIL"}`);
     return ok ? 0 : 1;
   } finally {

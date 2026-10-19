@@ -4,8 +4,16 @@
  * Uses the preinstalled ms-playwright Chromium or system google-chrome over CDP.
  * No new npm dependencies.
  *
- * Usage: node tests/prove/prove-csp.ts
+ * Usage: node tests/prove/prove-csp.ts [--full]
  * Expects dist/ already built with _headers and _redirects.
+ *
+ * Modes:
+ *   pr   (GITHUB_EVENT_NAME=pull_request or SCOPE_BASE set): visit the fixed routes
+ *        (/, 404, retired redirect, prod-dist guest check, alex-morgan test build), each
+ *        changed profile slug, and, when shared code changed, one React and one data
+ *        representative profile.
+ *   full (--full, SCOPE_FULL=1, PROVE_CSP_FULL=1, a failed diff, or any non-PR run):
+ *        every profile under profiles/.
  */
 import { spawn, spawnSync } from "node:child_process";
 import type { Dirent } from "node:fs";
@@ -31,18 +39,58 @@ import {
   webSocketUrlFrom,
   withSession,
 } from "../../tools/lib/chrome-cdp.ts";
+import { isPullRequestScope, loadScopeFromEnv } from "../../tools/lib/changed-scope.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const DIST = join(ROOT, "dist");
 const DIST_PROD_BACKUP = join(ROOT, ".tmp-dist-prod-csp");
 
-const PROFILE_SLUGS = [
-  "dinesh-allimuthu",
-  "sowmipriya-rajendiran",
-  "sriram-sm",
-  "kayalvizhi-sm",
-  "yokeshwar-vs",
-];
+const DATA_PROFILE_FONT = "Outfit Variable";
+
+type ProfileKind = "react" | "data";
+type ProfileInfo = { slug: string; kind: ProfileKind };
+
+/** Every profiles/<slug> folder with a meta.ts (react) or profile.json (data), sorted by slug. */
+function discoverProfiles(): ProfileInfo[] {
+  const dir = join(ROOT, "profiles");
+  if (!existsSync(dir)) return [];
+  const out: ProfileInfo[] = [];
+  for (const ent of readdirSync(dir, { withFileTypes: true })) {
+    if (!ent.isDirectory() || ent.name.startsWith("_") || ent.name.startsWith(".")) continue;
+    if (existsSync(join(dir, ent.name, "meta.ts"))) out.push({ slug: ent.name, kind: "react" });
+    else if (existsSync(join(dir, ent.name, "profile.json"))) out.push({ slug: ent.name, kind: "data" });
+  }
+  return out.sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
+type Plan = { mode: "pr" | "full"; slugs: string[] };
+
+/** Fixed routes always visited: /, 404, retired redirect, prod-dist check, alex-morgan build. */
+const FIXED_ROUTE_COUNT = 5;
+
+function planRoutes(): Plan {
+  const profiles = discoverProfiles();
+  const all = profiles.map((p) => p.slug);
+  const forceFull =
+    process.argv.includes("--full") ||
+    process.env["SCOPE_FULL"] === "1" ||
+    process.env["PROVE_CSP_FULL"] === "1";
+  if (forceFull || !isPullRequestScope()) return { mode: "full", slugs: all };
+
+  const scope = loadScopeFromEnv(ROOT);
+  if (scope.failClosed) return { mode: "full", slugs: all };
+
+  const picked = new Set(scope.changedSlugs.filter((slug) => all.includes(slug)));
+  if (scope.sharedChanged) {
+    // One representative per profile kind. With no data profile in the tree, the
+    // alex-morgan guest build covers the data path.
+    const react = profiles.find((p) => p.kind === "react");
+    const data = profiles.find((p) => p.kind === "data");
+    if (react) picked.add(react.slug);
+    if (data) picked.add(data.slug);
+  }
+  return { mode: "pr", slugs: [...picked].sort() };
+}
 
 const EXPECTED_HEADING_FONT: Record<string, string> = {
   "dinesh-allimuthu": "Space Grotesk Variable",
@@ -108,6 +156,12 @@ function proveWriteHeadersRejectsHandlers(): void {
 }
 
 async function main(): Promise<void> {
+  const plan = planRoutes();
+  const profileKinds = new Map(discoverProfiles().map((p) => [p.slug, p.kind]));
+  console.log(
+    `prove-csp: mode=${plan.mode} routes=${FIXED_ROUTE_COUNT + plan.slugs.length} slugs=${plan.slugs.join(",") || "none"}`
+  );
+
   proveWriteHeadersRejectsHandlers();
 
   const chromePath = findChromium();
@@ -141,6 +195,8 @@ async function main(): Promise<void> {
     });
   });
 
+  const chromeProfile = mkdtempSync(join(tmpdir(), "phazeo-csp-chrome-"));
+  const chromeErr: Buffer[] = [];
   const chrome = spawn(
     chromePath,
     [
@@ -151,14 +207,17 @@ async function main(): Promise<void> {
       "--disable-dev-shm-usage",
       "--no-first-run",
       "--no-default-browser-check",
-      "--user-data-dir=/tmp/phazeo-csp-chrome-profile",
+      `--user-data-dir=${chromeProfile}`,
       "about:blank",
     ],
-    { stdio: ["ignore", "pipe", "pipe"] }
+    { stdio: ["ignore", "ignore", "pipe"] }
   );
+  chrome.stderr?.on("data", (buf: Buffer) => {
+    chromeErr.push(buf);
+  });
 
   let wsDebuggerUrl: string | null = null;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 80; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${debugPort}/json/version`);
       wsDebuggerUrl = webSocketUrlFrom(await res.json());
@@ -170,7 +229,12 @@ async function main(): Promise<void> {
   if (!wsDebuggerUrl) {
     chrome.kill();
     serve.kill();
+    rmSync(chromeProfile, { recursive: true, force: true });
+    const errText = Buffer.concat(chromeErr).toString("utf8").trim();
     console.error("prove-csp: could not connect to Chromium CDP");
+    if (errText) {
+      console.error(errText.slice(0, 2000));
+    }
     process.exit(1);
   }
 
@@ -293,11 +357,14 @@ async function main(): Promise<void> {
     });
   }
 
-  for (const slug of PROFILE_SLUGS) {
+  for (const slug of plan.slugs) {
     await resetCollectors();
     const r = await loadRoute(`/${slug}`, { waitMs: 2000 });
-    const expected = EXPECTED_HEADING_FONT[slug] ?? "";
-    const fontOk = typeof r.fontFamily === "string" && r.fontFamily.includes(expected);
+    // Known React profiles have pinned fonts; data profiles default to Outfit; others skip the font check.
+    const expected =
+      EXPECTED_HEADING_FONT[slug] ?? (profileKinds.get(slug) === "data" ? DATA_PROFILE_FONT : "");
+    const fontOk =
+      expected === "" || (typeof r.fontFamily === "string" && r.fontFamily.includes(expected));
     const violations = r.violations?.length ?? 0;
     const errors = r.errors?.length ?? 0;
     const ok = violations === 0 && errors === 0 && Boolean(r.h1) && fontOk;
@@ -309,7 +376,7 @@ async function main(): Promise<void> {
       errors,
       heading: r.h1,
       fontFamily: r.fontFamily,
-      expectedFont: expected,
+      ...(expected ? { expectedFont: expected } : {}),
     });
   }
 
@@ -461,6 +528,7 @@ async function main(): Promise<void> {
 
   browser.close();
   chrome.kill("SIGKILL");
+  rmSync(chromeProfile, { recursive: true, force: true });
 
   if (failed) {
     console.error("prove-csp: FAILED");

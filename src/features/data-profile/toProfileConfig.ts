@@ -1,6 +1,5 @@
-import { profileAssetPath } from "../../../profiles/_shared/assets";
-import type { ProfileConfig } from "../../../types";
-import { assertValidSlug, SLUG_MAX_LEN, SLUG_PATTERN } from "../../registry-slug";
+import { type ProfileConfig, profileAssetPath } from "#kit";
+import { assertValidSlug } from "../../registry/slug-lists";
 import { dataProfileThemes } from "./themes";
 import type { DataProfileJson } from "./types";
 
@@ -71,5 +70,3 @@ export function configFromDataProfile(
     },
   };
 }
-
-export { SLUG_MAX_LEN, SLUG_PATTERN };

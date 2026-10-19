@@ -1,4 +1,4 @@
-import { ProfileNavigation } from "../../../_shared/ProfileNavigation";
+import { ProfileNavigation } from "#kit";
 
 const navItems = [
   { label: "About", href: "#about" },

@@ -1,4 +1,4 @@
-import type { ProfileSeo, ProfileTheme } from "../../../types";
+import type { ProfileSeo, ProfileTheme } from "#kit";
 
 export const theme: ProfileTheme = {
   cssVariables: {

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "../fonts/inter-latin.css";
+@import "./inter-latin.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

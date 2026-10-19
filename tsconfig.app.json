@@ -23,8 +23,12 @@
     "noUncheckedSideEffectImports": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "paths": {
+      "#kit": ["./src/kit/index.ts"],
+      "#kit/*": ["./src/kit/*"]
+    },
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   },
-  "include": ["src", "profiles", "types"]
+  "include": ["src", "profiles"]
 }

@@ -2,16 +2,20 @@
  * Test-only injection of docs/guest-profile.example.json for CSP proof builds.
  * Imported only when VITE_GUEST_CSP_EXAMPLE=1 so production bundles omit this module.
  */
-import type { ProfileConfig, ProfileRegistry } from "../types";
-import { configFromDataProfile } from "./templates/data-profile/toProfileConfig";
-import type { DataProfileJson } from "./templates/data-profile/types";
+import type { ProfileConfig, ProfileRegistry } from "#kit";
+import { configFromDataProfile } from "../features/data-profile/toProfileConfig";
+import type { DataProfileJson } from "../features/data-profile/types";
 
-const exampleModules = import.meta.glob("../docs/guest-profile.example.json", {
+export type GuestCspInjector = {
+  injectGuestCspExample: (registry: ProfileRegistry, seenSlugs: Map<string, string>) => void;
+};
+
+const exampleModules = import.meta.glob("../../docs/guest-profile.example.json", {
   eager: true,
   import: "default",
 }) as Record<string, DataProfileJson>;
 
-/** Fictional demo slug - assembled so a bare search for the joined form is intentional. */
+/** Fictional demo slug, assembled so a bare search for the joined form is intentional. */
 const DEMO_SLUG = ["alex", "morgan"].join("-");
 
 export function injectGuestCspExample(

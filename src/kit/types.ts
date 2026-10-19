@@ -29,20 +29,12 @@ export interface ProfileSeo {
 export type ProfileComponentLoader = () => Promise<{ default: ComponentType }>;
 
 /**
- * A single version of a profile (v1, v2, etc.)
- * Each version exports a lazy component loader, theme, and optional SEO.
- * Prefer componentLoader for code splitting; Component is legacy for merged profiles.
+ * A single version of a profile (v1, v2, etc.).
+ * Each version exports a lazy component loader, a theme, and optional SEO.
  */
 export interface ProfileVersion {
-  /**
-   * Lazy loader for the React component (enables per-profile code splitting).
-   * Prefer this over Component for new profiles.
-   */
-  componentLoader?: ProfileComponentLoader;
-  /**
-   * Legacy: direct component. Use componentLoader when possible for code splitting.
-   */
-  Component?: ComponentType;
+  /** Lazy loader for the React component (per-profile code splitting). */
+  componentLoader: ProfileComponentLoader;
   /** Theme configuration (CSS variables, fonts) */
   theme: ProfileTheme;
   /** Optional SEO metadata */
@@ -57,13 +49,9 @@ export type VersionId = `v${number}`;
 /**
  * Optional skill metadata on a profile.
  * Not rendered on directory cards today (cards show cardSummary / socials instead).
- * `deviconClass` is retained for future use; the Devicon stylesheet is not loaded.
  */
 export interface ProfileCardSkill {
   name: string;
-  /** Legacy Devicon class suffix (unused on cards while no Devicon CSS is loaded). */
-  deviconClass?: string;
-  colored?: boolean;
 }
 
 /**

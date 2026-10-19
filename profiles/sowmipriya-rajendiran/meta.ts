@@ -1,4 +1,4 @@
-import type { ProfileConfig } from "../../types";
+import type { ProfileConfig } from "#kit";
 
 // Import all versions
 import { profileVersion as v1 } from "./v1";
@@ -14,11 +14,11 @@ export const sowmipriyaConfig: ProfileConfig = {
   status: "available",
   avatarGradient: "from-fuchsia-500 to-pink-600",
   skills: [
-    { name: "Python", deviconClass: "python-plain", colored: true },
-    { name: "TensorFlow", deviconClass: "tensorflow-original", colored: true },
-    { name: "React", deviconClass: "react-original", colored: true },
-    { name: "PostgreSQL", deviconClass: "postgresql-plain", colored: true },
-    { name: "AWS", deviconClass: "amazonwebservices-original-wordmark", colored: true },
+    { name: "Python" },
+    { name: "TensorFlow" },
+    { name: "React" },
+    { name: "PostgreSQL" },
+    { name: "AWS" },
   ],
   workPeriods: [
     { start: "2015-07", end: "2019-08" },

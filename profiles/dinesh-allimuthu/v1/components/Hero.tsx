@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 
-import { profileAssetUrl } from "../../../_shared/assets";
+import { profileAssetUrl } from "#kit";
 import { FlipWords } from "../ui/flip-words";
 import { LampContainer } from "../ui/lamp";
 

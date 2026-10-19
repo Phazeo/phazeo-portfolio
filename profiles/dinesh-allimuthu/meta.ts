@@ -1,4 +1,4 @@
-import type { ProfileConfig } from "../../types";
+import type { ProfileConfig } from "#kit";
 
 import { profileVersion as v1 } from "./v1";
 
@@ -11,11 +11,7 @@ export const dineshConfig: ProfileConfig = {
   listed: true,
   status: "available",
   avatarGradient: "from-amber-500 to-orange-600",
-  skills: [
-    { name: "Python", deviconClass: "python-plain", colored: true },
-    { name: "LLM Agents", deviconClass: "python-plain", colored: true },
-    { name: "LangChain", deviconClass: "python-plain", colored: true },
-  ],
+  skills: [{ name: "Python" }, { name: "LLM Agents" }, { name: "LangChain" }],
   cardSummary:
     "Data Scientist with 11+ years of experience in IT, currently focused on building LLM-powered AI agents and intelligent data systems.",
   workPeriods: [

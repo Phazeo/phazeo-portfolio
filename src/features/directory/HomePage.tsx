@@ -1,9 +1,9 @@
 import type { ComponentType } from "react";
 import { Link } from "react-router-dom";
-
-import { GitHubIcon, LinkedInIcon, WebsiteIcon, XIcon } from "../components/SocialIcons";
-import { useTheme } from "../contexts/ThemeContext";
-import { getExperienceYearsDisplay, getListedProfiles } from "../registry";
+import { useTheme } from "../../app/providers/ThemeProvider";
+import { GitHubIcon, LinkedInIcon, WebsiteIcon, XIcon } from "../../components/SocialIcons";
+import { getListedProfiles } from "../../registry";
+import { getExperienceYearsDisplay } from "./experience";
 
 function StatusDot({ status }: { status: "available" | "building" | "away" }) {
   const styles = {
