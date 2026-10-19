@@ -41,6 +41,12 @@ function redirectsPlugin(): Plugin {
     },
   };
 }
+if (process.env["VITE_DIRECTORY_DEMO"]) {
+  throw new Error(
+    "VITE_DIRECTORY_DEMO is for local directory review only. Unset it before pnpm build."
+  );
+}
+
 export default defineConfig({
   plugins: [react(), tailwindcss(), redirectsPlugin()],
   base: "/",
