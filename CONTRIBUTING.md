@@ -216,7 +216,7 @@ Browser end-to-end checks use Playwright against system Google Chrome (no `playw
 pnpm test:e2e
 ```
 
-Use `pnpm test:e2e:site` for the built site (headers, redirects, CSP) and `pnpm test:e2e:demo` for the directory demo. Override the Chrome binary with `PW_CHROME_PATH` if needed.
+Use `pnpm test:e2e:site` for the built site (headers, redirects, CSP), `pnpm test:e2e:demo` for the directory demo, and `pnpm test:e2e:guest` for the guest example at `/alex-morgan`. Override the Chrome binary with `PW_CHROME_PATH` if needed.
 
 4. Push again. Do not bypass hooks.
 

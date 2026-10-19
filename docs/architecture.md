@@ -62,6 +62,6 @@ A slug folder has either `meta.ts` or `profile.json`, never both. Folders whose 
 - `pnpm check:imports`: dependency rules above
 - `pnpm test`: all unit tests
 - `pnpm build`: typecheck, checks, production build, and security headers
-- `pnpm test:e2e`: Playwright suites (`site` against `dist/`, `demo` against the directory demo). Requires a system Google Chrome install (`channel: "chrome"`). Do not run `playwright install`. Build first so the site project can serve `dist/`.
-- `pnpm test:e2e:site` / `pnpm test:e2e:demo`: one project each (`prove:csp` aliases the site project)
+- `pnpm test:e2e`: Playwright suites (`site` against `dist/`, `demo` against the directory demo, `guest` against a guest-example build in `.tmp-dist-guest/`). Requires a system Google Chrome install (`channel: "chrome"`). Do not run `playwright install`. Build first so the site project can serve `dist/`.
+- `pnpm test:e2e:site` / `pnpm test:e2e:demo` / `pnpm test:e2e:guest`: one project each (`prove:csp` aliases the site project)
 - Optional `PW_CHROME_PATH` (or `CHROME_PATH`) overrides the Chrome binary path

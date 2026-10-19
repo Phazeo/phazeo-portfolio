@@ -41,6 +41,7 @@
     "test:e2e": "playwright test",
     "test:e2e:site": "playwright test --project=site",
     "test:e2e:demo": "playwright test --project=demo",
+    "test:e2e:guest": "playwright test --project=guest",
     "prove:csp": "pnpm test:e2e:site",
     "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm check:imports && pnpm test:ownership && pnpm test:profiles && pnpm test:imports && pnpm test:scope && pnpm test:directory && pnpm test:directory-contrast && pnpm test:theme-provider && pnpm test:headers-merge && pnpm test:email-text && pnpm test:public-boundary",
     "prepare": "husky"

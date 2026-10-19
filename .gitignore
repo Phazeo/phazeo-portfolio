@@ -29,6 +29,7 @@ pnpm-debug.log*
 # Local tool cache (pinned gitleaks binary)
 .tools/
 .tmp-dist-prod-csp/
+.tmp-dist-guest/
 
 # Playwright
 /test-results/

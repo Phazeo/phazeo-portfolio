@@ -3,6 +3,7 @@ import { defineConfig } from "@playwright/test";
 const CI = Boolean(process.env["CI"]);
 const SITE_PORT = Number(process.env["PW_SITE_PORT"] ?? 4173);
 const DEMO_PORT = Number(process.env["PW_DEMO_PORT"] ?? 5174);
+const GUEST_PORT = Number(process.env["PW_GUEST_PORT"] ?? 4175);
 const chromePath = process.env["PW_CHROME_PATH"] || process.env["CHROME_PATH"];
 
 export default defineConfig({
@@ -33,6 +34,11 @@ export default defineConfig({
       testMatch: "directory.spec.ts",
       use: { baseURL: `http://127.0.0.1:${DEMO_PORT}` },
     },
+    {
+      name: "guest",
+      testMatch: "guest.spec.ts",
+      use: { baseURL: `http://127.0.0.1:${GUEST_PORT}` },
+    },
   ],
   webServer: [
     {
@@ -50,6 +56,16 @@ export default defineConfig({
         ...process.env,
         VITE_DIRECTORY_DEMO: "45",
       },
+    },
+    {
+      command: [
+        `VITE_GUEST_CSP_EXAMPLE=1 pnpm exec vite build --outDir .tmp-dist-guest`,
+        `node tools/build/write-headers.ts --dir .tmp-dist-guest`,
+        `node tools/lib/static-server.ts --port ${GUEST_PORT} --dir .tmp-dist-guest`,
+      ].join(" && "),
+      url: `http://127.0.0.1:${GUEST_PORT}/`,
+      reuseExistingServer: !CI,
+      timeout: 180_000,
     },
   ],
 });
