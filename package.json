@@ -38,7 +38,10 @@
     "test:public-boundary": "node --test tests/unit/public-boundary.test.ts",
     "guard:tree": "sh tools/guard/check-leaks.sh --tree",
     "guard:staged": "sh tools/guard/check-leaks.sh --staged",
-    "prove:csp": "node tests/prove/prove-csp.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:site": "playwright test --project=site",
+    "test:e2e:demo": "playwright test --project=demo",
+    "prove:csp": "pnpm test:e2e:site",
     "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm check:imports && pnpm test:ownership && pnpm test:profiles && pnpm test:imports && pnpm test:scope && pnpm test:directory && pnpm test:directory-contrast && pnpm test:theme-provider && pnpm test:headers-merge && pnpm test:email-text && pnpm test:public-boundary",
     "prepare": "husky"
   },
@@ -66,6 +69,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "24.19.1",
     "@types/react": "19.3.0",
