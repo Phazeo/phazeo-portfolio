@@ -1,3 +1,4 @@
+import { EmailText } from "#kit";
 export function Contact() {
   return (
     <section
@@ -29,16 +30,14 @@ export function Contact() {
         <div className="grid sm:grid-cols-3 gap-6">
           <a
             href="mailto:yokeshwarmecheri@gmail.com"
-            className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 text-center group min-w-0"
+            className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 text-center group"
           >
             <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-(--color-primary) flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform">
               ✉️
             </div>
             <h3 className="font-display font-semibold text-gray-900 mb-1">Email</h3>
-            <p className="text-(--color-primary) text-sm min-w-0">
-              {"yokeshwarmecheri"}
-              <wbr />
-              {"@gmail.com"}
+            <p className="text-(--color-primary) text-sm">
+              <EmailText email={"yokeshwarmecheri@gmail.com"} />
             </p>
           </a>
 

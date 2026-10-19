@@ -32,6 +32,7 @@
     "tools",
     "tests",
     "src/registry/slug.ts",
-    "src/features/directory/query.ts"
+    "src/features/directory/query.ts",
+    "src/kit/split-email.ts"
   ]
 }

@@ -39,12 +39,16 @@ See `profiles/sriram-sm/` for a complete React example. Architecture notes live 
 
 Folders under `profiles/` must not start with an underscore. Shared code lives in `src/kit` and is imported as `#kit`.
 
+For contact addresses, import `EmailText` from `#kit` so the address can wrap at `@` on narrow viewports.
+Pass the full address string; keep your existing link or paragraph classes on the parent.
+Do not invent your own `break-all` split.
+
 ### Import rules for profiles
 
 A profile may import only:
 
 - files inside its own `profiles/<slug>/` folder
-- `#kit` and `#kit/*` (types, asset helpers, `ProfileNavigation`, font CSS)
+- `#kit` and `#kit/*` (types, asset helpers, `ProfileNavigation`, `EmailText`, font CSS)
 - the packages `react`, `react-dom`, `motion`, and `motion/react`
 
 `pnpm check:imports` enforces this (and the boundaries between `src/` areas). Do not import from `src/app`, `src/features`, `src/registry`, `src/components`, `tools`, or `tests`.
