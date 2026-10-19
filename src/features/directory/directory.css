@@ -1,9 +1,10 @@
 /*
   Directory glossy glass tokens and surfaces.
   Contrast is verified by tests/unit/directory-contrast.test.ts
-  (full-stack backdrop + overlay + sheen + spotlight) and glass visibility.
+  (full-stack backdrop + overlay + sheen + spotlight + specular) and glass visibility.
 */
 
+@layer components {
 @property --sheen-shift {
   syntax: "<percentage>";
   inherits: true;
@@ -464,8 +465,6 @@
   --sheen-shift: 0%;
   position: relative;
   isolation: isolate;
-  display: flex;
-  flex-direction: column;
   height: 100%;
   border-radius: var(--dir-radius);
   border: 1px solid transparent;
@@ -586,10 +585,6 @@
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.04em;
-  backdrop-filter: blur(10px) saturate(var(--dir-saturate))
-    brightness(var(--dir-brightness));
-  -webkit-backdrop-filter: blur(10px) saturate(var(--dir-saturate))
-    brightness(var(--dir-brightness));
 }
 
 .directory-avatar__sheen {
@@ -680,6 +675,14 @@
 
 .directory-keyhint {
   display: none;
+}
+
+
+@supports not (grid-template-rows: subgrid) {
+  .directory-card {
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -842,4 +845,5 @@
       ),
       linear-gradient(var(--dir-card-fill-touch), var(--dir-card-fill-touch));
   }
+}
 }
