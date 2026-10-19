@@ -1,4 +1,4 @@
-import type { ProfileVersion } from "../../../types";
+import type { ProfileVersion } from "#kit";
 import { seo, theme } from "./theme";
 
 export const profileVersion: ProfileVersion = {

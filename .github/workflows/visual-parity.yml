@@ -49,4 +49,6 @@ jobs:
             echo "Do not add a browser download or new dependency - report to maintainers."
             exit 1
           fi
-          pnpm prove:visual -- --base "origin/${BASE_REF}" --head HEAD
+          # Screenshots stay strict (any pixel diff fails). Dist hashes are reported
+          # but allowed to differ: layout refactors change chunk names without changing pixels.
+          pnpm prove:visual -- --base "origin/${BASE_REF}" --head HEAD --allow-dist-diff

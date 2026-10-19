@@ -1,4 +1,4 @@
-import type { ProfileTheme } from "../../../types";
+import type { ProfileTheme } from "#kit";
 
 /** Preset names allowed in profile.json meta.theme */
 export const DATA_PROFILE_THEMES = ["slate", "ocean", "editorial", "tech"] as const;

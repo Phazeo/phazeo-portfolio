@@ -1,9 +1,9 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
 
-import { RouteErrorFallback } from "./components/RouteErrorFallback";
-import { HomePage } from "./pages/HomePage";
-import { NotFoundPage } from "./pages/NotFoundPage";
-import { PortfolioPage } from "./pages/PortfolioPage";
+import { RouteErrorFallback } from "../components/RouteErrorFallback";
+import { HomePage } from "../features/directory/HomePage";
+import { PortfolioPage } from "../features/portfolio/PortfolioPage";
+import { NotFoundPage } from "./not-found";
 
 function RootLayout() {
   return <Outlet />;

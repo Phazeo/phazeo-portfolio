@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Load src/registry.ts via Vite SSR so registry validation fails the build
+ * Load src/registry/index.ts via Vite SSR so registry validation fails the build
  * (not only at runtime in the browser). Uses vite already in the tree - no new deps.
  *
  * Fail closed when a profile references a missing local asset, or calls
  * profileAssetUrl / profileAssetPath with a non-literal slug or an
  * unresolvable / non-literal path argument.
  *
- * Data-first profiles (profiles/<slug>/profile.json) are loaded by src/registry.ts;
+ * Data-first profiles (profiles/<slug>/profile.json) are loaded by src/registry/index.ts;
  * mutual exclusion with meta.ts is enforced by tools/checks/check-profiles.ts.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -196,7 +196,7 @@ async function main(): Promise<void> {
   });
 
   try {
-    await server.ssrLoadModule("/src/registry.ts");
+    await server.ssrLoadModule("/src/registry/index.ts");
     console.log("check-registry: OK");
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

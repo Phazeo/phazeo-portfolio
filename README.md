@@ -28,8 +28,20 @@ Other useful commands:
 
 ```bash
 pnpm quality
+pnpm check:imports
 pnpm build
 ```
+
+## Repository layout
+
+- `profiles/<slug>/`: one folder per person (React `meta.ts` plus `v1/`, or `profile.json`).
+- `src/app`: app shell (router, providers, not-found page).
+- `src/features`: directory (home), portfolio (profile loader), data-profile (JSON template).
+- `src/registry`: discovers profiles and validates slugs.
+- `src/kit`: the only code profiles may import (`#kit`): types, asset helpers, navigation, fonts.
+- `tools`, `config`, `tests`: checks, policy lists, and tests.
+
+See [docs/architecture.md](./docs/architecture.md) for the dependency rules.
 
 Open http://localhost:5173 to preview locally.
 
@@ -38,6 +50,7 @@ Open http://localhost:5173 to preview locally.
 - **Leak guard:** personal data, credentials, and host allowlist on the change set and tree.
 - **Public boundary:** denylisted tokens, section-sign markers in text, and long dashes outside profile content.
 - **Profile ownership:** only the profile owner (or an allowed exception) may change that slug.
+- **Import boundaries:** profiles import only their own folder, `#kit`, and an allowed package list.
 - **Build and security headers:** quality, production build, and hashed CSP / headers check.
 
 ## Contributing and terms

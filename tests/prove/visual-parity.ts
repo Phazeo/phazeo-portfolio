@@ -10,7 +10,12 @@
  * Usage:
  *   node tests/prove/visual-parity.ts [--base <rev>] [--head <rev>] [--out <dir>]
  *                                     [--mask <css-selector>]... [--keep]
+ *                                     [--allow-dist-diff] [--help]
  *   defaults: --base origin/batch/merge-private-into-public  --head HEAD
+ *
+ * --allow-dist-diff: report dist/ differences (paths and SHA-256) but do not fail on them.
+ *   Screenshot comparison and the determinism check stay strict. Use this for intentional
+ *   refactors where bundle hashes change but pixels must not. CI does not pass this flag.
  *
  * Exit codes: 0 pass, 1 parity or determinism failure, 2 Chrome not found.
  */
@@ -56,7 +61,33 @@ const THEMES: readonly Theme[] = ["light", "dark"];
 /** CSS selectors hidden in every capture. Keep empty unless something truly cannot be made deterministic. */
 const BUILTIN_MASKS: readonly string[] = [];
 
-type Args = { base: string; head: string; out: string | null; masks: string[]; keep: boolean };
+type Args = {
+  base: string;
+  head: string;
+  out: string | null;
+  masks: string[];
+  keep: boolean;
+  allowDistDiff: boolean;
+  help: boolean;
+};
+
+const HELP = `Usage: node tests/prove/visual-parity.ts [options]
+
+Build BASE and HEAD, compare dist/ hashes, and screenshot every route (desktop and
+mobile, light and dark). HEAD is captured twice to prove determinism.
+
+Options:
+  --base <rev>         BASE revision (default: ${DEFAULT_BASE})
+  --head <rev>         HEAD revision (default: ${DEFAULT_HEAD})
+  --out <dir>          Directory for screenshots and dist manifests
+  --mask <selector>    CSS selector hidden in every capture (repeatable)
+  --keep               Keep temporary worktrees and build output
+  --allow-dist-diff    Report dist/ differences but do not fail on them.
+                       Screenshots and determinism checks remain strict.
+  -h, --help           Show this help
+
+Exit codes: 0 pass, 1 parity or determinism failure, 2 Chrome not found.
+`;
 
 type Route = { label: string; path: string };
 
@@ -65,7 +96,15 @@ type Label = "base" | "head" | "head2";
 type Served = { label: Label; url: string; proc: ChildProcess };
 
 function parseArgs(argv: readonly string[]): Args {
-  const args: Args = { base: DEFAULT_BASE, head: DEFAULT_HEAD, out: null, masks: [], keep: false };
+  const args: Args = {
+    base: DEFAULT_BASE,
+    head: DEFAULT_HEAD,
+    out: null,
+    masks: [],
+    keep: false,
+    allowDistDiff: false,
+    help: false,
+  };
   for (let i = 2; i < argv.length; i++) {
     const flag = argv[i];
     const next = argv[i + 1];
@@ -79,6 +118,8 @@ function parseArgs(argv: readonly string[]): Args {
     else if (flag === "--out") args.out = resolve(need());
     else if (flag === "--mask") args.masks.push(need());
     else if (flag === "--keep") args.keep = true;
+    else if (flag === "--allow-dist-diff") args.allowDistDiff = true;
+    else if (flag === "--help" || flag === "-h") args.help = true;
     else if (flag === "--") continue;
     else throw new Error(`unknown argument: ${flag}`);
   }
@@ -249,6 +290,10 @@ function compareShots(
 
 async function main(): Promise<number> {
   const args = parseArgs(process.argv);
+  if (args.help) {
+    console.log(HELP);
+    return 0;
+  }
   const masks = [...BUILTIN_MASKS, ...args.masks];
 
   const chromePath = findChromium();
@@ -387,7 +432,11 @@ async function main(): Promise<number> {
       `  visual (BASE vs HEAD): ${visualOk ? "OK" : "FAIL"}, ${cmp.identical} byte-identical, ${cmp.pixelEqual} pixel-identical, ${cmp.failures.length} differing`
     );
     console.log(`  screenshots: ${outDir}`);
-    const ok = distOk && detOk && visualOk;
+    const distPass = distOk || args.allowDistDiff;
+    if (!distOk && args.allowDistDiff) {
+      console.log("  dist difference ignored (--allow-dist-diff); screenshots remain strict");
+    }
+    const ok = distPass && detOk && visualOk;
     console.log(`visual-parity: ${ok ? "PASS" : "FAIL"}`);
     return ok ? 0 : 1;
   } finally {

@@ -21,6 +21,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import type { ErrorObject, ValidateFunction } from "ajv";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
+import { parseSlugList, validateSlug } from "../../src/registry/slug.ts";
 import { textMatchesAnyPhone } from "../guard/phone-patterns.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
@@ -33,8 +34,6 @@ const POLICY_FILES = ["allowed-hosts.txt", "allowed-binaries.txt", "allowed-larg
 const FORBIDDEN_FILES_TOOL = join(ROOT, "tools", "guard", "check-forbidden-files.ts");
 const HOSTS_TOOL = join(ROOT, "tools", "guard", "check-hosts.ts");
 
-const SLUG_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)+$/;
-const SLUG_MAX_LEN = 40;
 const FORBIDDEN_KEYS = new Set(["phone", "location", "address", "postalCode"]);
 const FORBIDDEN_FIELD_MSG =
   "Phone numbers and street addresses are not allowed on public profiles. Please remove this field.";
@@ -45,16 +44,6 @@ export type ValidateOptions = {
   skipHosts?: boolean;
   validate?: ValidateFunction;
 };
-
-function parseSlugList(text: string): Set<string> {
-  const set = new Set<string>();
-  for (const line of text.split("\n")) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    set.add(t);
-  }
-  return set;
-}
 
 function formatAjvError(err: ErrorObject, file: string): string {
   const path = err.instancePath || "/";
@@ -177,24 +166,11 @@ function scanHosts(absJson: string, label: string): string[] {
 }
 
 function assertValidSlug(slug: string): string[] {
-  const errors: string[] = [];
-  const retired = parseSlugList(readFileSync(RETIRED_PATH, "utf8"));
-  const reserved = parseSlugList(readFileSync(RESERVED_PATH, "utf8"));
-  if (slug.length > SLUG_MAX_LEN) {
-    errors.push(`check-profiles: slug "${slug}" exceeds ${SLUG_MAX_LEN} characters`);
-  }
-  if (retired.has(slug)) {
-    errors.push(`check-profiles: slug "${slug}" is retired`);
-  }
-  if (reserved.has(slug)) {
-    errors.push(`check-profiles: slug "${slug}" is reserved`);
-  }
-  if (slug.split("-").length < 2 || !SLUG_PATTERN.test(slug)) {
-    errors.push(
-      `check-profiles: slug "${slug}" must match ${SLUG_PATTERN} (at least two hyphen-separated parts)`
-    );
-  }
-  return errors;
+  const lists = {
+    retired: parseSlugList(readFileSync(RETIRED_PATH, "utf8")),
+    reserved: parseSlugList(readFileSync(RESERVED_PATH, "utf8")),
+  };
+  return validateSlug(slug, lists).map((msg) => `check-profiles: ${msg}`);
 }
 
 /**
@@ -280,7 +256,13 @@ function main(): void {
   }
 
   for (const ent of readdirSync(PROFILES_DIR, { withFileTypes: true })) {
-    if (!ent.isDirectory() || ent.name.startsWith("_")) continue;
+    if (!ent.isDirectory()) continue;
+    if (ent.name.startsWith("_")) {
+      errors.push(
+        `check-profiles: profiles/${ent.name}/ is not allowed; shared code lives in src/kit`
+      );
+      continue;
+    }
     const slug = ent.name;
     const dir = join(PROFILES_DIR, slug);
     const metaPath = join(dir, "meta.ts");
@@ -302,7 +284,6 @@ function main(): void {
     }
     if (!hasJson) continue;
 
-    errors.push(...assertValidSlug(slug));
     errors.push(
       ...validateProfileJsonFile(jsonPath, {
         slug,

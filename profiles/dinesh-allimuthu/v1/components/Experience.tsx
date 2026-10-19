@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { profileAssetUrl } from "../../../_shared/assets";
+import { profileAssetUrl } from "#kit";
 
 /* ------------------------------------------------------------------ */
 /* Logo: local self-hosted file → initials badge (no external hosts)  */

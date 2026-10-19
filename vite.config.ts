@@ -44,11 +44,6 @@ function redirectsPlugin(): Plugin {
 export default defineConfig({
   plugins: [react(), tailwindcss(), redirectsPlugin()],
   base: "/",
-  resolve: {
-    alias: {
-      "@": resolve(__dirname, "./src"),
-    },
-  },
   build: {
     outDir: "dist",
     rolldownOptions: {

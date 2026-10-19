@@ -1,4 +1,4 @@
-import "../../_shared/fonts/outfit-latin.css";
+import "#kit/fonts/outfit-latin.css";
 
 import { About } from "./components/About";
 import { Contact } from "./components/Contact";

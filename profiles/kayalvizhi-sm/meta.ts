@@ -1,4 +1,4 @@
-import type { ProfileConfig } from "../../types";
+import type { ProfileConfig } from "#kit";
 
 import { profileVersion as v1 } from "./v1";
 
@@ -11,11 +11,7 @@ export const kayalvizhiConfig: ProfileConfig = {
   listed: true,
   status: "available",
   avatarGradient: "from-teal-600 to-rose-600",
-  skills: [
-    { name: "Python", deviconClass: "python-plain", colored: true },
-    { name: "Azure", deviconClass: "azure-plain", colored: true },
-    { name: "SQL", deviconClass: "postgresql-plain", colored: true },
-  ],
+  skills: [{ name: "Python" }, { name: "Azure" }, { name: "SQL" }],
   cardSummary: "3+ years healthcare apps. GenAI PoC, ServiceNow, Splunk. PL-300, AZ-900.",
   experienceStartYear: 2022,
   socials: {

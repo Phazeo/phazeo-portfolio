@@ -14,17 +14,159 @@ Guests must be invited by the repository owner first (approved GitHub account). 
 4. **Optionally add** `public/profiles/<your-slug>/photo.jpg` (strip image metadata first) and `public/profiles/<your-slug>/resume.pdf` (no phone numbers - scanners will block the PR)
 5. **Open a PR** from your approved account
 
-Use either a React profile (`meta.ts` + `v1/…`) **or** a data-first `profile.json`, never both in the same slug folder.
+Use either a React profile (`meta.ts` plus `v1/`) **or** a data-first `profile.json`, never both in the same slug folder.
 
 ## Team React profile
 
 1. **Fork** this repository
-2. **Create** `profiles/<your-slug>/` with `meta.ts`, `v1/theme.ts`, `v1/ProfilePage.tsx`, `v1/index.tsx`, and components as needed
+2. **Create** `profiles/<your-slug>/` with the files in the table below
 3. **Ensure** the folder name equals `meta.slug` (the registry discovers `profiles/*/meta.ts`)
 4. **Test** with `pnpm install`, `pnpm dev`, and `pnpm quality`
 5. **Open a PR**
 
-See `profiles/sriram-sm/` for a complete React example.
+See `profiles/sriram-sm/` for a complete React example. Architecture notes live in [docs/architecture.md](./docs/architecture.md).
+
+### Required files
+
+| File | Purpose |
+| --- | --- |
+| `profiles/<slug>/meta.ts` | Exports the `ProfileConfig` (slug, owner, affiliation, card fields, versions). Default export. |
+| `profiles/<slug>/v1/index.tsx` | Exports the `ProfileVersion`: lazy `componentLoader`, `theme`, and optional `seo`. |
+| `profiles/<slug>/v1/ProfilePage.tsx` | Default-exported React page for this version. Add more files under `v1/` as needed. |
+| `profiles/<slug>/v1/theme.ts` | Exports `theme` (CSS variables) and `seo` (title, description, optional OG image). |
+
+Folders under `profiles/` must not start with an underscore. Shared code lives in `src/kit` and is imported as `#kit`.
+
+### Import rules for profiles
+
+A profile may import only:
+
+- files inside its own `profiles/<slug>/` folder
+- `#kit` and `#kit/*` (types, asset helpers, `ProfileNavigation`, font CSS)
+- the packages `react`, `react-dom`, `motion`, and `motion/react`
+
+`pnpm check:imports` enforces this (and the boundaries between `src/` areas). Do not import from `src/app`, `src/features`, `src/registry`, `src/components`, `tools`, or `tests`.
+
+### Working example
+
+Replace `jane-doe` and the other placeholder values with your own. The GitHub id must be your numeric account id.
+
+`profiles/jane-doe/meta.ts`
+
+```ts
+import type { ProfileConfig } from "#kit";
+
+import { profileVersion as v1 } from "./v1";
+
+export const janeDoeConfig: ProfileConfig = {
+  slug: "jane-doe",
+  displayName: "Jane Doe",
+  role: "Software Engineer",
+  owner: { githubId: 1234567, githubLogin: "jane-doe" },
+  affiliation: "team",
+  listed: true,
+  status: "available",
+  avatarGradient: "from-indigo-500 to-violet-600",
+  skills: [{ name: "TypeScript" }, { name: "React" }],
+  cardSummary: "Builds accessible web apps. TypeScript and React.",
+  experienceStartYear: 2022,
+  socials: {
+    linkedin: "https://www.linkedin.com/in/jane-doe",
+  },
+  versions: {
+    v1,
+  },
+};
+
+export default janeDoeConfig;
+```
+
+`profiles/jane-doe/v1/index.tsx`
+
+```tsx
+import type { ProfileVersion } from "#kit";
+import { seo, theme } from "./theme";
+
+export const profileVersion: ProfileVersion = {
+  componentLoader: () => import("./ProfilePage"),
+  theme,
+  seo,
+};
+
+export default profileVersion;
+```
+
+`profiles/jane-doe/v1/theme.ts`
+
+```ts
+import type { ProfileSeo, ProfileTheme } from "#kit";
+import { profileAssetPath } from "#kit";
+
+export const theme: ProfileTheme = {
+  cssVariables: {
+    "--color-primary": "#2563eb",
+    "--color-primary-hover": "#1d4ed8",
+    "--color-secondary": "#7c3aed",
+    "--color-accent": "#0891b2",
+    "--color-background": "#f8fafc",
+    "--font-heading": "'Outfit Variable', sans-serif",
+    "--font-body": "'Inter Variable', system-ui, sans-serif",
+  },
+};
+
+export const seo: ProfileSeo = {
+  title: "Jane Doe | Software Engineer",
+  description: "Jane Doe is a software engineer who builds accessible web apps.",
+  // Optional: only if public/profiles/jane-doe/profile-photo.jpg exists.
+  ogImage: profileAssetPath("jane-doe", "profile-photo.jpg"),
+};
+```
+
+`profiles/jane-doe/v1/ProfilePage.tsx`
+
+```tsx
+import "#kit/fonts/outfit-latin.css";
+
+import { ProfileNavigation, profileAssetUrl } from "#kit";
+import { motion } from "motion/react";
+
+const navItems = [
+  { label: "About", href: "#about" },
+  { label: "Contact", href: "#contact" },
+];
+
+export default function JaneDoeProfilePage() {
+  return (
+    <div className="min-h-screen">
+      <ProfileNavigation brandInitial="J" items={navItems} />
+      <motion.section
+        id="hero"
+        className="mx-auto max-w-3xl px-6 py-24"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <img
+          src={profileAssetUrl("jane-doe", "profile-photo.jpg")}
+          alt="Jane Doe"
+          className="mb-6 h-24 w-24 rounded-full object-cover"
+        />
+        <h1 className="text-4xl font-bold text-(--color-primary)">Jane Doe</h1>
+        <p className="mt-2 text-lg text-gray-700">Software Engineer</p>
+      </motion.section>
+      <section id="about" className="mx-auto max-w-3xl px-6 py-16">
+        <h2 className="text-2xl font-semibold">About</h2>
+        <p className="mt-4 text-gray-700">Short bio goes here.</p>
+      </section>
+      <section id="contact" className="mx-auto max-w-3xl px-6 py-16">
+        <h2 className="text-2xl font-semibold">Contact</h2>
+        <p className="mt-4 text-gray-700">Find me on GitHub or LinkedIn.</p>
+      </section>
+    </div>
+  );
+}
+```
+
+If you reference `profile-photo.jpg`, add `public/profiles/jane-doe/profile-photo.jpg` (metadata stripped). `pnpm check:registry` fails when a referenced asset is missing.
 
 ### Address (slug)
 
@@ -36,7 +178,7 @@ See `profiles/sriram-sm/` for a complete React example.
 ### Assets
 
 - Put resumes and images under `public/profiles/<slug>/`
-- Use `profileAssetUrl` / `profileAssetPath` from `profiles/_shared/assets.ts`
+- Use `profileAssetUrl` / `profileAssetPath` from `#kit`
 - Old `/profiles/_public/*` URLs permanently redirect to `/profiles/*` via `public/_redirects`
 
 ## What gets blocked and why

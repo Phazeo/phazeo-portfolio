@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { profileAssetUrl } from "../../../_shared/assets";
+import { profileAssetUrl } from "#kit";
 
 const PROFILE_PHOTO = profileAssetUrl("yokeshwar-vs", "profile-photo.jpg");
 

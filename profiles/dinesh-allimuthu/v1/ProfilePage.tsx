@@ -1,4 +1,4 @@
-import "../../_shared/fonts/space-grotesk-latin.css";
+import "#kit/fonts/space-grotesk-latin.css";
 
 import { About } from "./components/About";
 import { Achievements } from "./components/Achievements";

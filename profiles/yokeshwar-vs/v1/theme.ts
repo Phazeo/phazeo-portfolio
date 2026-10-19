@@ -1,5 +1,5 @@
-import type { ProfileSeo, ProfileTheme } from "../../../types";
-import { profileAssetPath } from "../../_shared/assets";
+import type { ProfileSeo, ProfileTheme } from "#kit";
+import { profileAssetPath } from "#kit";
 
 export const theme: ProfileTheme = {
   cssVariables: {

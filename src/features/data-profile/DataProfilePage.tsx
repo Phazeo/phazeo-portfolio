@@ -1,11 +1,11 @@
 import type { ComponentType, ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-import { profileAssetUrl } from "../../../profiles/_shared/assets";
-import "../../../profiles/_shared/fonts/outfit-latin.css";
-import "../../../profiles/_shared/fonts/playfair-display-latin.css";
-import "../../../profiles/_shared/fonts/space-grotesk-latin.css";
-import { useTheme } from "../../contexts/ThemeContext";
+import { profileAssetUrl } from "#kit";
+import "#kit/fonts/outfit-latin.css";
+import "#kit/fonts/playfair-display-latin.css";
+import "#kit/fonts/space-grotesk-latin.css";
+import { useTheme } from "../../app/providers/ThemeProvider";
 
 import type { DataProfileJson } from "./types";
 
