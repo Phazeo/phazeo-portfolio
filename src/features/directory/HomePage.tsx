@@ -13,30 +13,18 @@ import { Link, useSearchParams } from "react-router-dom";
 import type { ProfileConfig } from "#kit";
 import { useTheme } from "../../app/providers/ThemeProvider";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon, XIcon } from "../../components/SocialIcons";
-import { getListedProfiles } from "../../registry";
 import "./directory.css";
+import { DIRECTORY_BY_SLUG, DIRECTORY_INDEX, DIRECTORY_TYPE_COUNTS } from "./directory-data";
 import { getExperienceYearsDisplay } from "./experience";
 import {
   DIRECTORY_PAGE_SIZE,
-  type DirectoryEntry,
   type DirectoryTypeFilter,
-  filterByType,
-  matches,
+  filterDirectory,
+  initialsFromName,
   paginate,
   parseParams,
-  sortByDisplayName,
   toParams,
 } from "./query";
-
-function toEntry(profile: ProfileConfig): DirectoryEntry {
-  return {
-    slug: profile.slug,
-    displayName: profile.displayName,
-    role: profile.role,
-    affiliation: profile.affiliation,
-    skills: profile.skills?.map((s) => s.name),
-  };
-}
 
 function StatusLabel({ status }: { status: "available" | "building" | "away" }) {
   const labels = {
@@ -150,11 +138,7 @@ const subgridArticle =
   "[@supports(grid-template-rows:subgrid)]:row-span-4 [@supports(grid-template-rows:subgrid)]:grid [@supports(grid-template-rows:subgrid)]:grid-rows-subgrid [@supports(grid-template-rows:subgrid)]:gap-0";
 
 function ProfileCard({ profile }: { profile: ProfileConfig }) {
-  const initials = profile.displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2);
+  const initials = initialsFromName(profile.displayName);
   const gradient = profile.avatarGradient ?? "from-violet-500 to-fuchsia-500";
   const expYears = getExperienceYearsDisplay(profile);
   const role = profile.role ?? "Professional Portfolio";
@@ -313,11 +297,9 @@ function Pagination({
   );
 }
 
-export function HomePage() {
-  const profiles = getListedProfiles();
-  const bySlug = useMemo(() => new Map(profiles.map((p) => [p.slug, p])), [profiles]);
-  const entries = useMemo(() => profiles.map(toEntry), [profiles]);
+const URL_Q_DEBOUNCE_MS = 300;
 
+export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const params = useMemo(() => parseParams(searchParams), [searchParams]);
   const [qDraft, setQDraft] = useState(params.q);
@@ -326,6 +308,54 @@ export function HomePage() {
   const resultsLineRef = useRef<HTMLParagraphElement>(null);
   const listTopRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const lastWrittenQRef = useRef(params.q);
+  const qDraftRef = useRef(qDraft);
+  const urlWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const paramsTypeRef = useRef(params.type);
+  paramsTypeRef.current = params.type;
+
+  const clearUrlWriteTimer = useCallback(() => {
+    if (urlWriteTimerRef.current != null) {
+      clearTimeout(urlWriteTimerRef.current);
+      urlWriteTimerRef.current = null;
+    }
+  }, []);
+
+  const writeQToUrl = useCallback(
+    (q: string, opts: { type?: DirectoryTypeFilter; page?: number; replace?: boolean } = {}) => {
+      lastWrittenQRef.current = q;
+      setSearchParams(
+        toParams({
+          q,
+          type: opts.type ?? paramsTypeRef.current,
+          page: opts.page ?? 1,
+        }),
+        { replace: opts.replace ?? true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  const flushQToUrl = useCallback(
+    (opts: { type?: DirectoryTypeFilter; page?: number; replace?: boolean } = {}) => {
+      clearUrlWriteTimer();
+      writeQToUrl(qDraftRef.current, opts);
+    },
+    [clearUrlWriteTimer, writeQToUrl]
+  );
+
+  const scheduleQToUrl = useCallback(
+    (q: string) => {
+      clearUrlWriteTimer();
+      urlWriteTimerRef.current = setTimeout(() => {
+        urlWriteTimerRef.current = null;
+        if (qDraftRef.current === q) {
+          writeQToUrl(q, { page: 1 });
+        }
+      }, URL_Q_DEBOUNCE_MS);
+    },
+    [clearUrlWriteTimer, writeQToUrl]
+  );
 
   const listSpotlightRef = useCallback((listEl: HTMLUListElement | null) => {
     if (!listEl) {
@@ -369,8 +399,21 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
-    setQDraft(params.q);
+    qDraftRef.current = qDraft;
+  }, [qDraft]);
+
+  useEffect(() => {
+    if (params.q !== lastWrittenQRef.current) {
+      setQDraft(params.q);
+      lastWrittenQRef.current = params.q;
+    }
   }, [params.q]);
+
+  useEffect(() => {
+    return () => {
+      clearUrlWriteTimer();
+    };
+  }, [clearUrlWriteTimer]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -382,7 +425,14 @@ export function HomePage() {
         tag === "SELECT" ||
         target?.isContentEditable === true;
 
-      if (event.key === "/" && !editable) {
+      if (
+        event.key === "/" &&
+        !editable &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        !event.isComposing
+      ) {
         event.preventDefault();
         searchInputRef.current?.focus();
         return;
@@ -393,25 +443,22 @@ export function HomePage() {
         document.activeElement === searchInputRef.current &&
         searchInputRef.current
       ) {
+        clearUrlWriteTimer();
         setQDraft("");
-        setSearchParams(toParams({ q: "", type: params.type, page: 1 }), { replace: true });
+        qDraftRef.current = "";
+        writeQToUrl("", { type: paramsTypeRef.current, page: 1 });
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [params.type, setSearchParams]);
+  }, [clearUrlWriteTimer, writeQToUrl]);
 
-  const typeCounts = useMemo(() => {
-    const team = entries.filter((e) => e.affiliation === "team").length;
-    const guest = entries.filter((e) => e.affiliation === "guest").length;
-    return { all: entries.length, team, guest };
-  }, [entries]);
+  const typeCounts = DIRECTORY_TYPE_COUNTS;
 
-  const filtered = useMemo(() => {
-    const typed = filterByType(entries, params.type);
-    const matched = typed.filter((e) => matches(e, deferredQ));
-    return sortByDisplayName(matched);
-  }, [entries, params.type, deferredQ]);
+  const filtered = useMemo(
+    () => filterDirectory(DIRECTORY_INDEX, params.type, deferredQ),
+    [params.type, deferredQ]
+  );
 
   const { items, page, pageCount } = useMemo(
     () => paginate(filtered, params.page, DIRECTORY_PAGE_SIZE),
@@ -420,12 +467,12 @@ export function HomePage() {
 
   useEffect(() => {
     if (params.page !== page) {
-      setSearchParams(toParams({ q: qDraft, type: params.type, page }), { replace: true });
+      setSearchParams(toParams({ q: params.q, type: params.type, page }), { replace: true });
     }
-  }, [page, params.page, params.type, qDraft, setSearchParams]);
+  }, [page, params.page, params.q, params.type, setSearchParams]);
 
   const pageProfiles = items
-    .map((e) => bySlug.get(e.slug))
+    .map((e) => DIRECTORY_BY_SLUG.get(e.slug))
     .filter((p): p is ProfileConfig => Boolean(p));
 
   const hasActiveFilters = Boolean(qDraft.trim()) || params.type !== "all";
@@ -433,25 +480,28 @@ export function HomePage() {
   const rangeEnd = Math.min(page * DIRECTORY_PAGE_SIZE, filtered.length);
 
   let resultsLabel: string;
-  if (hasActiveFilters) {
-    resultsLabel = `${filtered.length} of ${entries.length} match`;
+  if (hasActiveFilters && pageCount > 1) {
+    resultsLabel = `Showing ${rangeStart} to ${rangeEnd} of ${filtered.length} matches`;
+  } else if (hasActiveFilters) {
+    resultsLabel = `${filtered.length} of ${DIRECTORY_INDEX.length} match`;
   } else if (pageCount > 1 && filtered.length > 0) {
     resultsLabel = `Showing ${rangeStart} to ${rangeEnd} of ${filtered.length}`;
   } else {
-    resultsLabel = `${entries.length} ${entries.length === 1 ? "person" : "people"}`;
+    resultsLabel = `${DIRECTORY_INDEX.length} ${DIRECTORY_INDEX.length === 1 ? "person" : "people"}`;
   }
 
   function setQuery(next: string) {
     setQDraft(next);
-    setSearchParams(toParams({ q: next, type: params.type, page: 1 }), { replace: true });
+    qDraftRef.current = next;
+    scheduleQToUrl(next);
   }
 
   function setType(type: DirectoryTypeFilter) {
-    setSearchParams(toParams({ q: qDraft, type, page: 1 }), { replace: true });
+    flushQToUrl({ type, page: 1 });
   }
 
   function goPage(n: number) {
-    setSearchParams(toParams({ q: qDraft, type: params.type, page: n }), { replace: false });
+    flushQToUrl({ page: n, replace: false });
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -462,12 +512,19 @@ export function HomePage() {
   }
 
   function clearFilters() {
+    clearUrlWriteTimer();
     setQDraft("");
-    setSearchParams(toParams({ q: "", type: "all", page: 1 }), { replace: true });
+    qDraftRef.current = "";
+    writeQToUrl("", { type: "all", page: 1 });
   }
 
   function onSearchSubmit(event: FormEvent) {
     event.preventDefault();
+    flushQToUrl({ page: 1 });
+  }
+
+  function onSearchBlur() {
+    flushQToUrl({ page: 1 });
   }
 
   const typeOptions = [
@@ -528,6 +585,7 @@ export function HomePage() {
                       type="search"
                       value={qDraft}
                       onChange={(e) => setQuery(e.target.value)}
+                      onBlur={onSearchBlur}
                       className="w-full rounded-[14px] py-2.5 pr-16 pl-10 text-[color:var(--dir-text-name)] placeholder:text-[color:var(--dir-text-placeholder)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
                       placeholder="Search name, role or skill"
                       autoComplete="off"
@@ -607,7 +665,7 @@ export function HomePage() {
           ) : (
             <div className="space-y-4 py-12 text-center">
               <p className="text-[color:var(--dir-text-muted)]">
-                {entries.length === 0
+                {DIRECTORY_INDEX.length === 0
                   ? "No portfolios available yet."
                   : "No people match these filters."}
               </p>

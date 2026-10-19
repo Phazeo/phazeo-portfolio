@@ -110,22 +110,27 @@ function requireVar(vars: Map<string, string>, name: string): string {
   return v;
 }
 
-/** Card fill over base, and over each glow (tl / br) at its own opacity. */
+/** Card fills (default + touch) over base and over each glow (tl / br). */
 function cardSurfaces(vars: Map<string, string>): Rgba[] {
   const base = { ...parseColor(requireVar(vars, "--dir-base")), a: 1 };
-  const card = parseColor(requireVar(vars, "--dir-card-fill"));
-  const overBase = composite(card, base);
-  const glows: Rgba[] = [overBase];
-  for (const [colorKey, opacityKey] of [
-    ["--dir-glow-tl", "--dir-glow-opacity-tl"],
-    ["--dir-glow-br", "--dir-glow-opacity-br"],
-  ] as const) {
-    const glow = parseColor(requireVar(vars, colorKey));
-    const opacity = Number(requireVar(vars, opacityKey));
-    const lit = composite({ ...glow, a: opacity }, base);
-    glows.push(composite(card, lit));
+  const fills = [
+    parseColor(requireVar(vars, "--dir-card-fill")),
+    parseColor(requireVar(vars, "--dir-card-fill-touch")),
+  ];
+  const surfaces: Rgba[] = [];
+  for (const card of fills) {
+    surfaces.push(composite(card, base));
+    for (const [colorKey, opacityKey] of [
+      ["--dir-glow-tl", "--dir-glow-opacity-tl"],
+      ["--dir-glow-br", "--dir-glow-opacity-br"],
+    ] as const) {
+      const glow = parseColor(requireVar(vars, colorKey));
+      const opacity = Number(requireVar(vars, opacityKey));
+      const lit = composite({ ...glow, a: opacity }, base);
+      surfaces.push(composite(card, lit));
+    }
   }
-  return glows;
+  return surfaces;
 }
 
 function assertTextContrast(vars: Map<string, string>, names: string[], min: number) {
