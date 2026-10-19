@@ -148,6 +148,7 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
       <article data-dir-card className={`directory-card p-[1.35rem] ${subgridArticle}`}>
         <div className="directory-card__spot" aria-hidden="true" />
         <div className="directory-card__sheen" aria-hidden="true" />
+        <div className="directory-card__specular" aria-hidden="true" />
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3.5">
             <div className="directory-avatar">

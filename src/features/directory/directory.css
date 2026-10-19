@@ -7,7 +7,7 @@
 /*
   Directory glossy glass tokens and surfaces.
   Contrast is verified by tests/unit/directory-contrast.test.ts
-  (full-stack backdrop + overlay + sheen + spotlight) and glass visibility.
+  (full-stack backdrop + overlay + sheen + spotlight + specular) and glass visibility.
 */
 
 @layer components {
@@ -45,6 +45,9 @@
   --dir-card-shadow-wide: 0 16px 40px -12px rgba(88, 28, 135, 0.3);
   --dir-card-shadow: var(--dir-card-shadow-tight), var(--dir-card-shadow-wide);
   --dir-spotlight: rgba(255, 255, 255, 0.35);
+  --dir-specular: rgba(255, 255, 255, 0.18);
+  --dir-specular-strong: rgba(255, 255, 255, 0.28);
+  --dir-bottom-shade: rgba(49, 46, 129, 0.06);
   --dir-blur: 20px;
   --dir-saturate: 190%;
   --dir-brightness: 1.12;
@@ -121,6 +124,9 @@
   --dir-card-shadow-wide: 0 10px 40px rgba(8, 6, 32, 0.45);
   --dir-card-shadow: var(--dir-card-shadow-tight), var(--dir-card-shadow-wide);
   --dir-spotlight: rgba(255, 255, 255, 0.03);
+  --dir-specular: rgba(255, 255, 255, 0.03);
+  --dir-specular-strong: rgba(255, 255, 255, 0.06);
+  --dir-bottom-shade: rgba(0, 0, 0, 0.25);
   --dir-blur: 18px;
   --dir-saturate: 180%;
   --dir-brightness: 0.62;
@@ -282,6 +288,7 @@
   color: var(--dir-text-pagination);
   box-shadow:
     inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
     0 0 0 1px var(--dir-card-hairline),
     var(--dir-card-shadow);
   transition:
@@ -344,6 +351,7 @@
     brightness(var(--dir-brightness));
   box-shadow:
     inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
     0 0 0 1px var(--dir-card-hairline),
     var(--dir-card-shadow);
 }
@@ -410,6 +418,7 @@
     brightness(var(--dir-brightness));
   box-shadow:
     inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
     0 0 0 1px var(--dir-card-hairline),
     var(--dir-card-shadow);
 }
@@ -476,6 +485,7 @@
     linear-gradient(var(--dir-card-fill), var(--dir-card-fill));
   box-shadow:
     inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
     0 0 0 1px var(--dir-card-hairline),
     var(--dir-card-shadow);
   backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
@@ -531,7 +541,35 @@
 }
 
 
+.directory-card__specular {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse 120% 60% at 50% -20%,
+    var(--dir-specular),
+    transparent 70%
+  );
+}
 
+.directory-glass-btn::after,
+.directory-segment::after,
+.directory-avatar__face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 120% 60% at 50% -20%,
+    var(--dir-specular-strong),
+    transparent 70%
+  );
+}
 
 .directory-card__sheen {
   position: absolute;
@@ -772,7 +810,13 @@
 
   .directory-card__spot,
   .directory-card__sheen,
+  .directory-card__specular,
   .directory-avatar__sheen,
+  .directory-glass-btn::after,
+  .directory-segment::after,
+  .directory-avatar__face::after {
+    display: none;
+  }
 }
 
 @media (prefers-contrast: more) {
@@ -805,8 +849,12 @@
   .directory-shell__grain,
   .directory-card__spot,
   .directory-card__sheen,
+  .directory-card__specular,
   .directory-avatar__glow,
-  .directory-avatar__sheen {
+  .directory-avatar__sheen,
+  .directory-glass-btn::after,
+  .directory-segment::after,
+  .directory-avatar__face::after {
     display: none !important;
   }
 
