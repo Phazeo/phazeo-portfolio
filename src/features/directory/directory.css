@@ -1,15 +1,9 @@
 @layer theme, base, components, utilities;
 
-@property --sheen-shift {
-  syntax: "<percentage>";
-  inherits: true;
-  initial-value: 0%;
-}
-
 /*
   Directory glossy glass tokens and surfaces.
   Contrast is verified by tests/unit/directory-contrast.test.ts
-  (full-stack backdrop + overlay + sheen + spotlight + specular) and glass visibility.
+  (text-zone stack: brightness backdrop + tint + weak overlay).
 */
 
 @layer components {
@@ -30,9 +24,9 @@
   --dir-shape-4-light: #fde68a;
   --dir-shape-4-mid: #fbbf24;
   --dir-shape-4-dark: #f59e0b;
-  --dir-shape-opacity: 0.55;
+  --dir-shape-opacity: 0.9;
   --dir-shape-inner-alpha: 0.45;
-  --dir-card-fill: rgba(255, 255, 255, 0.32);
+  --dir-card-fill: rgba(255, 255, 255, 0.38);
   --dir-card-fill-touch: rgba(255, 255, 255, 0.42);
   --dir-card-fill-opaque: #f8fafc;
   --dir-overlay-strong: rgba(255, 255, 255, 0.45);
@@ -40,15 +34,13 @@
   --dir-overlay-weak: rgba(255, 255, 255, 0.1);
   --dir-card-edge-bright: rgba(255, 255, 255, 0.95);
   --dir-card-edge-fade: rgba(255, 255, 255, 0.35);
+  --dir-card-edge-spot: rgba(255, 255, 255, 0.9);
   --dir-card-hairline: rgba(30, 27, 75, 0.08);
   --dir-card-highlight: rgba(255, 255, 255, 0.25);
-  --dir-card-sheen: rgba(255, 255, 255, 0.4);
   --dir-card-shadow-tight: 0 1px 2px rgba(49, 46, 129, 0.08);
   --dir-card-shadow-wide: 0 16px 40px -12px rgba(88, 28, 135, 0.3);
   --dir-card-shadow: var(--dir-card-shadow-tight), var(--dir-card-shadow-wide);
-  --dir-spotlight: rgba(255, 255, 255, 0.35);
-  --dir-specular: rgba(255, 255, 255, 0.18);
-  --dir-specular-strong: rgba(255, 255, 255, 0.28);
+  --dir-specular: rgba(255, 255, 255, 0.45);
   --dir-bottom-shade: rgba(49, 46, 129, 0.06);
   --dir-blur: 20px;
   --dir-saturate: 190%;
@@ -56,27 +48,27 @@
   --dir-radius: 24px;
   --dir-radius-control: 16px;
   --dir-text-name: #0f172a;
-  --dir-text-role: #0f172a;
-  --dir-text-summary: #0f172a;
-  --dir-text-muted: #0f172a;
-  --dir-text-placeholder: #0f172a;
-  --dir-text-results: #0f172a;
-  --dir-text-status: #0f172a;
-  --dir-text-pagination: #0f172a;
+  --dir-text-role: #334155;
+  --dir-text-summary: #334155;
+  --dir-text-muted: #334155;
+  --dir-text-placeholder: #334155;
+  --dir-text-results: #334155;
+  --dir-text-status: #334155;
+  --dir-text-pagination: #334155;
   --dir-search-border: rgba(15, 23, 42, 0.55);
-  --dir-focus-ring: #0e7490;
-  --dir-avatar-fill: rgba(255, 255, 255, 0.32);
+  --dir-focus-ring: #0c4a6e;
+  --dir-avatar-fill: rgba(255, 255, 255, 0.38);
   --dir-avatar-ring: rgba(15, 23, 42, 0.12);
   --dir-avatar-initials: #0f172a;
   --dir-avatar-glow-opacity: 0.7;
-  --dir-toolbar-fill: rgba(255, 255, 255, 0.32);
+  --dir-toolbar-fill: rgba(255, 255, 255, 0.38);
   --dir-toolbar-fill-opaque: #f8fafc;
   --dir-segment-active-fill: rgba(14, 116, 144, 0.14);
-  --dir-segment-active-text: #155e75;
+  --dir-segment-active-text: #0c4a6e;
   --dir-hero-from: #1e1b4b;
   --dir-hero-to: #4c1d95;
   --dir-grain-opacity: 0.035;
-  --dir-btn-fill: rgba(255, 255, 255, 0.32);
+  --dir-btn-fill: rgba(255, 255, 255, 0.38);
   --dir-btn-fill-opaque: #f8fafc;
   --dir-btn-border: rgba(15, 23, 42, 0.12);
   --dir-divider: rgba(15, 23, 42, 0.1);
@@ -108,41 +100,38 @@
   --dir-shape-4-light: #f59e0b;
   --dir-shape-4-mid: #d97706;
   --dir-shape-4-dark: #b45309;
-  --dir-shape-opacity: 0.55;
+  --dir-shape-opacity: 0.85;
   --dir-shape-inner-alpha: 0.18;
   --dir-card-fill: rgba(14, 12, 40, 0.45);
   --dir-card-fill-touch: rgba(18, 16, 48, 0.55);
   --dir-card-fill-opaque: #12101f;
-  /* Closest passing whites at tint 0.45: ideal gloss+tint blocked on shape4-light / role ~3.20 */
-  --dir-overlay-strong: rgba(255, 255, 255, 0.03);
-  --dir-overlay-mid: rgba(255, 255, 255, 0.025);
+  --dir-overlay-strong: rgba(255, 255, 255, 0.12);
+  --dir-overlay-mid: rgba(255, 255, 255, 0.06);
   --dir-overlay-weak: rgba(255, 255, 255, 0.02);
   --dir-card-edge-bright: rgba(255, 255, 255, 0.7);
   --dir-card-edge-fade: rgba(255, 255, 255, 0.06);
+  --dir-card-edge-spot: rgba(255, 255, 255, 0.9);
   --dir-card-hairline: rgba(255, 255, 255, 0.06);
   --dir-card-highlight: rgba(255, 255, 255, 0.25);
-  --dir-card-sheen: rgba(255, 255, 255, 0.06);
   --dir-card-shadow-tight: 0 1px 2px rgba(8, 6, 32, 0.35);
   --dir-card-shadow-wide: 0 10px 40px rgba(8, 6, 32, 0.45);
   --dir-card-shadow: var(--dir-card-shadow-tight), var(--dir-card-shadow-wide);
-  --dir-spotlight: rgba(255, 255, 255, 0.03);
-  --dir-specular: rgba(255, 255, 255, 0.03);
-  --dir-specular-strong: rgba(255, 255, 255, 0.06);
+  --dir-specular: rgba(255, 255, 255, 0.18);
   --dir-bottom-shade: rgba(0, 0, 0, 0.25);
   --dir-blur: 18px;
   --dir-saturate: 180%;
   --dir-brightness: 0.62;
   --dir-text-name: #fafafa;
-  --dir-text-role: #fafafa;
-  --dir-text-summary: #fafafa;
-  --dir-text-muted: #fafafa;
-  --dir-text-placeholder: #fafafa;
-  --dir-text-results: #fafafa;
-  --dir-text-status: #fafafa;
-  --dir-text-pagination: #fafafa;
+  --dir-text-role: #d4d4d8;
+  --dir-text-summary: #d4d4d8;
+  --dir-text-muted: #d4d4d8;
+  --dir-text-placeholder: #c4c4c8;
+  --dir-text-results: #d4d4d8;
+  --dir-text-status: #d4d4d8;
+  --dir-text-pagination: #d4d4d8;
   --dir-search-border: rgba(255, 255, 255, 0.58);
   --dir-focus-ring: #67e8f9;
-  --dir-avatar-fill: rgba(14, 12, 40, 0.4);
+  --dir-avatar-fill: rgba(14, 12, 40, 0.45);
   --dir-avatar-ring: rgba(255, 255, 255, 0.14);
   --dir-avatar-initials: #fafafa;
   --dir-avatar-glow-opacity: 0.55;
@@ -196,11 +185,17 @@
   pointer-events: none;
 }
 
+/*
+  Shapes sit behind the card column (not the hero or toolbar).
+  Priority if geometry conflicts: clear of hero/toolbar, then card overlap, then viewport fill.
+  Below 1024px sizes scale with clamp(); from 1024px up they lock to desktop sizes and
+  track the centred max-w-4xl column via 50% calcs.
+*/
 .directory-shell__shape--violet {
-  width: clamp(280px, 42vw, 520px);
-  height: clamp(280px, 42vw, 520px);
-  top: -18%;
-  left: -16%;
+  width: clamp(220px, 55vw, 440px);
+  height: clamp(220px, 55vw, 440px);
+  top: 360px;
+  left: -24px;
   background: linear-gradient(
     145deg,
     var(--dir-shape-1-light) 0%,
@@ -210,10 +205,10 @@
 }
 
 .directory-shell__shape--fuchsia {
-  width: clamp(220px, 32vw, 380px);
-  height: clamp(220px, 32vw, 380px);
-  top: 48%;
-  right: -14%;
+  width: clamp(200px, 48vw, 380px);
+  height: clamp(200px, 48vw, 380px);
+  top: 440px;
+  right: -20px;
   background: linear-gradient(
     145deg,
     var(--dir-shape-2-light) 0%,
@@ -223,10 +218,10 @@
 }
 
 .directory-shell__shape--cyan {
-  width: clamp(180px, 26vw, 300px);
-  height: clamp(180px, 26vw, 300px);
-  top: 62%;
-  left: -12%;
+  width: clamp(200px, 55vw, 320px);
+  height: clamp(200px, 55vw, 320px);
+  top: 520px;
+  left: 8%;
   background: linear-gradient(
     145deg,
     var(--dir-shape-3-light) 0%,
@@ -236,11 +231,11 @@
 }
 
 .directory-shell__shape--amber {
-  width: clamp(120px, 16vw, 200px);
-  height: clamp(120px, 16vw, 200px);
-  top: auto;
-  bottom: 10%;
-  right: 6%;
+  width: clamp(160px, 45vw, 200px);
+  height: clamp(160px, 45vw, 200px);
+  top: 640px;
+  left: 28%;
+  right: auto;
   background: linear-gradient(
     145deg,
     var(--dir-shape-4-light) 0%,
@@ -250,34 +245,36 @@
 }
 
 @media (min-width: 1024px) {
-  /* Keep blobs in the corners and card gutters; clear of hero and toolbar. */
   .directory-shell__shape--violet {
-    width: 300px;
-    height: 300px;
-    top: -260px;
-    left: -260px;
+    width: 440px;
+    height: 440px;
+    top: 360px;
+    left: calc(50% - 28rem - 40px);
+    right: auto;
   }
 
   .directory-shell__shape--fuchsia {
-    width: 340px;
-    height: 340px;
-    top: 62%;
-    right: -200px;
+    width: 380px;
+    height: 380px;
+    top: 400px;
+    left: calc(50% - 2rem);
+    right: auto;
   }
 
   .directory-shell__shape--cyan {
-    width: 280px;
-    height: 280px;
-    top: 76%;
-    left: -180px;
+    width: 320px;
+    height: 320px;
+    top: 620px;
+    left: calc(50% - 26rem);
+    right: auto;
   }
 
   .directory-shell__shape--amber {
     width: 200px;
     height: 200px;
-    top: auto;
-    bottom: 6%;
-    right: 3%;
+    top: 660px;
+    left: calc(50% + 10rem);
+    right: auto;
   }
 }
 
@@ -305,12 +302,15 @@
 }
 
 .directory-glass-btn {
+  --x: 50%;
+  --y: 0%;
   position: relative;
   isolation: isolate;
   overflow: hidden;
   background-image: linear-gradient(
       135deg,
       var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
       var(--dir-overlay-weak) 100%
     ),
     linear-gradient(var(--dir-btn-fill), var(--dir-btn-fill));
@@ -332,26 +332,6 @@
     box-shadow 160ms ease;
 }
 
-.directory-glass-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    var(--dir-card-edge-bright),
-    var(--dir-card-edge-fade)
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 0;
-}
-
 .directory-glass-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -362,6 +342,7 @@
   background-image: linear-gradient(
       135deg,
       var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
       var(--dir-overlay-weak) 100%
     ),
     linear-gradient(var(--dir-segment-active-fill), var(--dir-segment-active-fill));
@@ -369,12 +350,15 @@
 }
 
 .directory-toolbar-field {
+  --x: 50%;
+  --y: 0%;
   position: relative;
   isolation: isolate;
   overflow: hidden;
   background-image: linear-gradient(
       135deg,
       var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
       var(--dir-overlay-weak) 100%
     ),
     linear-gradient(var(--dir-toolbar-fill), var(--dir-toolbar-fill));
@@ -389,26 +373,6 @@
     inset 0 -1px 0 var(--dir-bottom-shade),
     0 0 0 1px var(--dir-card-hairline),
     var(--dir-card-shadow);
-}
-
-.directory-toolbar-field::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    var(--dir-card-edge-bright),
-    var(--dir-card-edge-fade)
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 0;
 }
 
 .directory-toolbar-field:has(input:focus-visible) {
@@ -474,6 +438,8 @@
 }
 
 .directory-segment {
+  --x: 50%;
+  --y: 0%;
   position: relative;
   isolation: isolate;
   display: grid;
@@ -484,6 +450,7 @@
   background-image: linear-gradient(
       135deg,
       var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
       var(--dir-overlay-weak) 100%
     ),
     linear-gradient(var(--dir-toolbar-fill), var(--dir-toolbar-fill));
@@ -504,26 +471,6 @@
     display: inline-flex;
     width: auto;
   }
-}
-
-.directory-segment::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    var(--dir-card-edge-bright),
-    var(--dir-card-edge-fade)
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 0;
 }
 
 .directory-segment button {
@@ -557,6 +504,7 @@
   background-image: linear-gradient(
       135deg,
       var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
       var(--dir-overlay-weak) 100%
     ),
     linear-gradient(var(--dir-segment-active-fill), var(--dir-segment-active-fill));
@@ -581,7 +529,6 @@
 .directory-card {
   --x: 50%;
   --y: 50%;
-  --sheen-shift: 0%;
   position: relative;
   isolation: isolate;
   height: 100%;
@@ -590,6 +537,7 @@
   background-image: linear-gradient(
       135deg,
       var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
       var(--dir-overlay-weak) 100%
     ),
     linear-gradient(var(--dir-card-fill), var(--dir-card-fill));
@@ -608,17 +556,26 @@
   outline: none;
 }
 
-.directory-card::before {
+.directory-card::before,
+.directory-toolbar-field::before,
+.directory-segment::before,
+.directory-glass-btn::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(
-    135deg,
-    var(--dir-card-edge-bright),
-    var(--dir-card-edge-fade)
-  );
+  background:
+    radial-gradient(
+      120px circle at var(--x) var(--y),
+      rgba(255, 255, 255, 0),
+      transparent 70%
+    ),
+    linear-gradient(
+      135deg,
+      var(--dir-card-edge-bright),
+      var(--dir-card-edge-fade)
+    );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -634,70 +591,41 @@
   outline-offset: 2px;
 }
 
-.directory-card__spot {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 180ms ease;
-  background: radial-gradient(
-    350px circle at var(--x) var(--y),
-    var(--dir-spotlight),
-    transparent 70%
-  );
-}
-
-
 .directory-card__specular {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 14px;
   border-radius: inherit;
   overflow: hidden;
   pointer-events: none;
-  z-index: -1;
-  background: radial-gradient(
-    ellipse 120% 60% at 50% -20%,
-    var(--dir-specular),
-    transparent 70%
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--dir-specular) 0%,
+    transparent 100%
   );
 }
 
 .directory-glass-btn::after,
+.directory-toolbar-field::after,
 .directory-segment::after,
 .directory-avatar__face::after {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 14px;
   border-radius: inherit;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(
-    ellipse 120% 60% at 50% -20%,
-    var(--dir-specular-strong),
-    transparent 70%
-  );
-}
-
-.directory-card__sheen {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: -1;
   background: linear-gradient(
-    125deg,
-    transparent 0%,
-    var(--dir-card-sheen) calc(18% + var(--sheen-shift)),
-    transparent 42%
+    to bottom,
+    var(--dir-specular) 0%,
+    transparent 100%
   );
-  background-size: 100% 40%;
-  background-repeat: no-repeat;
-  background-position: 0 0;
-  transition: --sheen-shift 220ms ease;
 }
 
 .directory-avatar {
@@ -728,6 +656,7 @@
   background-image: linear-gradient(
       135deg,
       var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
       var(--dir-overlay-weak) 100%
     ),
     linear-gradient(var(--dir-avatar-fill), var(--dir-avatar-fill));
@@ -736,20 +665,6 @@
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.04em;
-}
-
-.directory-avatar__sheen {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
-  background: linear-gradient(
-    125deg,
-    transparent 10%,
-    var(--dir-card-sheen) 28%,
-    transparent 48%
-  );
 }
 
 .directory-card-name {
@@ -843,19 +758,23 @@
 
   .directory-card:hover {
     transform: translateY(-3px);
-    --sheen-shift: 8%;
   }
 
-  .directory-card:hover::before {
-    background: linear-gradient(
-      135deg,
-      var(--dir-card-edge-bright),
-      var(--dir-card-edge-fade)
-    );
-  }
-
-  .directory-card:hover .directory-card__spot {
-    opacity: 1;
+  .directory-card:hover::before,
+  .directory-toolbar-field:hover::before,
+  .directory-segment:hover::before,
+  .directory-glass-btn:hover::before {
+    background:
+      radial-gradient(
+        120px circle at var(--x) var(--y),
+        var(--dir-card-edge-spot),
+        transparent 70%
+      ),
+      linear-gradient(
+        135deg,
+        var(--dir-card-edge-bright),
+        var(--dir-card-edge-fade)
+      );
   }
 
   .directory-card:hover .directory-card-arrow {
@@ -866,25 +785,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .directory-card,
-  .directory-card__spot,
-  .directory-card__sheen,
   .directory-card-arrow,
   .directory-glass-btn,
   .directory-segment button {
     transition: none;
   }
 
-  .directory-card__sheen {
-    transition: none;
-  }
-
   .directory-card:hover {
     transform: none;
-    --sheen-shift: 0%;
-  }
-
-  .directory-card:hover .directory-card__spot {
-    opacity: 0;
   }
 
   .directory-card:hover .directory-card-arrow {
@@ -918,11 +826,9 @@
     background: var(--dir-btn-fill-opaque);
   }
 
-  .directory-card__spot,
-  .directory-card__sheen,
   .directory-card__specular,
-  .directory-avatar__sheen,
   .directory-glass-btn::after,
+  .directory-toolbar-field::after,
   .directory-segment::after,
   .directory-avatar__face::after {
     display: none;
@@ -957,12 +863,10 @@
   .directory-shell__bg,
   .directory-shell__shape,
   .directory-shell__grain,
-  .directory-card__spot,
-  .directory-card__sheen,
   .directory-card__specular,
   .directory-avatar__glow,
-  .directory-avatar__sheen,
   .directory-glass-btn::after,
+  .directory-toolbar-field::after,
   .directory-segment::after,
   .directory-avatar__face::after {
     display: none !important;
@@ -1000,6 +904,7 @@
     background-image: linear-gradient(
         135deg,
         var(--dir-overlay-strong) 0%,
+        var(--dir-overlay-weak) 20%,
         var(--dir-overlay-weak) 100%
       ),
       linear-gradient(var(--dir-card-fill-touch), var(--dir-card-fill-touch));

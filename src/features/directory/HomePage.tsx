@@ -99,8 +99,6 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
   return (
     <li className={`group relative mb-6 h-full ${subgridLi}`}>
       <article data-dir-card className={`directory-card p-[1.35rem] ${subgridArticle}`}>
-        <div className="directory-card__spot" aria-hidden="true" />
-        <div className="directory-card__sheen" aria-hidden="true" />
         <div className="directory-card__specular" aria-hidden="true" />
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3.5">
@@ -110,7 +108,6 @@ function ProfileCard({ profile }: { profile: ProfileConfig }) {
                 aria-hidden="true"
               />
               <div className="directory-avatar__face">
-                <span className="directory-avatar__sheen" aria-hidden="true" />
                 <span className="relative z-10">{initials}</span>
               </div>
             </div>
