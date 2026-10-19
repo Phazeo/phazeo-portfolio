@@ -140,7 +140,7 @@
   --dir-segment-active-fill: rgba(103, 232, 249, 0.14);
   --dir-segment-active-text: #a5f3fc;
   --dir-hero-from: #fafafa;
-  --dir-hero-to: #f4f4f5;
+  --dir-hero-to: #a1a1aa;
   --dir-grain-opacity: 0.04;
   --dir-btn-fill: rgba(14, 12, 40, 0.45);
   --dir-btn-fill-opaque: #12101f;
@@ -593,18 +593,14 @@
 
 .directory-card__specular {
   position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 14px;
+  inset: 0;
   border-radius: inherit;
-  overflow: hidden;
   pointer-events: none;
   z-index: 0;
   background: linear-gradient(
     to bottom,
-    var(--dir-specular) 0%,
-    transparent 100%
+    var(--dir-specular) 0,
+    transparent 14px
   );
 }
 
@@ -614,17 +610,14 @@
 .directory-avatar__face::after {
   content: "";
   position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 14px;
+  inset: 0;
   border-radius: inherit;
   pointer-events: none;
   z-index: 0;
   background: linear-gradient(
     to bottom,
-    var(--dir-specular) 0%,
-    transparent 100%
+    var(--dir-specular) 0,
+    transparent 14px
   );
 }
 
