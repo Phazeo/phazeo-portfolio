@@ -31,13 +31,14 @@
     "test:scope": "node --test tests/unit/changed-scope.test.ts",
     "test:directory": "node --test tests/unit/directory-query.test.ts",
     "test:directory-contrast": "node --test tests/unit/directory-contrast.test.ts",
+    "test:headers-merge": "node --test tests/unit/headers-merge.test.ts",
     "test:email-text": "node --test tests/unit/email-text.test.ts",
     "test:profiles": "node --test tests/unit/check-profiles.test.ts",
     "test:public-boundary": "node --test tests/unit/public-boundary.test.ts",
     "guard:tree": "sh tools/guard/check-leaks.sh --tree",
     "guard:staged": "sh tools/guard/check-leaks.sh --staged",
     "prove:csp": "node tests/prove/prove-csp.ts",
-    "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm check:imports && pnpm test:ownership && pnpm test:profiles && pnpm test:imports && pnpm test:scope && pnpm test:directory && pnpm test:directory-contrast && pnpm test:email-text && pnpm test:public-boundary",
+    "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm check:imports && pnpm test:ownership && pnpm test:profiles && pnpm test:imports && pnpm test:scope && pnpm test:directory && pnpm test:directory-contrast && pnpm test:headers-merge && pnpm test:email-text && pnpm test:public-boundary",
     "prepare": "husky"
   },
   "lint-staged": {
