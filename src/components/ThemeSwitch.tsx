@@ -13,7 +13,6 @@ export function ThemeSwitch() {
       aria-label="Dark mode"
       onClick={toggleTheme}
     >
-      <span className="theme-switch__hit" aria-hidden="true" />
       <span className="theme-switch__clip" aria-hidden="true">
         <span className="theme-switch__track" />
         <span className="theme-switch__rim" />

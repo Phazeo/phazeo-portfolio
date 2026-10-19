@@ -62,14 +62,10 @@
   }
 }
 
-.theme-switch__hit {
+.theme-switch::before {
+  content: "";
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 44px;
-  height: 44px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+  inset: -6px;
 }
 
 .theme-switch__clip {
@@ -214,10 +210,13 @@
 
 .theme-switch__knob-wrap {
   top: var(--ts-pad);
-  left: calc(var(--ts-pad) + var(--dark) * (var(--ts-w) - var(--ts-knob) - var(--ts-pad) * 2));
+  left: var(--ts-pad);
   width: var(--ts-knob);
   height: var(--ts-knob);
-  transition: left var(--ts-dur) var(--ts-ease);
+  transform: translateX(
+    calc(var(--dark) * (var(--ts-w) - var(--ts-knob) - var(--ts-pad) * 2))
+  );
+  transition: transform var(--ts-dur) var(--ts-ease);
 }
 
 .theme-switch__halo {
