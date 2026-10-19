@@ -141,6 +141,8 @@ async function main(): Promise<void> {
     });
   });
 
+  const chromeProfile = mkdtempSync(join(tmpdir(), "phazeo-csp-chrome-"));
+  const chromeErr: Buffer[] = [];
   const chrome = spawn(
     chromePath,
     [
@@ -151,14 +153,17 @@ async function main(): Promise<void> {
       "--disable-dev-shm-usage",
       "--no-first-run",
       "--no-default-browser-check",
-      "--user-data-dir=/tmp/phazeo-csp-chrome-profile",
+      `--user-data-dir=${chromeProfile}`,
       "about:blank",
     ],
-    { stdio: ["ignore", "pipe", "pipe"] }
+    { stdio: ["ignore", "ignore", "pipe"] }
   );
+  chrome.stderr?.on("data", (buf: Buffer) => {
+    chromeErr.push(buf);
+  });
 
   let wsDebuggerUrl: string | null = null;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 80; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${debugPort}/json/version`);
       wsDebuggerUrl = webSocketUrlFrom(await res.json());
@@ -170,7 +175,12 @@ async function main(): Promise<void> {
   if (!wsDebuggerUrl) {
     chrome.kill();
     serve.kill();
+    rmSync(chromeProfile, { recursive: true, force: true });
+    const errText = Buffer.concat(chromeErr).toString("utf8").trim();
     console.error("prove-csp: could not connect to Chromium CDP");
+    if (errText) {
+      console.error(errText.slice(0, 2000));
+    }
     process.exit(1);
   }
 
@@ -461,6 +471,7 @@ async function main(): Promise<void> {
 
   browser.close();
   chrome.kill("SIGKILL");
+  rmSync(chromeProfile, { recursive: true, force: true });
 
   if (failed) {
     console.error("prove-csp: FAILED");
