@@ -80,20 +80,33 @@ test.describe("directory demo", () => {
     const { context, page } = await openWithTheme(browser, baseURL, "light");
     await setViewport(page, 1280);
     const search = page.getByRole("searchbox", { name: /search name/i });
+    const results = page.locator(".directory-results");
     await expect(search).toBeVisible();
 
-    await search.fill("data");
+    // Blur without typing keeps page 2 and its results range.
+    await page.goto("/?page=2");
+    await expect(page).toHaveURL(/[?&]page=2(?:&|$)/);
+    await expect(results).toContainText(/Showing \d+ to \d+ of \d+/);
+    const page2Label = (await results.innerText()).trim();
+    await search.focus();
     await search.blur();
-    // Blur keeps the directory page (query may update after debounce).
-    await expect(page).toHaveURL(/\/(?:\?.*)?$/);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page).toHaveURL(/[?&]page=2(?:&|$)/);
+    await expect(results).toHaveText(page2Label);
 
-    // Typing on page 3 resets to page 1.
+    // Typing on page 3 resets display to page 1 before the URL debounce lands.
     await page.goto("/?page=3");
-    await expect(page).toHaveURL(/page=3/);
-    await search.fill("eng");
-    await expect(page).toHaveURL(/^(?!.*page=3).*$/);
-    await expect(page).not.toHaveURL(/page=3/);
+    await expect(page).toHaveURL(/[?&]page=3(?:&|$)/);
+    await expect(results).toContainText(/Showing \d+ to \d+ of \d+/);
+    await search.pressSequentially("data");
+    const page1Results = (text: string) => {
+      const showing = text.match(/Showing (\d+) to/);
+      if (showing) return showing[1] === "1";
+      // Single-page filter summary also means the visible range starts at 1.
+      return /^\d+ of \d+ match/.test(text.trim());
+    };
+    await expect.poll(async () => page1Results(await results.innerText())).toBe(true);
+    await expect(page).toHaveURL(/[?&]q=data/);
+    await expect.poll(async () => page1Results(await results.innerText())).toBe(true);
 
     const errors: string[] = [];
     page.on("console", (msg) => {
@@ -101,10 +114,11 @@ test.describe("directory demo", () => {
     });
     page.on("pageerror", (err) => errors.push(String(err)));
 
+    await search.fill("");
     const burst = "a".repeat(150);
-    await search.fill(burst);
-    await expect(page).toHaveURL(/[?&]q=a{10,}/);
+    await search.pressSequentially(burst, { delay: 20 });
     expect(errors).toEqual([]);
+    await expect(page).toHaveURL(new RegExp(`[?&]q=${burst}(?:&|$)`));
 
     await page.getByRole("button", { name: "Clear search" }).click();
     await expect(search).toHaveValue("");

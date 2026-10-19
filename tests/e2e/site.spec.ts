@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { DIRECTORY_DEMO_NAMES } from "../../src/features/directory/directory-demo-names.ts";
 import {
   ASSETS_CACHE_VALUE,
   mergeHeadersForPath,
@@ -151,5 +152,34 @@ test.describe("site", () => {
     const distRedirects = join(DIST, "_redirects");
     expect(existsSync(distRedirects)).toBeTruthy();
     expect(loadRedirects(distRedirects).length).toBeGreaterThan(0);
+  });
+
+  test("production dist omits guest example and directory demo content", () => {
+    const forbidden = [
+      "alex-morgan",
+      "Alex Morgan",
+      ...DIRECTORY_DEMO_NAMES,
+      "VITE_DIRECTORY_DEMO",
+    ];
+    const hits: string[] = [];
+
+    function walk(dir: string): void {
+      for (const name of readdirSync(dir)) {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) {
+          walk(path);
+          continue;
+        }
+        const text = readFileSync(path, "utf8");
+        for (const needle of forbidden) {
+          if (text.includes(needle)) {
+            hits.push(`${path}: ${needle}`);
+          }
+        }
+      }
+    }
+
+    walk(DIST);
+    expect(hits, hits.join("\n")).toEqual([]);
   });
 });
