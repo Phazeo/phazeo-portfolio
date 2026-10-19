@@ -31,8 +31,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # Pull requests need full history so the changed-scope diff can find the merge base.
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          # Full history so changed-scope can three-dot-diff against the PR base SHA.
+          # Do not use `&& 0 || 1`: in Actions expressions, 0 is falsy, so that always becomes 1.
+          fetch-depth: 0
 
       - name: Install pnpm
         # pnpm/action-setup@v6.1.0 (tag v6.1.0^{} → this commit; published 2026-09-05)
