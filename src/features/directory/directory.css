@@ -1,16 +1,16 @@
-/*
-  Directory glossy glass tokens and surfaces.
-  Contrast is verified by tests/unit/directory-contrast.test.ts
-  (full-stack backdrop + overlay + sheen + spotlight + specular) and glass visibility.
-*/
-
-@layer components {
 @property --sheen-shift {
   syntax: "<percentage>";
   inherits: true;
   initial-value: 0%;
 }
 
+/*
+  Directory glossy glass tokens and surfaces.
+  Contrast is verified by tests/unit/directory-contrast.test.ts
+  (full-stack backdrop + overlay + sheen + spotlight) and glass visibility.
+*/
+
+@layer components {
 .directory-shell {
   /* Light: colourful daylight base, milky glass */
   --dir-base: #c7d2fe;
@@ -30,8 +30,8 @@
   --dir-shape-4-dark: #f59e0b;
   --dir-shape-opacity: 0.9;
   --dir-shape-inner-alpha: 0.45;
-  --dir-card-fill: rgba(255, 255, 255, 0.42);
-  --dir-card-fill-touch: rgba(255, 255, 255, 0.54);
+  --dir-card-fill: rgba(255, 255, 255, 0.32);
+  --dir-card-fill-touch: rgba(255, 255, 255, 0.42);
   --dir-card-fill-opaque: #f8fafc;
   --dir-overlay-strong: rgba(255, 255, 255, 0.45);
   --dir-overlay-mid: rgba(255, 255, 255, 0.275);
@@ -46,32 +46,32 @@
   --dir-card-shadow: var(--dir-card-shadow-tight), var(--dir-card-shadow-wide);
   --dir-spotlight: rgba(255, 255, 255, 0.35);
   --dir-blur: 20px;
-  --dir-saturate: 180%;
-  --dir-brightness: 1.04;
+  --dir-saturate: 190%;
+  --dir-brightness: 1.12;
   --dir-radius: 24px;
   --dir-radius-control: 16px;
   --dir-text-name: #0f172a;
-  --dir-text-role: #334155;
-  --dir-text-summary: #334155;
-  --dir-text-muted: #334155;
-  --dir-text-placeholder: #334155;
-  --dir-text-results: #334155;
-  --dir-text-status: #334155;
+  --dir-text-role: #1e293b;
+  --dir-text-summary: #1e293b;
+  --dir-text-muted: #1e293b;
+  --dir-text-placeholder: #1e293b;
+  --dir-text-results: #1e293b;
+  --dir-text-status: #1e293b;
   --dir-text-pagination: #1e293b;
   --dir-search-border: rgba(15, 23, 42, 0.55);
   --dir-focus-ring: #0e7490;
-  --dir-avatar-fill: rgba(255, 255, 255, 0.42);
+  --dir-avatar-fill: rgba(255, 255, 255, 0.32);
   --dir-avatar-ring: rgba(15, 23, 42, 0.12);
   --dir-avatar-initials: #0f172a;
   --dir-avatar-glow-opacity: 0.7;
-  --dir-toolbar-fill: rgba(255, 255, 255, 0.42);
+  --dir-toolbar-fill: rgba(255, 255, 255, 0.32);
   --dir-toolbar-fill-opaque: #f8fafc;
   --dir-segment-active-fill: rgba(14, 116, 144, 0.14);
   --dir-segment-active-text: #155e75;
   --dir-hero-from: #1e1b4b;
   --dir-hero-to: #4c1d95;
   --dir-grain-opacity: 0.035;
-  --dir-btn-fill: rgba(255, 255, 255, 0.42);
+  --dir-btn-fill: rgba(255, 255, 255, 0.32);
   --dir-btn-fill-opaque: #f8fafc;
   --dir-btn-border: rgba(15, 23, 42, 0.12);
   --dir-divider: rgba(15, 23, 42, 0.1);
@@ -91,39 +91,39 @@
   --dir-base: #0c0a24;
   --dir-base-mid: #140b2e;
   --dir-base-end: #08121f;
-  --dir-shape-1-light: #a78bfa;
+  --dir-shape-1-light: #8b5cf6;
   --dir-shape-1-mid: #6d28d9;
-  --dir-shape-1-dark: #312e81;
-  --dir-shape-2-light: #f472b6;
+  --dir-shape-1-dark: #4c1d95;
+  --dir-shape-2-light: #ec4899;
   --dir-shape-2-mid: #db2777;
-  --dir-shape-2-dark: #ea580c;
-  --dir-shape-3-light: #67e8f9;
+  --dir-shape-2-dark: #c2410c;
+  --dir-shape-3-light: #06b6d4;
   --dir-shape-3-mid: #0891b2;
   --dir-shape-3-dark: #1d4ed8;
-  --dir-shape-4-light: #fde68a;
+  --dir-shape-4-light: #f59e0b;
   --dir-shape-4-mid: #d97706;
   --dir-shape-4-dark: #b45309;
   --dir-shape-opacity: 0.85;
-  /* Contrast fix (full-stack): reduced inner highlight, weaker overlay, deeper tint */
   --dir-shape-inner-alpha: 0.18;
-  --dir-card-fill: rgba(14, 12, 40, 0.87);
-  --dir-card-fill-touch: rgba(18, 16, 48, 0.94);
+  --dir-card-fill: rgba(14, 12, 40, 0.45);
+  --dir-card-fill-touch: rgba(18, 16, 48, 0.55);
   --dir-card-fill-opaque: #12101f;
-  --dir-overlay-strong: rgba(255, 255, 255, 0.12);
-  --dir-overlay-mid: rgba(255, 255, 255, 0.07);
+  /* Closest passing whites at tint 0.45: ideal gloss+tint blocked on shape4-light / role ~3.20 */
+  --dir-overlay-strong: rgba(255, 255, 255, 0.03);
+  --dir-overlay-mid: rgba(255, 255, 255, 0.025);
   --dir-overlay-weak: rgba(255, 255, 255, 0.02);
-  --dir-card-edge-bright: rgba(255, 255, 255, 0.55);
+  --dir-card-edge-bright: rgba(255, 255, 255, 0.7);
   --dir-card-edge-fade: rgba(255, 255, 255, 0.06);
   --dir-card-hairline: rgba(255, 255, 255, 0.06);
   --dir-card-highlight: rgba(255, 255, 255, 0.25);
-  --dir-card-sheen: rgba(255, 255, 255, 0.12);
+  --dir-card-sheen: rgba(255, 255, 255, 0.06);
   --dir-card-shadow-tight: 0 1px 2px rgba(8, 6, 32, 0.35);
   --dir-card-shadow-wide: 0 10px 40px rgba(8, 6, 32, 0.45);
   --dir-card-shadow: var(--dir-card-shadow-tight), var(--dir-card-shadow-wide);
-  --dir-spotlight: rgba(255, 255, 255, 0.08);
+  --dir-spotlight: rgba(255, 255, 255, 0.03);
   --dir-blur: 18px;
-  --dir-saturate: 160%;
-  --dir-brightness: 1;
+  --dir-saturate: 180%;
+  --dir-brightness: 0.62;
   --dir-text-name: #fafafa;
   --dir-text-role: #e4e4e7;
   --dir-text-summary: #e4e4e7;
@@ -132,20 +132,20 @@
   --dir-text-results: #e4e4e7;
   --dir-text-status: #e4e4e7;
   --dir-text-pagination: #f4f4f5;
-  --dir-search-border: rgba(255, 255, 255, 0.56);
+  --dir-search-border: rgba(255, 255, 255, 0.58);
   --dir-focus-ring: #67e8f9;
-  --dir-avatar-fill: rgba(14, 12, 40, 0.45);
+  --dir-avatar-fill: rgba(14, 12, 40, 0.4);
   --dir-avatar-ring: rgba(255, 255, 255, 0.14);
   --dir-avatar-initials: #fafafa;
   --dir-avatar-glow-opacity: 0.55;
-  --dir-toolbar-fill: rgba(14, 12, 40, 0.87);
+  --dir-toolbar-fill: rgba(14, 12, 40, 0.45);
   --dir-toolbar-fill-opaque: #12101f;
   --dir-segment-active-fill: rgba(103, 232, 249, 0.14);
   --dir-segment-active-text: #a5f3fc;
   --dir-hero-from: #fafafa;
   --dir-hero-to: #a1a1aa;
   --dir-grain-opacity: 0.04;
-  --dir-btn-fill: rgba(14, 12, 40, 0.87);
+  --dir-btn-fill: rgba(14, 12, 40, 0.45);
   --dir-btn-fill-opaque: #12101f;
   --dir-btn-border: rgba(255, 255, 255, 0.12);
   --dir-divider: rgba(255, 255, 255, 0.1);
@@ -530,6 +530,9 @@
   );
 }
 
+
+
+
 .directory-card__sheen {
   position: absolute;
   inset: 0;
@@ -769,9 +772,7 @@
 
   .directory-card__spot,
   .directory-card__sheen,
-  .directory-avatar__sheen {
-    display: none;
-  }
+  .directory-avatar__sheen,
 }
 
 @media (prefers-contrast: more) {
