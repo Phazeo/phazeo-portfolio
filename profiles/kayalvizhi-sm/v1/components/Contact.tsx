@@ -27,13 +27,17 @@ export function Contact() {
         <div className="grid sm:grid-cols-1 gap-6 max-w-md mx-auto">
           <a
             href="mailto:kayalvizhi.sm@tcs.com"
-            className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 text-center group"
+            className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 text-center group min-w-0"
           >
             <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-(--color-secondary) flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform">
               ✉️
             </div>
             <h3 className="font-display font-semibold text-gray-900 mb-1">Email</h3>
-            <p className="text-(--color-primary) text-sm">kayalvizhi.sm@tcs.com</p>
+            <p className="text-(--color-primary) text-sm min-w-0">
+              {"kayalvizhi.sm"}
+              <wbr />
+              {"@tcs.com"}
+            </p>
           </a>
         </div>
       </div>

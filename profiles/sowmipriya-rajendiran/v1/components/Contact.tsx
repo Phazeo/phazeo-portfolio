@@ -27,9 +27,11 @@ export function Contact() {
               </h3>
               <a
                 href="mailto:priyasowmi94@gmail.com"
-                className="text-base md:text-lg text-(--color-primary) hover:text-(--color-primary-hover) transition-all font-display font-semibold break-all"
+                className="text-base md:text-lg text-(--color-primary) hover:text-(--color-primary-hover) transition-all font-display font-semibold min-w-0"
               >
-                priyasowmi94@gmail.com
+                {"priyasowmi94"}
+                <wbr />
+                {"@gmail.com"}
               </a>
             </div>
 
