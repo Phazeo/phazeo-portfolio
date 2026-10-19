@@ -19,9 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      # Scope for changed-profile checks. On push events GITHUB_BASE_REF is empty and the
-      # event is not pull_request, so every check runs its full (non-PR) path.
+      # Scope for changed-profile checks. On push events these are empty / not pull_request,
+      # so every check runs its full (non-PR) path. Prefer GITHUB_BASE_SHA over origin/<ref>.
       GITHUB_BASE_REF: ${{ github.base_ref }}
+      GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
       GITHUB_SHA: ${{ github.sha }}
       GITHUB_EVENT_NAME: ${{ github.event_name }}
     steps:

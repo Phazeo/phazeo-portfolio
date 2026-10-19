@@ -113,8 +113,14 @@ export function resolveScopeRevs(env: NodeJS.ProcessEnv = process.env): {
   base: string;
   head: string;
 } {
-  const baseRef = env["GITHUB_BASE_REF"];
   const headSha = env["GITHUB_SHA"];
+  // Prefer the PR base commit SHA (always present on pull_request with fetch-depth 0).
+  // Falling back to origin/<ref> needs an explicit fetch of that remote branch.
+  const baseSha = env["GITHUB_BASE_SHA"];
+  if (baseSha && headSha) {
+    return { base: baseSha, head: headSha };
+  }
+  const baseRef = env["GITHUB_BASE_REF"];
   if (baseRef && headSha) {
     return { base: `origin/${baseRef}`, head: headSha };
   }

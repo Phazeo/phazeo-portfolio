@@ -13,6 +13,7 @@ import {
   type ChangedScope,
   computeChangedScope,
   isNarrowScope,
+  resolveScopeRevs,
 } from "../../tools/lib/changed-scope.ts";
 
 type Tree = Record<string, string>;
@@ -119,6 +120,28 @@ describe("computeChangedScope", () => {
       assert.equal(scope.failClosed, true);
       assert.equal(scope.sharedChanged, true);
       assert.deepEqual(scope.changedSlugs, ["alpha", "beta"]);
+    });
+  });
+});
+
+describe("resolveScopeRevs", () => {
+  it("prefers GITHUB_BASE_SHA over origin/GITHUB_BASE_REF", () => {
+    const revs = resolveScopeRevs({
+      GITHUB_BASE_SHA: "abcbase",
+      GITHUB_SHA: "abchead",
+      GITHUB_BASE_REF: "batch/merge-private-into-public",
+    });
+    assert.deepEqual(revs, { base: "abcbase", head: "abchead" });
+  });
+
+  it("falls back to origin/<ref> when only GITHUB_BASE_REF is set", () => {
+    const revs = resolveScopeRevs({
+      GITHUB_BASE_REF: "batch/merge-private-into-public",
+      GITHUB_SHA: "abchead",
+    });
+    assert.deepEqual(revs, {
+      base: "origin/batch/merge-private-into-public",
+      head: "abchead",
     });
   });
 });
