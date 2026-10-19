@@ -522,73 +522,36 @@ export function HomePage() {
       <div className="directory-shell__content">
         <ThemeSwitch />
 
-        <div className="mx-auto max-w-4xl px-4 py-16 sm:py-24">
-          <div className="mb-12 text-center">
-            <h1 className="directory-hero-title mb-4 text-4xl font-bold sm:text-5xl">
+        <div className="directory-page mx-auto max-w-4xl px-4">
+          <header className="directory-hero">
+            <div className="directory-hero__glow" aria-hidden="true" />
+            <div className="directory-eyebrow" data-dir-eyebrow>
+              <span className="directory-eyebrow__dot" aria-hidden="true" />
+              <span>
+                {DIRECTORY_INDEX.length === 1
+                  ? "1 portfolio"
+                  : `${DIRECTORY_INDEX.length} portfolios`}
+              </span>
+            </div>
+            <h1 className="directory-hero-title text-4xl font-bold sm:text-5xl">
               Phazeo Portfolios
             </h1>
-            <p
-              data-dir-hero-subtitle
-              className="mx-auto max-w-2xl text-lg text-[color:var(--dir-text-muted)]"
-            >
+            <p data-dir-hero-subtitle className="directory-hero-subtitle">
               Professional portfolios showcasing talented individuals and their work.
             </p>
-          </div>
 
-          <div ref={listTopRef} className="directory-toolbar mb-8 scroll-mt-8">
-            <search className="block">
-              <form onSubmit={onSearchSubmit} className="flex flex-col gap-3">
-                <div className="directory-toolbar__search">
-                  <label htmlFor={searchId} className="sr-only">
-                    Search name, role or skill
-                  </label>
-                  <div className="directory-toolbar-field relative flex items-center">
-                    <span
-                      className="pointer-events-none absolute left-3 text-[color:var(--dir-text-muted)]"
-                      aria-hidden="true"
-                    >
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z"
-                        />
-                      </svg>
-                    </span>
-                    <input
-                      ref={searchInputRef}
-                      id={searchId}
-                      type="search"
-                      value={qDraft}
-                      onChange={(e) => setQuery(e.target.value)}
-                      onBlur={onSearchBlur}
-                      className="w-full rounded-[16px] py-2.5 pr-16 pl-10 text-[color:var(--dir-text-name)] placeholder:text-[color:var(--dir-text-placeholder)] outline-none"
-                      placeholder="Search name, role or skill"
-                      autoComplete="off"
-                    />
-                    {!qDraft ? (
-                      <span
-                        className="directory-keyhint pointer-events-none absolute right-3 items-center rounded-md border border-[color:var(--dir-card-border)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--dir-text-muted)]"
-                        aria-hidden="true"
-                      >
-                        /
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={clearSearchImmediate}
-                        className="directory-search-clear absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-[color:var(--dir-text-muted)] hover:opacity-100"
-                        aria-label="Clear search"
-                      >
+            <div className="directory-toolbar">
+              <search className="directory-toolbar__search-wrap">
+                <form onSubmit={onSearchSubmit} className="directory-toolbar__form">
+                  <div className="directory-toolbar__search">
+                    <label htmlFor={searchId} className="sr-only">
+                      Search name, role or skill
+                    </label>
+                    <div className="directory-toolbar-field">
+                      <span className="directory-search-icon" aria-hidden="true">
                         <svg
-                          className="h-4 w-4"
+                          width="18"
+                          height="18"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -598,16 +561,53 @@ export function HomePage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
+                            d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z"
                           />
                         </svg>
-                      </button>
-                    )}
+                      </span>
+                      <input
+                        ref={searchInputRef}
+                        id={searchId}
+                        type="search"
+                        value={qDraft}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onBlur={onSearchBlur}
+                        className="directory-toolbar-field__input"
+                        placeholder="Search name, role or skill"
+                        autoComplete="off"
+                      />
+                      {!qDraft ? (
+                        <span className="directory-keyhint" aria-hidden="true">
+                          /
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={clearSearchImmediate}
+                          className="directory-search-clear"
+                          aria-label="Clear search"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="directory-toolbar__meta">
-                  <fieldset>
+                  <fieldset className="directory-toolbar__filters">
                     <legend className="sr-only">Filter by type</legend>
                     <div className="directory-segment">
                       {typeOptions.map(([value, label, count]) => (
@@ -625,18 +625,21 @@ export function HomePage() {
                       ))}
                     </div>
                   </fieldset>
+                </form>
+              </search>
+            </div>
+          </header>
 
-                  <p
-                    ref={resultsLineRef}
-                    tabIndex={-1}
-                    className="directory-results outline-none"
-                    aria-live="polite"
-                  >
-                    {resultsLabel}
-                  </p>
-                </div>
-              </form>
-            </search>
+          <div ref={listTopRef} className="directory-results-header scroll-mt-8">
+            <p
+              ref={resultsLineRef}
+              tabIndex={-1}
+              className="directory-results outline-none"
+              aria-live="polite"
+            >
+              {resultsLabel}
+            </p>
+            <span className="directory-results-sort">A to Z</span>
           </div>
 
           <h2 className="sr-only">People</h2>
