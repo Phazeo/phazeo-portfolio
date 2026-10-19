@@ -60,16 +60,27 @@ jobs:
       - name: Verify headers match build
         run: pnpm check:headers
 
-      - name: Prove CSP in Chromium
+      - name: Playwright e2e
         env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
           CHROME_PATH: /usr/bin/google-chrome
+          PW_CHROME_PATH: /usr/bin/google-chrome
         run: |
           if [ ! -x "$CHROME_PATH" ]; then
             echo "STOP: runner has no usable Chrome at CHROME_PATH=$CHROME_PATH"
             echo "Do not add a browser download or new dependency - report to maintainers."
             exit 1
           fi
-          pnpm prove:csp
+          pnpm exec playwright test
+
+      - name: Upload Playwright results
+        if: failure()
+        # actions/upload-artifact@v4.6.2 (tag v4.6.2 → this commit)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
 
       - name: Verify build output
         run: |
