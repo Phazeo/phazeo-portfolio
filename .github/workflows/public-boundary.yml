@@ -29,7 +29,7 @@ jobs:
         # actions/setup-node@v7.0.0 (tag v7.0.0 → this commit; published 2026-07-14)
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
           package-manager-cache: false
 
       - name: Check PR title, body, and commit messages
@@ -39,8 +39,8 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          node scripts/check-public-boundary.mjs --text-env PR_TITLE
-          node scripts/check-public-boundary.mjs --text-env PR_BODY
+          node tools/guard/check-public-boundary.ts --text-env PR_TITLE
+          node tools/guard/check-public-boundary.ts --text-env PR_BODY
           mkdir -p "$RUNNER_TEMP/boundary"
           git log --format=%B "${BASE_SHA}..${HEAD_SHA}" >"$RUNNER_TEMP/boundary/commit-messages.txt"
-          node scripts/check-public-boundary.mjs --text-file "$RUNNER_TEMP/boundary/commit-messages.txt"
+          node tools/guard/check-public-boundary.ts --text-file "$RUNNER_TEMP/boundary/commit-messages.txt"

@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Refuse push if any commit being pushed fails scripts/check-leaks --commits.
+# Refuse push if any commit being pushed fails tools/guard/check-leaks.sh --commits.
 set -e
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
@@ -28,7 +28,7 @@ do
   fi
 
   echo "pre-push: check-leaks --commits $range ($local_ref)" >&2
-  if ! sh scripts/check-leaks --commits "$range"; then
+  if ! sh tools/guard/check-leaks.sh --commits "$range"; then
     echo "PUSH BLOCKED: leak guard failed for $range" >&2
     exit 1
   fi

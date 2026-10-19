@@ -1,0 +1,17 @@
+# Reviewed executable / archive paths allowed by [binary-file] (one path per line).
+# Shell entry points and husky hooks are executable by design.
+.husky/commit-msg
+.husky/pre-commit
+.husky/pre-push
+.husky/prepare-commit-msg
+tools/guard/check-leaks.sh
+tools/guard/check-leaks-on-push.sh
+tools/guard/check-no-ai-commit.ts
+tools/guard/ensure-gitleaks.sh
+tests/prove/prove-leak-guard.sh
+# Legacy paths, kept so older commits still pass the per-commit scan.
+scripts/check-leaks
+scripts/check-leaks-on-push.sh
+scripts/check-no-ai-commit.mjs
+scripts/ensure-gitleaks.sh
+scripts/prove-leak-guard.sh

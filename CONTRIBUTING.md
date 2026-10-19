@@ -30,7 +30,7 @@ See `profiles/sriram-sm/` for a complete React example.
 
 - Full name as the person writes it, lowercase and hyphenated (for example `jane-doe`). An initial is fine for a later part (for example `jane-d`).
 - Must match `^[a-z][a-z0-9]*(-[a-z0-9]+)+$`, max 40 characters, at least two hyphen-separated parts.
-- Must not appear in `.github/retired-slugs.txt` or `.github/reserved-slugs.txt`.
+- Must not appear in `config/slugs/retired.txt` or `config/slugs/reserved.txt`.
 - Must be unique. The repository owner approves the address.
 
 ### Assets
@@ -46,7 +46,7 @@ This repository is public. Automated checks block:
 - **Phone numbers** and **street addresses** in source, text, images, or PDFs
 - **Image metadata** (EXIF/XMP) on JPEG/PNG/WebP/GIF
 - **Resume PDFs** that contain phone numbers
-- **Unreviewed hosts** - every hostname must be listed in `.github/allowed-hosts.txt`
+- **Unreviewed hosts** - every hostname must be listed in `config/policy/allowed-hosts.txt`
 - **Long dashes** (em dash or en dash) outside `profiles/` and `public/profiles/`
 
 Credentials, private keys, tool caches, oversized binaries, and similar secrets are also blocked by the leak guard.
@@ -59,14 +59,14 @@ Credentials, private keys, tool caches, oversized binaries, and similar secrets 
 
 ```sh
 pnpm quality
-sh scripts/check-leaks --tree
+pnpm guard:tree
 ```
 
 4. Push again. Do not bypass hooks.
 
 ## Commit rules
 
-- **No AI attribution** in author, committer, co-author, or message trailers. Local hooks strip common trailers and refuse leftovers; CI re-checks (`scripts/check-no-ai-commit.mjs`).
+- **No AI attribution** in author, committer, co-author, or message trailers. Local hooks strip common trailers and refuse leftovers; CI re-checks (`pnpm` / the no-AI commit workflow).
 - **No long dashes** in commit messages (or in files outside profile content trees). Use a normal hyphen, a colon, or rewrite.
 
 Human contributor emails are fine. Do not set `git user.email` to an AI tool address.

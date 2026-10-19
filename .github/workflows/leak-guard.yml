@@ -1,4 +1,4 @@
-# Leak guard - single entry point scripts/check-leaks on every PR and push.
+# Leak guard - single entry point tools/guard/check-leaks.sh on every PR and push.
 name: Leak guard
 
 on:
@@ -35,27 +35,27 @@ jobs:
         # actions/setup-node@v7.0.0 (tag v7.0.0 → this commit; published 2026-07-14)
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
           package-manager-cache: false
 
-      - name: Wiring test (only scripts/check-leaks)
-        run: node scripts/test-leak-guard-wiring.mjs
+      - name: Wiring test (only tools/guard/check-leaks.sh)
+        run: node --test tests/unit/leak-guard-wiring.test.ts
 
       - name: Public boundary unit tests
-        run: node scripts/test-public-boundary.mjs
+        run: node --test tests/unit/public-boundary.test.ts
 
       - name: Scan PR commits
         if: github.event_name == 'pull_request'
         env:
           BASE_REF: ${{ github.base_ref }}
           HEAD_SHA: ${{ github.sha }}
-        run: sh scripts/check-leaks --commits "origin/${BASE_REF}..${HEAD_SHA}"
+        run: sh tools/guard/check-leaks.sh --commits "origin/${BASE_REF}..${HEAD_SHA}"
 
       - name: Scan push commits
         if: github.event_name == 'push'
         env:
           BEFORE: ${{ github.event.before }}
           HEAD_SHA: ${{ github.sha }}
-        run: sh scripts/check-leaks-on-push.sh "$BEFORE" "$HEAD_SHA"
+        run: sh tools/guard/check-leaks-on-push.sh "$BEFORE" "$HEAD_SHA"
       - name: Scan full working tree
-        run: sh scripts/check-leaks --tree
+        run: sh tools/guard/check-leaks.sh --tree
