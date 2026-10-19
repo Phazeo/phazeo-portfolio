@@ -651,8 +651,8 @@ export function HomePage() {
               ))}
             </ul>
           ) : (
-            <div className="space-y-4 py-12 text-center">
-              <p className="text-[color:var(--dir-text-muted)]">
+            <div className="directory-empty">
+              <p className="directory-empty__text">
                 {DIRECTORY_INDEX.length === 0
                   ? "No portfolios available yet."
                   : "No people match these filters."}
