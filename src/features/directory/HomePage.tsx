@@ -388,6 +388,7 @@ export function HomePage() {
     .map((e) => bySlug.get(e.slug))
     .filter((p): p is ProfileConfig => Boolean(p));
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-bind when the list remounts after empty results
   useEffect(() => {
     const listEl = listRef.current;
     if (!listEl) {
@@ -428,7 +429,6 @@ export function HomePage() {
       listEl.removeEventListener("pointermove", onPointerMove);
       listEl.removeEventListener("pointerleave", onPointerLeave);
     };
-    // biome-ignore lint/correctness/useExhaustiveDependencies: re-bind when the list remounts after empty results
   }, [pageProfiles.length]);
 
   const hasActiveFilters = Boolean(qDraft.trim()) || params.type !== "all";
