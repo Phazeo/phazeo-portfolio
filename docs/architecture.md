@@ -18,7 +18,7 @@ src/components/         shared app UI (error boundary, fallbacks, social icons)
 src/styles/             global CSS and the shell font
 tools/                  build and check scripts
 config/                 policy and slug lists
-tests/                  unit tests and proof scripts
+tests/                  unit tests and Playwright e2e specs
 ```
 
 ## The kit
@@ -47,7 +47,7 @@ Enforced by `pnpm check:imports`:
 
 - `react-profiles` loads `profiles/*/meta.ts`
 - `data-profiles` loads `profiles/*/profile.json` and converts each one with the data-profile feature
-- `guest-csp-example` is only included when `VITE_GUEST_CSP_EXAMPLE=1` (used by the CSP proof build)
+- `guest-csp-example` is only included when `VITE_GUEST_CSP_EXAMPLE=1` (local guest example build)
 - `index` merges them, rejects duplicate slugs, and exports `getProfile`, `getListedProfiles`, and related helpers
 
 A slug folder has either `meta.ts` or `profile.json`, never both. Folders whose names start with an underscore are not allowed under `profiles/`.
@@ -62,3 +62,6 @@ A slug folder has either `meta.ts` or `profile.json`, never both. Folders whose 
 - `pnpm check:imports`: dependency rules above
 - `pnpm test`: all unit tests
 - `pnpm build`: typecheck, checks, production build, and security headers
+- `pnpm test:e2e`: Playwright suites (`site` against `dist/`, `demo` against the directory demo). Requires a system Google Chrome install (`channel: "chrome"`). Do not run `playwright install`. Build first so the site project can serve `dist/`.
+- `pnpm test:e2e:site` / `pnpm test:e2e:demo`: one project each (`prove:csp` aliases the site project)
+- Optional `PW_CHROME_PATH` (or `CHROME_PATH`) overrides the Chrome binary path
