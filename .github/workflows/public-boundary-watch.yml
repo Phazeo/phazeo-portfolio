@@ -32,7 +32,7 @@ jobs:
         # actions/setup-node@v7.0.0 (tag v7.0.0 → this commit; published 2026-07-14)
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
           package-manager-cache: false
 
       - name: Check issue or comment text
@@ -43,8 +43,8 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           if [ "$EVENT_NAME" = "issues" ]; then
-            node scripts/check-public-boundary.mjs --text-env ISSUE_TITLE
-            node scripts/check-public-boundary.mjs --text-env ISSUE_BODY
+            node tools/guard/check-public-boundary.ts --text-env ISSUE_TITLE
+            node tools/guard/check-public-boundary.ts --text-env ISSUE_BODY
           else
-            node scripts/check-public-boundary.mjs --text-env COMMENT_BODY
+            node tools/guard/check-public-boundary.ts --text-env COMMENT_BODY
           fi

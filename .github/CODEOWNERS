@@ -1,6 +1,9 @@
 # Default owner for the repository.
 * @dinesh-ad
 
+# Shared policy and slug lists (app + checks read these).
+/config/ @dinesh-ad
+
 # Profile owner for sowmipriya-rajendiran (plus default).
 /profiles/sowmipriya-rajendiran/ @dinesh-ad @sowmipriya
 /public/profiles/sowmipriya-rajendiran/ @dinesh-ad @sowmipriya

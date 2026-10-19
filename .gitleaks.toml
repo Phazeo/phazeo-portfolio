@@ -8,12 +8,15 @@ useDefault = true
 [[allowlists]]
 description = "Leak-guard fixtures, dependency trees, and build output"
 paths = [
-  '''(^|/)test/leak-fixtures/''',
+  '''(^|/)tests/fixtures/leak/''',
   '''(^|/)node_modules/''',
   '''(^|/)dist/''',
   '''pnpm-lock\.yaml$''',
   # Opaque SHA-256 digests only - hex runs can false-positive phone rules.
+  '''(^|/)config/policy/boundary-denylist\.sha256$''',
+  # Old location, still present in older commits scanned in commits mode.
   '''(^|/)\.github/boundary-denylist\.sha256$''',
+  '''(^|/)test/leak-fixtures/''',
 ]
 
 # --- IPv4: default-deny; only loopback, unspecified, RFC 5737 docs ranges ---
@@ -72,7 +75,7 @@ id = "phazeo-private-key-block"
 description = "PEM private key block"
 regex = '''-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'''
 
-# --- Phone numbers (personal data). Keep in sync with scripts/phone-patterns.mjs. ---
+# --- Phone numbers (personal data). Keep in sync with tools/guard/phone-patterns.ts. ---
 # International: + then 8-15 digits with optional spaces/dots/dashes/brackets.
 [[rules]]
 id = "phazeo-phone-intl"

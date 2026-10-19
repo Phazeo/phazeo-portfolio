@@ -15,7 +15,7 @@ The address is the person's full name as they write it, lowercase and hyphenated
 
 Examples: `firstname-lastname`, `firstname-x`.
 
-Rules: at least two hyphen-separated parts, max 40 characters, must match `^[a-z][a-z0-9]*(-[a-z0-9]+)+$`, and must not appear in `.github/retired-slugs.txt` or `.github/reserved-slugs.txt`.
+Rules: at least two hyphen-separated parts, max 40 characters, must match `^[a-z][a-z0-9]*(-[a-z0-9]+)+$`, and must not appear in `config/slugs/retired.txt` or `config/slugs/reserved.txt`.
 
 ## Local development
 

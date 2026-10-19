@@ -1,5 +1,5 @@
-import reservedSlugsText from "../.github/reserved-slugs.txt?raw";
-import retiredSlugsText from "../.github/retired-slugs.txt?raw";
+import reservedSlugsText from "../config/slugs/reserved.txt?raw";
+import retiredSlugsText from "../config/slugs/retired.txt?raw";
 
 /** At least two hyphen-separated parts; max 40 chars. */
 export const SLUG_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)+$/;
