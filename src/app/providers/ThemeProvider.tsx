@@ -5,14 +5,28 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
-type Theme = "light" | "dark";
+import {
+  createThemeSession,
+  STORAGE_KEY,
+  THEME_COLOR_DARK,
+  THEME_COLOR_LIGHT,
+  type Theme,
+  type ThemeSessionEnv,
+} from "./theme-session";
 
-const STORAGE_KEY = "phazeo-portfolio-theme";
+export type { Theme } from "./theme-session";
+export {
+  createThemeSession,
+  STORAGE_KEY,
+  THEME_COLOR_DARK,
+  THEME_COLOR_LIGHT,
+} from "./theme-session";
 
-function readStoredTheme(): Theme | null {
+export function readStoredTheme(): Theme | null {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "light" || stored === "dark") {
@@ -24,7 +38,7 @@ function readStoredTheme(): Theme | null {
   return null;
 }
 
-function writeStoredTheme(theme: Theme): void {
+export function writeStoredTheme(theme: Theme): void {
   try {
     localStorage.setItem(STORAGE_KEY, theme);
   } catch {
@@ -32,22 +46,12 @@ function writeStoredTheme(theme: Theme): void {
   }
 }
 
-function getInitialTheme(): Theme {
-  if (typeof document === "undefined") {
-    return "light";
-  }
-  const stored = readStoredTheme();
-  if (stored) {
-    return stored;
-  }
-  try {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  } catch {
-    return "light";
-  }
+/** Read the class already applied by the index.html inline script (before paint). */
+export function readDomTheme(): Theme {
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
-function applyTheme(theme: Theme) {
+export function applyTheme(theme: Theme): void {
   const root = document.documentElement;
   if (theme === "dark") {
     root.classList.add("dark");
@@ -56,8 +60,34 @@ function applyTheme(theme: Theme) {
   }
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme) {
-    metaTheme.setAttribute("content", theme === "dark" ? "#0a0a0f" : "#ffffff");
+    metaTheme.setAttribute("content", theme === "dark" ? THEME_COLOR_DARK : THEME_COLOR_LIGHT);
   }
+}
+
+function browserSessionEnv(): ThemeSessionEnv {
+  return {
+    getStored: readStoredTheme,
+    setStored: writeStoredTheme,
+    getDomTheme: readDomTheme,
+    apply: applyTheme,
+    subscribeSystem(onChange) {
+      let mq: MediaQueryList;
+      try {
+        mq = window.matchMedia("(prefers-color-scheme: dark)");
+      } catch {
+        return () => {
+          /* no media query support */
+        };
+      }
+      const handler = (event: MediaQueryListEvent) => {
+        onChange(event.matches);
+      };
+      mq.addEventListener("change", handler);
+      return () => {
+        mq.removeEventListener("change", handler);
+      };
+    },
+  };
 }
 
 const ThemeContext = createContext<{
@@ -67,29 +97,36 @@ const ThemeContext = createContext<{
 } | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
+  const sessionRef = useRef<ReturnType<typeof createThemeSession> | null>(null);
+  if (!sessionRef.current) {
+    sessionRef.current = createThemeSession(browserSessionEnv());
+  }
+  const session = sessionRef.current;
+
+  const [theme, setThemeState] = useState<Theme>(() => session.getTheme());
 
   useEffect(() => {
-    setThemeState(getInitialTheme());
-    setMounted(true);
-  }, []);
+    const unmount = session.mount();
+    const unsub = session.subscribe(setThemeState);
+    setThemeState(session.getTheme());
+    return () => {
+      unsub();
+      unmount();
+    };
+  }, [session]);
 
-  useEffect(() => {
-    if (!mounted) {
-      return;
-    }
-    applyTheme(theme);
-    writeStoredTheme(theme);
-  }, [theme, mounted]);
-
-  const setTheme = useCallback((newTheme: Theme) => {
-    setThemeState(newTheme);
-  }, []);
+  const setTheme = useCallback(
+    (newTheme: Theme) => {
+      session.setTheme(newTheme);
+      setThemeState(session.getTheme());
+    },
+    [session]
+  );
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === "light" ? "dark" : "light"));
-  }, []);
+    session.toggle();
+    setThemeState(session.getTheme());
+  }, [session]);
 
   const value = useMemo(() => ({ theme, setTheme, toggleTheme }), [theme, setTheme, toggleTheme]);
 
