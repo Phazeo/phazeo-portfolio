@@ -13,6 +13,11 @@ export type DirectoryEntry = {
   skills?: string[];
 };
 
+/** Entry with precomputed normalized search text for fast matching. */
+export type IndexedDirectoryEntry = DirectoryEntry & {
+  searchText: string;
+};
+
 export type DirectoryParams = {
   q: string;
   type: DirectoryTypeFilter;
@@ -23,6 +28,12 @@ export type PageResult<T> = {
   items: T[];
   page: number;
   pageCount: number;
+};
+
+export type DirectoryTypeCounts = {
+  all: number;
+  team: number;
+  guest: number;
 };
 
 const PAGE_SIZE = 20;
@@ -38,13 +49,39 @@ export function normalize(text: string): string {
     .trim();
 }
 
-function haystack(entry: DirectoryEntry): string {
+/** Build the normalized haystack for an entry (name, role, skills). */
+export function searchTextFor(entry: DirectoryEntry): string {
   const parts = [entry.displayName, entry.role ?? "", ...(entry.skills ?? [])];
   return normalize(parts.join(" "));
 }
 
-/** Every whitespace-separated word of q must appear in name, role or skills. */
-export function matches(entry: DirectoryEntry, q: string): boolean {
+export function indexEntry(entry: DirectoryEntry): IndexedDirectoryEntry {
+  return { ...entry, searchText: searchTextFor(entry) };
+}
+
+/**
+ * Index entries once: attach searchText and sort with the shared Collator.
+ * Filtering later preserves this order.
+ */
+export function buildDirectoryIndex(entries: readonly DirectoryEntry[]): IndexedDirectoryEntry[] {
+  return sortByDisplayName(entries.map(indexEntry));
+}
+
+export function typeCountsFor(index: readonly IndexedDirectoryEntry[]): DirectoryTypeCounts {
+  let team = 0;
+  let guest = 0;
+  for (const e of index) {
+    if (e.affiliation === "team") {
+      team++;
+    } else {
+      guest++;
+    }
+  }
+  return { all: index.length, team, guest };
+}
+
+/** Every whitespace-separated word of q must appear in the precomputed search text. */
+export function matches(entry: IndexedDirectoryEntry, q: string): boolean {
   const query = normalize(q);
   if (!query) {
     return true;
@@ -53,8 +90,24 @@ export function matches(entry: DirectoryEntry, q: string): boolean {
   if (words.length === 0) {
     return true;
   }
-  const hay = haystack(entry);
-  return words.every((w) => hay.includes(w));
+  return words.every((w) => entry.searchText.includes(w));
+}
+
+/**
+ * Filter by type then query. Preserves the input order (callers pass a
+ * presorted index so there is no sort per keystroke).
+ */
+export function filterDirectory(
+  index: readonly IndexedDirectoryEntry[],
+  type: DirectoryTypeFilter,
+  q: string
+): IndexedDirectoryEntry[] {
+  const typed = filterByType(index, type);
+  const query = normalize(q);
+  if (!query) {
+    return typed;
+  }
+  return typed.filter((e) => matches(e, q));
 }
 
 export function sortByDisplayName<T extends { displayName: string }>(list: readonly T[]): T[] {
@@ -122,6 +175,19 @@ export function toParams(params: DirectoryParams): URLSearchParams {
     out.set("page", String(params.page));
   }
   return out;
+}
+
+/** Initials from a display name: first code point of up to two whitespace parts. */
+export function initialsFromName(displayName: string): string {
+  return displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => {
+      const cp = Array.from(part)[0];
+      return cp ? cp.toUpperCase() : "";
+    })
+    .join("");
 }
 
 export const DIRECTORY_PAGE_SIZE = PAGE_SIZE;
