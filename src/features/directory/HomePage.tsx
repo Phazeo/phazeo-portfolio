@@ -618,7 +618,7 @@ export function HomePage() {
                       value={qDraft}
                       onChange={(e) => setQuery(e.target.value)}
                       onBlur={onSearchBlur}
-                      className="w-full rounded-[16px] py-2.5 pr-16 pl-10 text-[color:var(--dir-text-name)] placeholder:text-[color:var(--dir-text-placeholder)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                      className="w-full rounded-[16px] py-2.5 pr-16 pl-10 text-[color:var(--dir-text-name)] placeholder:text-[color:var(--dir-text-placeholder)] outline-none"
                       placeholder="Search name, role or skill"
                       autoComplete="off"
                     />
@@ -633,7 +633,7 @@ export function HomePage() {
                       <button
                         type="button"
                         onClick={clearSearchImmediate}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-[color:var(--dir-text-muted)] hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--dir-focus-ring)]"
+                        className="directory-search-clear absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-[color:var(--dir-text-muted)] hover:opacity-100"
                         aria-label="Clear search"
                       >
                         <svg

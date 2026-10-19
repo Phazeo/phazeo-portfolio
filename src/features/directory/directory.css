@@ -1,3 +1,9 @@
+@property --sheen-shift {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
 /*
   Directory glossy glass tokens and surfaces.
   Contrast is verified by tests/unit/directory-contrast.test.ts
@@ -312,11 +318,23 @@
   z-index: 0;
 }
 
+.directory-toolbar-field:has(input:focus-visible) {
+  outline: 2px solid var(--dir-focus-ring);
+  outline-offset: 2px;
+}
+
 .directory-toolbar-field input {
   position: relative;
   z-index: 1;
   color: var(--dir-text-name);
   background: transparent;
+  outline: none;
+}
+
+.directory-toolbar-field .directory-search-clear:focus-visible {
+  outline: 2px solid var(--dir-focus-ring);
+  outline-offset: 0;
+  border-radius: 6px;
 }
 
 .directory-toolbar-field input::placeholder {
@@ -476,6 +494,7 @@
   background-size: 100% 40%;
   background-repeat: no-repeat;
   background-position: 0 0;
+  transition: --sheen-shift 220ms ease;
 }
 
 .directory-avatar {
@@ -630,10 +649,6 @@
     opacity: 1;
   }
 
-  .directory-card:hover .directory-card__sheen {
-    transition: background 220ms ease;
-  }
-
   .directory-card:hover .directory-card-arrow {
     transform: translateX(2px);
     color: var(--dir-segment-active-text);
@@ -647,6 +662,10 @@
   .directory-card-arrow,
   .directory-glass-btn,
   .directory-segment button {
+    transition: none;
+  }
+
+  .directory-card__sheen {
     transition: none;
   }
 
@@ -754,7 +773,7 @@
   .directory-card:has(:focus-visible),
   .directory-glass-btn:focus-visible,
   .directory-segment button:focus-visible,
-  .directory-toolbar-field:focus-within {
+  .directory-toolbar-field:has(input:focus-visible) {
     outline: 2px solid Highlight;
   }
 }
