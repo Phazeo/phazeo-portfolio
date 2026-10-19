@@ -18,6 +18,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { API } from "typescript/unstable/sync";
+import { type ChangedScope, isNarrowScope, loadScopeFromEnv } from "../lib/changed-scope.ts";
 
 /** Bare specifiers profiles may import (exact match). */
 export const PROFILE_ALLOWED_PACKAGES: readonly string[] = [
@@ -172,14 +173,55 @@ function checkSpecifier(
   return errors;
 }
 
-/**
- * Check every .ts/.tsx file under <root>/src and <root>/profiles.
- * Returns one message per violation (empty array when clean).
- */
-export function checkImportBoundaries(root: string): string[] {
+export type CheckOptions = {
+  /** Only check these files (absolute or repo-relative). Omit to check everything. */
+  files?: string[];
+};
+
+/** Every source file under <root>/src and <root>/profiles (absolute paths, sorted). */
+export function listBoundaryFiles(root: string): string[] {
   const absRoot = resolve(root);
   const files: string[] = [];
   for (const dir of SCAN_DIRS) walk(join(absRoot, dir), files);
+  return files.sort();
+}
+
+/**
+ * Files to check for a scope. Full list when SCOPE_FULL, fail-closed, or not a pull request.
+ * Otherwise: changed files under src/ or profiles/, plus all of src/kit when shared code changed.
+ */
+export function resolveBoundaryFiles(
+  root: string,
+  scope: ChangedScope,
+  env: NodeJS.ProcessEnv = process.env
+): { scoped: boolean; files: string[] } {
+  if (!isNarrowScope(scope, env)) return { scoped: false, files: listBoundaryFiles(root) };
+  const absRoot = resolve(root);
+  const picked = new Set<string>();
+  for (const p of scope.changedPaths) {
+    if (!(p.startsWith("src/") || p.startsWith("profiles/"))) continue;
+    if (!SOURCE_FILE_RE.test(p)) continue;
+    const abs = join(absRoot, p);
+    if (existsSync(abs)) picked.add(abs);
+  }
+  if (scope.sharedChanged) {
+    const kit: string[] = [];
+    walk(join(absRoot, "src", "kit"), kit);
+    for (const f of kit) picked.add(f);
+  }
+  return { scoped: true, files: [...picked].sort() };
+}
+
+/**
+ * Check .ts/.tsx files under <root>/src and <root>/profiles (or only `options.files`).
+ * Returns one message per violation (empty array when clean).
+ */
+export function checkImportBoundaries(root: string, options: CheckOptions = {}): string[] {
+  const absRoot = resolve(root);
+  const files =
+    options.files === undefined
+      ? listBoundaryFiles(absRoot)
+      : [...new Set(options.files.map((f) => resolve(absRoot, f)))].filter((f) => existsSync(f));
   if (files.length === 0) return [];
 
   const tmp = mkdtempSync(join(tmpdir(), "phazeo-import-boundaries-"));
@@ -235,7 +277,14 @@ export function checkImportBoundaries(root: string): string[] {
 
 function main(): void {
   const root = fileURLToPath(new URL("../..", import.meta.url));
-  const errors = checkImportBoundaries(root);
+  const scope = loadScopeFromEnv(root);
+  const { scoped, files } = resolveBoundaryFiles(root, scope);
+  console.log(
+    scoped
+      ? `check-imports: scoped ${files.length} files (slugs=${scope.changedSlugs.join(",") || "none"} shared=${scope.sharedChanged})`
+      : `check-imports: all ${files.length} files`
+  );
+  const errors = checkImportBoundaries(root, { files });
   if (errors.length > 0) {
     console.error("check-imports: FAILED");
     for (const e of errors) console.error(e);

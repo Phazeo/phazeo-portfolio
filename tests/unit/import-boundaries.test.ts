@@ -237,6 +237,30 @@ describe("import boundaries: rule 4 (tools and tests)", () => {
   });
 });
 
+describe("import boundaries: files option", () => {
+  const TREE: Tree = {
+    "src/kit/ok.ts": "export {};\n",
+    "src/app/bad.ts": 'import { u } from "../../tests/u";\nexport default u;\n',
+  };
+
+  it("checks only the listed files (repo-relative)", () => {
+    withTree(TREE, (root) => {
+      assert.deepEqual(checkImportBoundaries(root, { files: ["src/kit/ok.ts"] }), []);
+      const errors = checkImportBoundaries(root, { files: ["src/app/bad.ts"] });
+      assert.equal(errors.length, 1);
+      assert.match(errors[0] ?? "", /^src\/app\/bad\.ts: .*rule 4/);
+    });
+  });
+
+  it("accepts absolute paths and an empty list", () => {
+    withTree(TREE, (root) => {
+      const errors = checkImportBoundaries(root, { files: [join(root, "src/app/bad.ts")] });
+      assert.equal(errors.length, 1);
+      assert.deepEqual(checkImportBoundaries(root, { files: [] }), []);
+    });
+  });
+});
+
 describe("import boundaries: real repository", () => {
   it("is clean", () => {
     const root = new URL("../..", import.meta.url).pathname;

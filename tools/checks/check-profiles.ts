@@ -23,6 +23,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { parseSlugList, validateSlug } from "../../src/registry/slug.ts";
 import { textMatchesAnyPhone } from "../guard/phone-patterns.ts";
+import { isNarrowScope, loadScopeFromEnv } from "../lib/changed-scope.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const PROFILES_DIR = join(ROOT, "profiles");
@@ -255,6 +256,13 @@ function main(): void {
     process.exit(2);
   }
 
+  const scope = loadScopeFromEnv(ROOT);
+  const narrow = isNarrowScope(scope);
+  const expensiveSlugs = new Set(scope.changedSlugs);
+  console.log(
+    `check-profiles: scope slugs=${scope.changedSlugs.join(",") || "none"} shared=${scope.sharedChanged} failClosed=${scope.failClosed}`
+  );
+
   for (const ent of readdirSync(PROFILES_DIR, { withFileTypes: true })) {
     if (!ent.isDirectory()) continue;
     if (ent.name.startsWith("_")) {
@@ -264,6 +272,7 @@ function main(): void {
       continue;
     }
     const slug = ent.name;
+    errors.push(...assertValidSlug(slug));
     const dir = join(PROFILES_DIR, slug);
     const metaPath = join(dir, "meta.ts");
     const jsonPath = join(dir, "profile.json");
@@ -284,6 +293,9 @@ function main(): void {
     }
     if (!hasJson) continue;
 
+    // Cheap structural and slug checks above always run; schema, assets, and hosts only for slugs in scope.
+    if (narrow && !expensiveSlugs.has(slug)) continue;
+
     errors.push(
       ...validateProfileJsonFile(jsonPath, {
         slug,
@@ -294,9 +306,11 @@ function main(): void {
     );
   }
 
-  if (errors.length > 0) {
+  // In-scope profile.json validation repeats the slug check; report each message once.
+  const unique = [...new Set(errors)];
+  if (unique.length > 0) {
     console.error("check-profiles: FAILED");
-    for (const e of errors) console.error(e);
+    for (const e of unique) console.error(e);
     process.exit(1);
   }
   console.log("check-profiles: OK");

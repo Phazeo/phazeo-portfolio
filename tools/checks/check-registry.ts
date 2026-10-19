@@ -14,6 +14,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
+import { isNarrowScope, loadScopeFromEnv } from "../lib/changed-scope.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const PROFILES_DIR = join(ROOT, "profiles");
@@ -44,6 +45,11 @@ function walkFiles(dir: string, visit: (abs: string) => void): void {
       visit(abs);
     }
   }
+}
+
+/** Walk only profiles/<slug> for each slug (slugs without a folder are skipped). */
+function walkProfileSlugs(slugs: readonly string[], visit: (abs: string) => void): void {
+  for (const slug of slugs) walkFiles(join(PROFILES_DIR, slug), visit);
 }
 
 function lineAt(text: string, index: number): number {
@@ -91,7 +97,10 @@ function resolveTemplatePaths(template: string, fileText: string): string[] | nu
   return [...new Set(paths)];
 }
 
-function collectAssetErrors(): string[] {
+/**
+ * `slugs` limits the per-profile asset scan to those folders; null scans every profile.
+ */
+function collectAssetErrors(slugs: readonly string[] | null): string[] {
   const errors: string[] = [];
   const required: { slug: string; rel: string }[] = [];
   const seenRel = new Set<string>();
@@ -106,7 +115,7 @@ function collectAssetErrors(): string[] {
     required.push({ slug, rel });
   }
 
-  walkFiles(PROFILES_DIR, (abs) => {
+  const scanFile = (abs: string): void => {
     const text = readFileSync(abs, "utf8");
     const from = relative(ROOT, abs);
 
@@ -163,7 +172,9 @@ function collectAssetErrors(): string[] {
     for (const m of text.matchAll(LOCAL_PATH_RE)) {
       requireFile(m[2] ?? "", m[3] ?? "");
     }
-  });
+  };
+  if (slugs === null) walkFiles(PROFILES_DIR, scanFile);
+  else walkProfileSlugs(slugs, scanFile);
 
   for (const { slug, rel } of required) {
     const abs = join(ROOT, "public", rel);
@@ -180,7 +191,14 @@ function collectAssetErrors(): string[] {
 }
 
 async function main(): Promise<void> {
-  const assetErrors = collectAssetErrors();
+  const scope = loadScopeFromEnv(ROOT);
+  const narrow = isNarrowScope(scope);
+  // Shared-only changes on a PR (no changed slugs) skip the per-profile asset walk; SSR still runs.
+  const assetSlugs = narrow ? scope.changedSlugs : null;
+  console.log(
+    `check-registry: asset scan ${assetSlugs === null ? "all profiles" : `slugs=${assetSlugs.join(",") || "none"}`} (shared=${scope.sharedChanged} failClosed=${scope.failClosed})`
+  );
+  const assetErrors = collectAssetErrors(assetSlugs);
   if (assetErrors.length > 0) {
     console.error("check-registry: FAILED");
     for (const e of assetErrors) console.error(e);

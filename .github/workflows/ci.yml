@@ -18,12 +18,20 @@ jobs:
     name: Build & validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      # Scope for changed-profile checks. On push events GITHUB_BASE_REF is empty and the
+      # event is not pull_request, so every check runs its full (non-PR) path.
+      GITHUB_BASE_REF: ${{ github.base_ref }}
+      GITHUB_SHA: ${{ github.sha }}
+      GITHUB_EVENT_NAME: ${{ github.event_name }}
     steps:
       - name: Checkout
         # actions/checkout@v7.0.1 (tag v7.0.1 → this commit; published 2026-07-20)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Pull requests need full history so the changed-scope diff can find the merge base.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
 
       - name: Install pnpm
         # pnpm/action-setup@v6.1.0 (tag v6.1.0^{} → this commit; published 2026-09-05)
