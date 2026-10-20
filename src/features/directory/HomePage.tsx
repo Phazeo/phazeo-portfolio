@@ -523,8 +523,10 @@ export function HomePage() {
         <ThemeSwitch />
 
         <div className="directory-page mx-auto max-w-4xl px-4">
+          <div className="directory-hero__glow-layer" aria-hidden="true">
+            <div className="directory-hero__glow" />
+          </div>
           <header className="directory-hero">
-            <div className="directory-hero__glow" aria-hidden="true" />
             <div className="directory-eyebrow" data-dir-eyebrow>
               <span className="directory-eyebrow__dot" aria-hidden="true" />
               <span>

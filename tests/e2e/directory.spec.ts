@@ -8,6 +8,7 @@ import {
   styleMap,
   textLineStats,
 } from "./helpers/geometry.ts";
+import { expectNoHorizontalOverflow } from "./helpers/overflow.ts";
 import { directoryWidths } from "./helpers/scope.ts";
 import { openWithTheme } from "./helpers/theme.ts";
 
@@ -23,6 +24,10 @@ async function firstCard(page: Page) {
 }
 
 test.describe("directory demo", () => {
+  test("home with many cards: no horizontal scroll at phone widths", async ({ page }) => {
+    await expectNoHorizontalOverflow(page, "/");
+  });
+
   test("Prompt 40: card clicks open profile; socials stay social", async ({
     browser,
     baseURL,

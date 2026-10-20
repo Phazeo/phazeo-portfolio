@@ -327,15 +327,28 @@
   text-align: center;
 }
 
+/*
+ * The glow is wider than the hero, so it sits in its own layer that spans the
+ * page shell and clips it there: it never makes the page scroll sideways.
+ * The layer keeps its static top (the top of the hero) and the shell's width.
+ */
+.directory-hero__glow-layer {
+  position: absolute;
+  inset-inline: 0;
+  z-index: 0;
+  height: 420px;
+  overflow: clip;
+  pointer-events: none;
+}
+
+/* 120% of the hero's width (the page's max-w-4xl minus its px-4 padding), at most 900px. */
 .directory-hero__glow {
   position: absolute;
   left: 50%;
   top: 0;
-  z-index: 0;
-  width: min(900px, 120%);
-  height: 420px;
+  width: min(900px, calc((min(100%, 56rem) - 2rem) * 1.2));
+  height: 100%;
   transform: translateX(-50%);
-  pointer-events: none;
   background:
     radial-gradient(
       ellipse 55% 65% at 32% 42%,
@@ -349,7 +362,7 @@
     );
 }
 
-.directory-hero > :not(.directory-hero__glow) {
+.directory-hero > * {
   position: relative;
   z-index: 1;
 }

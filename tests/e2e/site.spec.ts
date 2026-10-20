@@ -10,6 +10,7 @@ import {
   headerSourceCount,
 } from "../../tools/build/headers-merge.ts";
 import { loadRedirects, matchRedirect, parseRedirects } from "../../tools/build/redirects.ts";
+import { expectNoHorizontalOverflow, measureHeroGlow } from "./helpers/overflow.ts";
 import { ROOT, siteProfileSlugs } from "./helpers/scope.ts";
 
 const DIST = join(ROOT, "dist");
@@ -106,6 +107,32 @@ test.describe("site", () => {
       void baseURL;
     });
   }
+
+  for (const route of routes().filter((r) => r.path !== NOT_FOUND_PATH)) {
+    test(`${route.label}: no horizontal scroll at phone widths`, async ({ page }) => {
+      await expectNoHorizontalOverflow(page, route.path);
+    });
+  }
+
+  test("home: hero glow keeps its size and position; unclipped from 900px", async ({ page }) => {
+    for (const width of [768, 900, 1024, 1280, 1440, 1920]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/", { waitUntil: "load" });
+      const g = await measureHeroGlow(page);
+      const at = `at ${width}px`;
+      // 120% of the hero, at most 900px, centred on the hero, from the hero's top.
+      expect(g.glow.width, at).toBeCloseTo(Math.min(900, g.hero.width * 1.2), 0);
+      expect((g.glow.left + g.glow.right) / 2, at).toBeCloseTo((g.hero.left + g.hero.right) / 2, 0);
+      expect(g.glow.top, at).toBeCloseTo(g.hero.top, 0);
+      expect(g.glow.height, at).toBeCloseTo(420, 0);
+      // The clipping layer spans the page; from 900px nothing of the glow is cut.
+      expect(g.layer, at).not.toBeNull();
+      expect(g.layer?.right ?? 0, at).toBeCloseTo(g.clientWidth, 0);
+      if (width < 900) continue;
+      expect(g.layer?.left ?? 1, at).toBeLessThanOrEqual(g.glow.left + 0.5);
+      expect(g.layer?.right ?? 0, at).toBeGreaterThanOrEqual(g.glow.right - 0.5);
+    }
+  });
 
   test("redirects match public/_redirects", async ({ request }) => {
     const text = readFileSync(REDIRECTS_PATH, "utf8");
