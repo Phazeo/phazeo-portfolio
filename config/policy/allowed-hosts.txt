@@ -5,6 +5,7 @@
 phazeo.com
 portfolio.phazeo.com
 github.com
+api.github.com
 linkedin.com
 www.linkedin.com
 biomejs.dev

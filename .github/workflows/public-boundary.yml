@@ -1,4 +1,5 @@
-# Public/private boundary - PR title, body, and commit messages.
+# Public/private boundary - PR title, body, and commit messages (no email allowlist).
+# Fork PRs may use personal commit emails; No AI and message rules still apply.
 name: Public boundary
 
 on:
@@ -32,7 +33,7 @@ jobs:
           node-version-file: ".nvmrc"
           package-manager-cache: false
 
-      - name: Check PR title, body, and commit messages
+      - name: Check PR title, body, commit messages, and No AI
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
@@ -41,6 +42,6 @@ jobs:
         run: |
           node tools/guard/check-public-boundary.ts --text-env PR_TITLE
           node tools/guard/check-public-boundary.ts --text-env PR_BODY
-          mkdir -p "$RUNNER_TEMP/boundary"
-          git log --format=%B "${BASE_SHA}..${HEAD_SHA}" >"$RUNNER_TEMP/boundary/commit-messages.txt"
-          node tools/guard/check-public-boundary.ts --text-file "$RUNNER_TEMP/boundary/commit-messages.txt"
+          node tools/guard/check-public-boundary.ts --commits "${BASE_SHA}..${HEAD_SHA}"
+          node tools/guard/check-no-ai-commit.ts --range "${BASE_SHA}..${HEAD_SHA}"
+          node tools/guard/check-no-ai-commit.ts --authors "${BASE_SHA}..${HEAD_SHA}"
