@@ -1,5 +1,5 @@
 # Exact full commit SHAs that may skip one listed rule when already
-# an ancestor of origin/batch/merge-private-into-public or origin/main.
+# an ancestor of origin/main.
 # Format: 40-hex-sha rule reason
 # Never put denylisted plaintext here.
 # Rules: denylist-token or commit-email

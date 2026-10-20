@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - batch/merge-private-into-public
 
 concurrency:
   group: public-boundary-push-${{ github.workflow }}-${{ github.ref }}

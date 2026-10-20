@@ -132,7 +132,6 @@ describe("commit-emails push vs PR semantics", () => {
     });
     git(repo, "update-ref", "refs/heads/main", root);
     git(repo, "update-ref", "refs/remotes/origin/main", root);
-    git(repo, "update-ref", "refs/remotes/origin/batch/merge-private-into-public", root);
   });
 
   after(() => {
@@ -229,7 +228,6 @@ describe("commit-emails push vs PR semantics", () => {
 
     // Put forged on origin/main tip, then exception applies.
     git(repo, "update-ref", "refs/remotes/origin/main", forged);
-    git(repo, "update-ref", "refs/remotes/origin/batch/merge-private-into-public", forged);
     const listedOnTip = await checkCommitEmails(repo, [forged], async () => false, {
       exceptions: [
         {

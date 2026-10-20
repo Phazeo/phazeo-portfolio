@@ -129,20 +129,21 @@ describe("resolveScopeRevs", () => {
     const revs = resolveScopeRevs({
       GITHUB_BASE_SHA: "abcbase",
       GITHUB_SHA: "abchead",
-      GITHUB_BASE_REF: "batch/merge-private-into-public",
+      GITHUB_BASE_REF: "main",
     });
     assert.deepEqual(revs, { base: "abcbase", head: "abchead" });
   });
 
   it("falls back to origin/<ref> when only GITHUB_BASE_REF is set", () => {
     const revs = resolveScopeRevs({
-      GITHUB_BASE_REF: "batch/merge-private-into-public",
+      GITHUB_BASE_REF: "main",
       GITHUB_SHA: "abchead",
     });
-    assert.deepEqual(revs, {
-      base: "origin/batch/merge-private-into-public",
-      head: "abchead",
-    });
+    assert.deepEqual(revs, { base: "origin/main", head: "abchead" });
+  });
+
+  it("with no CI or scope variables, compares origin/main with HEAD", () => {
+    assert.deepEqual(resolveScopeRevs({}), { base: "origin/main", head: "HEAD" });
   });
 });
 

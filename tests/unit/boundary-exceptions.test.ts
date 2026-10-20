@@ -45,7 +45,6 @@ describe("boundary-exceptions", () => {
     // ancestry we build origin/main containing a commit we treat as listed.
     git(repo, "update-ref", "refs/heads/main", root);
     git(repo, "update-ref", "refs/remotes/origin/main", root);
-    git(repo, "update-ref", "refs/remotes/origin/batch/merge-private-into-public", root);
 
     exceptionsFile = join(repo, "exceptions.txt");
     writeFileSync(
@@ -101,7 +100,7 @@ describe("boundary-exceptions", () => {
   });
 
   it("listed SHA that is not an ancestor of a protected tip still fails", () => {
-    // Create an orphan commit not reachable from origin/main or origin/batch.
+    // Create an orphan commit not reachable from origin/main.
     mkdirSync(join(repo, "orphan"), { recursive: true });
     writeFileSync(join(repo, "orphan", "x.txt"), "orphan\n");
     git(repo, "add", "orphan/x.txt");
@@ -117,6 +116,27 @@ describe("boundary-exceptions", () => {
     ];
     const { kept, applied } = applyCommitExceptions(orphan, findings, exceptions, repo);
     assert.equal(applied, 0, "exception must not apply off the protected tips");
+    assert.equal(kept.length, 1);
+  });
+  it("a listed SHA reachable only from a leftover batch ref still fails", () => {
+    // Only origin/main counts: a stale or re-created batch branch must not
+    // widen what an exception covers.
+    const main = git(repo, "rev-parse", "refs/remotes/origin/main").trim();
+    writeFileSync(join(repo, "batch-only.txt"), "batch\n");
+    git(repo, "add", "batch-only.txt");
+    const batchOnly = commitTree(repo, "batch only", main);
+    git(repo, "update-ref", "refs/remotes/origin/batch/merge-private-into-public", batchOnly);
+    const localExceptions = join(repo, "ex-batch.txt");
+    writeFileSync(
+      localExceptions,
+      `${batchOnly} denylist-token owner accepted 2026-10-20: term already public in main history\n`
+    );
+    const findings = [
+      { rule: "denylist-token", source: `commit:${batchOnly.slice(0, 7)}`, hashPrefix: "deadbeefdead" },
+    ];
+    const { kept, applied } = applyCommitExceptions(batchOnly, findings, loadExceptions(localExceptions), repo);
+    git(repo, "update-ref", "-d", "refs/remotes/origin/batch/merge-private-into-public");
+    assert.equal(applied, 0, "exception must apply only from origin/main");
     assert.equal(kept.length, 1);
   });
 });

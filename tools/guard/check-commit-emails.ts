@@ -13,8 +13,7 @@
  * - GitHub reports commit.verification.verified === true
  *
  * Exact SHAs listed in config/policy/boundary-exceptions.txt with rule
- * commit-email may skip this check when already an ancestor of origin/batch
- * or origin/main.
+ * commit-email may skip this check when already an ancestor of origin/main.
  *
  * Usage:
  *   node tools/guard/check-commit-emails.ts --range <git-range> [--first-parent]
