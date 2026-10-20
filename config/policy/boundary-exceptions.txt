@@ -1,5 +1,10 @@
-# Exact full commit SHAs that may skip one public-boundary rule when already
+# Exact full commit SHAs that may skip one listed rule when already
 # an ancestor of origin/batch/merge-private-into-public or origin/main.
 # Format: <40-hex-sha> <rule> <reason>
 # Never put denylisted plaintext here.
+# Rules: denylist-token | commit-email
 a1430b85d93adf379762bdffac88dc2ec62a98ce denylist-token owner accepted 2026-10-20: term already public in main history
+7586e6bfe22ef6141bbfed49df33981cba2fd6f6 commit-email owner accepted 2026-10-20: historical merge, unsigned
+42be50d424fd8185056686a00f73a13390b94706 commit-email owner accepted 2026-10-20: historical merge, unsigned
+f4f21cd731ba044d72f630cc0a83bc9bfb6e9076 commit-email owner accepted 2026-10-20: historical merge, unsigned
+91d004c84a6e2ed5830120e2a627dbcbdefebe46 commit-email owner accepted 2026-10-20: historical merge, unsigned

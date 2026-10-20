@@ -16,6 +16,8 @@ paths = [
   '''pnpm-lock\.yaml$''',
   # Opaque SHA-256 digests only - hex runs can false-positive phone rules.
   '''(^|/)config/policy/boundary-denylist\.sha256$''',
+  # Exact commit SHAs for boundary exceptions - same hex false-positive risk.
+  '''(^|/)config/policy/boundary-exceptions\.txt$''',
   # Old location, still present in older commits scanned in commits mode.
   '''(^|/)\.github/boundary-denylist\.sha256$''',
   '''(^|/)test/leak-fixtures/''',

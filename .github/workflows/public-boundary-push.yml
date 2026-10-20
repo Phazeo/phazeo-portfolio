@@ -1,4 +1,6 @@
-# Public/private boundary on pushes to protected branches (commit messages + emails).
+# Public/private boundary on pushes to protected branches.
+# Messages: every commit in the range.
+# Emails: first-parent commits only (merge commits and direct pushes on the branch).
 name: Public boundary push
 
 on:
@@ -34,7 +36,7 @@ jobs:
           node-version-file: ".nvmrc"
           package-manager-cache: false
 
-      - name: Check new commit messages and emails
+      - name: Check new commit messages and first-parent emails
         env:
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.sha }}
@@ -73,4 +75,6 @@ jobs:
             exit 0
           fi
           node tools/guard/check-public-boundary.ts --commits "${RANGE}"
-          node tools/guard/check-commit-emails.ts --range "${RANGE}"
+          node tools/guard/check-no-ai-commit.ts --range "${RANGE}"
+          node tools/guard/check-no-ai-commit.ts --authors "${RANGE}"
+          node tools/guard/check-commit-emails.ts --range "${RANGE}" --first-parent
