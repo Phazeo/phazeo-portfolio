@@ -33,7 +33,7 @@
     "test:directory": "node --test tests/unit/directory-query.test.ts",
     "test:directory-contrast": "node --test tests/unit/directory-contrast.test.ts",
     "test:theme-provider": "node --test tests/unit/theme-provider.test.ts",
-    "test:headers-merge": "node --test tests/unit/headers-merge.test.ts",
+    "test:headers-merge": "node --test tests/unit/headers-merge.test.ts tests/unit/write-headers-scripts.test.ts",
     "test:email-text": "node --test tests/unit/email-text.test.ts",
     "test:profiles": "node --test tests/unit/check-profiles.test.ts",
     "test:public-boundary": "node --test tests/unit/public-boundary.test.ts tests/unit/boundary-exceptions.test.ts tests/unit/commit-emails.test.ts",

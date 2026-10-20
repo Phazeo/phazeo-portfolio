@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   assertBaseShaInCi,
+  assertPrActor,
   loadOwnersFromGit,
   runOwnershipCheck,
 } from "../../tools/checks/check-profile-ownership.ts";
@@ -230,6 +231,94 @@ describe("profile-ownership", () => {
     false,
     "author-not-approved"
   );
+
+  // Legacy profile (base has slug, no owner field): only maintainer exceptions.
+  check(
+    "legacy-bot-changes",
+    {
+      authorId: 334465155,
+      authorLogin: "phazeo-ci-bot",
+      changedPaths: ["profiles/kayalvizhi/meta.ts", "profiles/kayalvizhi-sm/meta.ts"],
+      baseOwnersBySlug: { kayalvizhi: null },
+      ownersBySlug: {
+        ...ownersBySlug,
+        "kayalvizhi-sm": { githubId: 56721895, githubLogin: "dinesh-ad" },
+      },
+    },
+    true,
+    "exception-author"
+  );
+
+  check(
+    "legacy-owner-changes",
+    {
+      authorId: 56721895,
+      authorLogin: "dinesh-ad",
+      changedPaths: ["profiles/kayalvizhi/meta.ts"],
+      baseOwnersBySlug: { kayalvizhi: null },
+    },
+    true,
+    "exception-author"
+  );
+
+  check(
+    "legacy-outside-contributor-changes",
+    {
+      authorId: 13678035,
+      authorLogin: "sowmipriya",
+      changedPaths: ["profiles/kayalvizhi/meta.ts"],
+      baseOwnersBySlug: { kayalvizhi: null },
+    },
+    false,
+    "legacy-profile-maintainer-only"
+  );
+
+  check(
+    "contributor-changes-own-owned-profile",
+    {
+      authorId: 13678035,
+      authorLogin: "sowmipriya",
+      changedPaths: ["profiles/sowmipriya-rajendiran/meta.ts"],
+      baseOwnersBySlug: {
+        "sowmipriya-rajendiran": { githubId: 13678035, githubLogin: "sowmipriya" },
+      },
+    },
+    true,
+    "owner-ok"
+  );
+
+  it("unknown-actor-fails", () => {
+    assert.throws(
+      () => assertPrActor({ authorId: Number.NaN, authorLogin: "" }),
+      /author id missing|author login missing/,
+      "unknown-actor-fails"
+    );
+    assert.throws(
+      () =>
+        runOwnershipCheck({
+          authorId: Number.NaN,
+          authorLogin: "",
+          changedPaths: ["profiles/alex-morgan/profile.json"],
+          ownersBySlug,
+          baseOwnersBySlug: {},
+        }),
+      /author id missing|author login missing/,
+      "unknown-actor-run"
+    );
+  });
+
+  it("legacy-base-load-records-null", () => {
+    const map = loadOwnersFromGit("abc123", {
+      execFileSync: (_cmd, args) => {
+        if (args.includes("ls-tree")) {
+          return "profiles/kayalvizhi/meta.ts\n";
+        }
+        return "export const kayalvizhiConfig = { slug: \"kayalvizhi\" };\n";
+      },
+    });
+    assert.equal(Object.hasOwn(map, "kayalvizhi"), true);
+    assert.equal(map["kayalvizhi"], null);
+  });
 
   // CI mode without BASE_SHA: fail closed
   it("ci-missing-base-sha", () => {

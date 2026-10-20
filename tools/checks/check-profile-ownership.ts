@@ -9,7 +9,7 @@ import { execFileSync as defaultExecFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { Decision, Owner } from "./profile-ownership.ts";
+import type { BaseOwnerEntry, Decision, Owner } from "./profile-ownership.ts";
 import {
   decideProfileOwnership,
   parseApprovedOwners,
@@ -32,9 +32,28 @@ export type OwnershipCheckInput = {
   githubActions?: string | undefined;
   baseSha?: string | undefined;
   ownersBySlug?: Record<string, Owner> | undefined;
-  baseOwnersBySlug?: Record<string, Owner> | undefined;
-  loadBaseOwners?: ((sha: string) => Record<string, Owner>) | undefined;
+  baseOwnersBySlug?: Record<string, BaseOwnerEntry> | undefined;
+  loadBaseOwners?: ((sha: string) => Record<string, BaseOwnerEntry>) | undefined;
 };
+
+/**
+ * Fail closed when the PR actor cannot be determined from the event payload.
+ */
+export function assertPrActor(opts: {
+  authorId: number;
+  authorLogin: string;
+}): void {
+  if (!Number.isInteger(opts.authorId) || opts.authorId <= 0) {
+    throw new Error(
+      "check-profile-ownership: PR author id missing or invalid (fail closed)"
+    );
+  }
+  if (!opts.authorLogin.trim()) {
+    throw new Error(
+      "check-profile-ownership: PR author login missing (fail closed)"
+    );
+  }
+}
 
 /**
  * Fail closed in CI when BASE_SHA is missing.
@@ -86,10 +105,10 @@ export function loadOwnersFromDir(profilesDir: string): Record<string, Owner> {
 export function loadOwnersFromGit(
   sha: string,
   opts: { root?: string; execFileSync?: ExecFileSync } = {}
-): Record<string, Owner> {
+): Record<string, BaseOwnerEntry> {
   const root = opts.root ?? ROOT;
   const exec: ExecFileSync = opts.execFileSync ?? defaultExecFileSync;
-  const map: Record<string, Owner> = {};
+  const map: Record<string, BaseOwnerEntry> = {};
   let listing = "";
   try {
     listing = exec("git", ["-C", root, "ls-tree", "-r", "--name-only", sha, "profiles"], {
@@ -108,7 +127,7 @@ export function loadOwnersFromGit(
     const jsonMatch = t.match(/^profiles\/([^/]+)\/profile\.json$/);
     const slug = metaMatch?.[1] ?? jsonMatch?.[1];
     if (!slug || slug.startsWith("_")) continue;
-    if (map[slug]) continue;
+    if (Object.hasOwn(map, slug)) continue;
     let text = "";
     try {
       text = exec("git", ["-C", root, "show", `${sha}:${t}`], { encoding: "utf8" });
@@ -119,17 +138,14 @@ export function loadOwnersFromGit(
       );
     }
     const owner = metaMatch ? parseOwnerFromMetaTs(text) : parseOwnerFromProfileJson(text);
-    if (!owner) {
-      throw new Error(
-        `check-profile-ownership: missing owner in base ${sha}:${t}`
-      );
-    }
+    // null = legacy profile on base with no owner field (maintainer exceptions only).
     map[slug] = owner;
   }
   return map;
 }
 
 export function runOwnershipCheck(input: OwnershipCheckInput): Decision {
+  assertPrActor({ authorId: input.authorId, authorLogin: input.authorLogin });
   assertBaseShaInCi({
     githubActions: input.githubActions,
     baseSha: input.baseSha,
@@ -170,8 +186,11 @@ function main(): void {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  if (!Number.isInteger(authorId) || !authorLogin) {
-    console.error("check-profile-ownership: PR_AUTHOR_ID and PR_AUTHOR_LOGIN required");
+  try {
+    assertPrActor({ authorId, authorLogin });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(message);
     process.exit(2);
   }
   if (changed.length === 0) {
