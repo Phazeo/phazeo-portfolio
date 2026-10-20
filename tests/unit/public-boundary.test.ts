@@ -84,6 +84,12 @@ describe("public-boundary", () => {
     mkdirSync(join(repoTmp, "config", "policy"), { recursive: true });
     mkdirSync(join(repoTmp, "tools", "guard"), { recursive: true });
     copyFileSync(SCRIPT, join(repoTmp, SCRIPT_REL));
+    // The scanner imports the policy format lock for path allowances.
+    mkdirSync(join(repoTmp, "tools", "checks"), { recursive: true });
+    copyFileSync(
+      join(ROOT, "tools", "checks", "check-policy-files.ts"),
+      join(repoTmp, "tools", "checks", "check-policy-files.ts")
+    );
     writeFileSync(join(repoTmp, DENYLIST_REL), `${probeHash}\n`);
     writeFileSync(join(repoTmp, "bad.yml"), `name: ${probe}\n`);
     writeFileSync(join(repoTmp, "bad.ts"), `export const x = "${probe}";\n`);

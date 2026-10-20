@@ -1,5 +1,6 @@
 /**
- * Format lock for boundary-denylist.sha256 and boundary-exceptions.txt.
+ * Format lock for boundary-denylist.sha256, boundary-exceptions.txt and
+ * boundary-path-allowances.txt.
  */
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -7,10 +8,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, it } from "node:test";
 import {
+  checkAllowancesText,
   checkDenylistText,
   checkExceptionsText,
   checkPolicyFile,
   checkPolicyFiles,
+  DEFAULT_ALLOWANCES_PATH,
   DEFAULT_DENYLIST_PATH,
   DEFAULT_EXCEPTIONS_PATH,
 } from "../../tools/checks/check-policy-files.ts";
@@ -67,7 +70,11 @@ describe("check-policy-files", () => {
   });
 
   it("repo policy files pass", () => {
-    const result = checkPolicyFiles(DEFAULT_DENYLIST_PATH, DEFAULT_EXCEPTIONS_PATH);
+    const result = checkPolicyFiles(
+      DEFAULT_DENYLIST_PATH,
+      DEFAULT_EXCEPTIONS_PATH,
+      DEFAULT_ALLOWANCES_PATH
+    );
     assert.equal(result.ok, true, result.errors.join("\n"));
   });
 
@@ -122,5 +129,50 @@ describe("check-policy-files", () => {
     const r = checkPolicyFile(path, "denylist");
     assert.equal(r.ok, false);
     assert.ok(r.errors.some((e) => /exceeds/i.test(e)), r.errors.join("\n"));
+  });
+
+  describe("path allowances", () => {
+    const DENY = new Set([VALID_DIGEST, VALID_DIGEST_B]);
+    const LINE = `.github/workflows/deploy.yml ${VALID_DIGEST}`;
+
+    it("accepts comments and exact lines for listed digests", () => {
+      const r = checkAllowancesText("allow", `# Allowed in one file\n\n${LINE}\n`, DENY);
+      assert.equal(r.ok, true, r.errors.join("\n"));
+      assert.deepEqual([...r.digests], [VALID_DIGEST]);
+    });
+
+    for (const [label, text] of [
+      ["another path", `.github/workflows/ci.yml ${VALID_DIGEST}\n`],
+      // Same length as the allowed path, so only the path rule can reject it.
+      ["another path of the same length", `.github/workflows/deplox.yml ${VALID_DIGEST}\n`],
+      ["a leading dot-slash", `./.github/workflows/deploy.yml ${VALID_DIGEST}\n`],
+      ["upper-case hex", `.github/workflows/deploy.yml ${VALID_DIGEST.toUpperCase()}\n`],
+      ["a trailing space", `${LINE} \n`],
+      ["an extra token", `${LINE} extra\n`],
+      ["a short digest", `.github/workflows/deploy.yml ${VALID_DIGEST.slice(1)}\n`],
+      ["a duplicate", `${LINE}\n${LINE}\n`],
+      ["a digest not in the denylist", `.github/workflows/deploy.yml ${"0".repeat(64)}\n`],
+      ["a bad comment", "#no space\n"],
+    ] as const) {
+      it(`fails for ${label}`, () => {
+        assert.equal(checkAllowancesText("allow", text, DENY).ok, false);
+      });
+    }
+
+    it("fails for a file over its 2048 byte cap", () => {
+      const path = tempFile("boundary-path-allowances.txt", `${LINE}\n${"# x\n".repeat(600)}`);
+      const r = checkPolicyFile(path, "allowances", DENY);
+      assert.equal(r.ok, false);
+      assert.ok(r.errors.some((e) => /exceeds/i.test(e)), r.errors.join("\n"));
+    });
+
+    it("cross-checks the allowances file against the denylist file", () => {
+      const d = tempFile("boundary-denylist.sha256", `${VALID_DIGEST_B}\n`);
+      const e = tempFile("boundary-exceptions.txt", `${VALID_EXCEPTION}\n`);
+      const a = tempFile("boundary-path-allowances.txt", `${LINE}\n`);
+      const r = checkPolicyFiles(d, e, a);
+      assert.equal(r.ok, false);
+      assert.ok(r.errors.some((m) => /not in the denylist/.test(m)), r.errors.join("\n"));
+    });
   });
 });
