@@ -1,0 +1,73 @@
+# Weekly reminder: opens one issue from 30 days before the site deploy token
+# expires. The date is the repository variable SITE_DEPLOY_TOKEN_EXPIRES
+# (YYYY-MM-DD); a missing or malformed date fails the run.
+# GitHub turns scheduled workflows off in a public repository after 60 days
+# without activity; check the Actions tab if the repository has been quiet.
+name: Deploy token expiry
+
+on:
+  schedule:
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: deploy-token-expiry
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check token expiry
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      open: ${{ steps.decide.outputs.open }}
+      title: ${{ steps.decide.outputs.title }}
+      body: ${{ steps.decide.outputs.body }}
+    steps:
+      - name: Checkout
+        # actions/checkout@v7.0.1 (tag v7.0.1 → this commit; published 2026-07-20)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        # actions/setup-node@v7.0.0 (tag v7.0.0 → this commit; published 2026-07-14)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: ".nvmrc"
+          package-manager-cache: false
+
+      - name: Decide whether to open the reminder
+        id: decide
+        env:
+          EXPIRES: ${{ vars.SITE_DEPLOY_TOKEN_EXPIRES }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          titles="$RUNNER_TEMP/open-issue-titles.txt"
+          gh issue list --state open --limit 1000 --json title --jq '.[].title' > "$titles"
+          node tools/deploy/token-expiry.ts --expires "$EXPIRES" --today "$(date -u +%F)" \
+            --open-titles-file "$titles" >> "$GITHUB_OUTPUT"
+
+  open-issue:
+    name: Open the reminder issue
+    needs: check
+    if: needs.check.outputs.open == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: ${{ needs.check.outputs.title }}
+          BODY: ${{ needs.check.outputs.body }}
+        run: gh issue create --title "$TITLE" --body "$BODY"
