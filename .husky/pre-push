@@ -15,10 +15,7 @@ do
   fi
 
   if [ "$remote_sha" = "$zero" ] || [ -z "$remote_sha" ]; then
-    if git rev-parse --verify origin/batch/merge-private-into-public >/dev/null 2>&1 \
-      && git merge-base --is-ancestor origin/batch/merge-private-into-public "$local_sha" 2>/dev/null; then
-      range="origin/batch/merge-private-into-public..${local_sha}"
-    elif git rev-parse --verify origin/main >/dev/null 2>&1; then
+    if git rev-parse --verify origin/main >/dev/null 2>&1; then
       range="origin/main..${local_sha}"
     else
       range="$local_sha"

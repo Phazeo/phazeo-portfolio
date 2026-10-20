@@ -107,7 +107,7 @@ export function computeChangedScope(
 
 /**
  * Resolve base/head from env (CI) or CLI defaults.
- * GITHUB_BASE_REF / GITHUB_SHA for pull_request; otherwise origin/batch tip … HEAD.
+ * GITHUB_BASE_REF / GITHUB_SHA for pull_request; otherwise origin/main … HEAD.
  */
 export function resolveScopeRevs(env: NodeJS.ProcessEnv = process.env): {
   base: string;
@@ -129,7 +129,7 @@ export function resolveScopeRevs(env: NodeJS.ProcessEnv = process.env): {
   if (explicitBase && explicitHead) {
     return { base: explicitBase, head: explicitHead };
   }
-  return { base: "origin/batch/merge-private-into-public", head: "HEAD" };
+  return { base: "origin/main", head: "HEAD" };
 }
 
 export function loadScopeFromEnv(

@@ -3,6 +3,15 @@
 # Environment and receives only the built files and the deploy token.
 # This is the only file allowed to name the deploy action and its tool
 # (config/policy/boundary-path-allowances.txt).
+#
+# Settings of the "production" Environment:
+# - secret SITE_DEPLOY_TOKEN: a Cloudflare API token, Workers Editor on the
+#   phazeo-portfolio Worker only. To renew it, create a new token in Cloudflare
+#   (Manage Account, Account API Tokens) and replace the Environment secret; then update
+#   the repository variable SITE_DEPLOY_TOKEN_EXPIRES (the weekly reminder in
+#   deploy-token-expiry.yml reads it).
+# - secret SITE_ACCOUNT_ID: the account id (a secret so public logs mask it).
+# - variable SITE_DOMAIN: the attached domain; turns on the live header check.
 name: Deploy
 
 on:
@@ -97,6 +106,17 @@ jobs:
           persist-credentials: false
           path: repo
 
+      - name: Check the Environment secrets are set
+        env:
+          # Booleans only: the values never reach this step.
+          TOKEN_SET: ${{ secrets.SITE_DEPLOY_TOKEN != '' }}
+          ACCOUNT_SET: ${{ secrets.SITE_ACCOUNT_ID != '' }}
+        run: |
+          if [ "$TOKEN_SET" != "true" ] || [ "$ACCOUNT_SET" != "true" ]; then
+            echo "Deploy settings missing: the production Environment needs secrets SITE_DEPLOY_TOKEN and SITE_ACCOUNT_ID."
+            exit 1
+          fi
+
       - name: Setup Node.js
         # actions/setup-node@v7.0.0 (tag v7.0.0 → this commit; published 2026-07-14)
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -132,14 +152,14 @@ jobs:
           NPM_CONFIG_FUND: "false"
         with:
           apiToken: ${{ secrets.SITE_DEPLOY_TOKEN }}
-          accountId: ${{ vars.SITE_ACCOUNT_ID }}
+          accountId: ${{ secrets.SITE_ACCOUNT_ID }}
           # 4.147.0 published 2026-10-02 (14-day cooldown).
           wranglerVersion: "4.147.0"
           packageManager: npm
           workingDirectory: site
           command: deploy --config site-deploy.json
 
-      # Runs only once the repository variable SITE_DOMAIN names the attached domain.
+      # Runs only once the variable SITE_DOMAIN names the attached domain.
       - name: Verify live headers
         id: verify
         if: vars.SITE_DOMAIN != ''
@@ -171,7 +191,7 @@ jobs:
           NPM_CONFIG_FUND: "false"
         with:
           apiToken: ${{ secrets.SITE_DEPLOY_TOKEN }}
-          accountId: ${{ vars.SITE_ACCOUNT_ID }}
+          accountId: ${{ secrets.SITE_ACCOUNT_ID }}
           wranglerVersion: "4.147.0"
           packageManager: npm
           workingDirectory: site

@@ -13,7 +13,7 @@
  *
  * Commit-message mode (--commits): scans each commit message in a git range.
  * Exact full SHAs in config/policy/boundary-exceptions.txt may skip one listed
- * rule only when that SHA is already an ancestor of origin/batch or origin/main.
+ * rule only when that SHA is already an ancestor of origin/main.
  */
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -32,7 +32,7 @@ const NO_ALLOWANCES: ReadonlySet<string> = new Set();
 const SECTION_RE = /§\d/;
 const LONG_DASH_RE = /[\u2013\u2014]/;
 
-const PROTECTED_TIPS = ["origin/batch/merge-private-into-public", "origin/main"] as const;
+const PROTECTED_TIPS = ["origin/main"] as const;
 
 type Args = {
   roots: string[];
