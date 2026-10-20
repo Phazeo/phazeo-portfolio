@@ -1,4 +1,4 @@
-# Public/private boundary - PR title, body, and commit messages.
+# Public/private boundary - PR title, body, commit messages, and committer emails.
 name: Public boundary
 
 on:
@@ -32,15 +32,16 @@ jobs:
           node-version-file: ".nvmrc"
           package-manager-cache: false
 
-      - name: Check PR title, body, and commit messages
+      - name: Check PR title, body, commit messages, and emails
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           node tools/guard/check-public-boundary.ts --text-env PR_TITLE
           node tools/guard/check-public-boundary.ts --text-env PR_BODY
-          mkdir -p "$RUNNER_TEMP/boundary"
-          git log --format=%B "${BASE_SHA}..${HEAD_SHA}" >"$RUNNER_TEMP/boundary/commit-messages.txt"
-          node tools/guard/check-public-boundary.ts --text-file "$RUNNER_TEMP/boundary/commit-messages.txt"
+          node tools/guard/check-public-boundary.ts --commits "${BASE_SHA}..${HEAD_SHA}"
+          node tools/guard/check-commit-emails.ts --range "${BASE_SHA}..${HEAD_SHA}"

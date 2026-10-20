@@ -35,7 +35,7 @@
     "test:headers-merge": "node --test tests/unit/headers-merge.test.ts",
     "test:email-text": "node --test tests/unit/email-text.test.ts",
     "test:profiles": "node --test tests/unit/check-profiles.test.ts",
-    "test:public-boundary": "node --test tests/unit/public-boundary.test.ts",
+    "test:public-boundary": "node --test tests/unit/public-boundary.test.ts tests/unit/boundary-exceptions.test.ts tests/unit/commit-emails.test.ts",
     "guard:tree": "sh tools/guard/check-leaks.sh --tree",
     "guard:staged": "sh tools/guard/check-leaks.sh --staged",
     "test:e2e": "playwright test",

@@ -1,0 +1,5 @@
+# Exact full commit SHAs that may skip one public-boundary rule when already
+# an ancestor of origin/batch/merge-private-into-public or origin/main.
+# Format: <40-hex-sha> <rule> <reason>
+# Never put denylisted plaintext here.
+a1430b85d93adf379762bdffac88dc2ec62a98ce denylist-token owner accepted 2026-10-20: term already public in main history

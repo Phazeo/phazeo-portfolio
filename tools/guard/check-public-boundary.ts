@@ -6,6 +6,10 @@
  * - tokens whose SHA-256 (lower-cased) is in config/policy/boundary-denylist.sha256
  * - em dash (U+2014) or en dash (U+2013), except under profiles/** and public/profiles/**
  * Never prints matched plaintext - rule, source, and hash prefix only.
+ *
+ * Commit-message mode (--commits): scans each commit message in a git range.
+ * Exact full SHAs in config/policy/boundary-exceptions.txt may skip one listed
+ * rule only when that SHA is already an ancestor of origin/batch or origin/main.
  */
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -16,9 +20,12 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const DENYLIST_PATH = join(ROOT, "config", "policy", "boundary-denylist.sha256");
+const EXCEPTIONS_PATH = join(ROOT, "config", "policy", "boundary-exceptions.txt");
 
 const SECTION_RE = /§\d/;
 const LONG_DASH_RE = /[\u2013\u2014]/;
+
+const PROTECTED_TIPS = ["origin/batch/merge-private-into-public", "origin/main"] as const;
 
 type Args = {
   roots: string[];
@@ -27,12 +34,21 @@ type Args = {
   tree: boolean;
   tracked: boolean;
   denylist: string;
+  exceptions: string;
   allowLongDash: boolean;
+  commitsRange: string | null;
+  cwd: string;
 };
 
 type Finding = { rule: string; source: string; hashPrefix?: string };
 
 type FileEntry = { abs: string; rel: string };
+
+export type BoundaryException = {
+  sha: string;
+  rule: string;
+  reason: string;
+};
 
 function parseArgs(argv: readonly string[]): Args {
   const out: Args = {
@@ -42,7 +58,10 @@ function parseArgs(argv: readonly string[]): Args {
     tree: false,
     tracked: false,
     denylist: DENYLIST_PATH,
+    exceptions: EXCEPTIONS_PATH,
     allowLongDash: false,
+    commitsRange: null,
+    cwd: ROOT,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i] ?? "";
@@ -54,8 +73,17 @@ function parseArgs(argv: readonly string[]): Args {
     else if (a === "--denylist" && next) {
       out.denylist = resolve(next);
       i++;
+    } else if (a === "--exceptions" && next) {
+      out.exceptions = resolve(next);
+      i++;
     } else if (a === "--allow-long-dash") out.allowLongDash = true;
-    else if (a === "--text" && next != null) {
+    else if (a === "--commits" && next) {
+      out.commitsRange = next;
+      i++;
+    } else if (a === "--cwd" && next) {
+      out.cwd = resolve(next);
+      i++;
+    } else if (a === "--text" && next != null) {
       out.text = next;
       out.source = "arg";
       i++;
@@ -93,6 +121,81 @@ function loadDenylist(path: string): Set<string> {
     set.add(t);
   }
   return set;
+}
+
+/** Load exceptions file. Missing file means no exceptions. */
+export function loadExceptions(path: string): BoundaryException[] {
+  if (!existsSync(path)) return [];
+  const out: BoundaryException[] = [];
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+    const parts = t.split(/\s+/);
+    const sha = parts[0] ?? "";
+    const rule = parts[1] ?? "";
+    const reason = parts.slice(2).join(" ");
+    if (!/^[0-9a-f]{40}$/i.test(sha) || !rule) {
+      console.error("check-public-boundary: invalid exceptions line (need <sha> <rule> <reason>)");
+      process.exit(2);
+    }
+    out.push({ sha: sha.toLowerCase(), rule, reason });
+  }
+  return out;
+}
+
+export function isAncestorOfProtectedTip(
+  sha: string,
+  cwd: string,
+  tips: readonly string[] = PROTECTED_TIPS
+): boolean {
+  for (const tip of tips) {
+    try {
+      execFileSync("git", ["-C", cwd, "rev-parse", "--verify", tip], {
+        stdio: "ignore",
+      });
+    } catch {
+      continue;
+    }
+    try {
+      execFileSync("git", ["-C", cwd, "merge-base", "--is-ancestor", sha, tip], {
+        stdio: "ignore",
+      });
+      return true;
+    } catch {
+      // not an ancestor of this tip
+    }
+  }
+  return false;
+}
+
+/**
+ * Drop findings covered by an exception that names this exact SHA and rule,
+ * and whose SHA is already an ancestor of a protected tip.
+ * Returns kept findings and how many exception applications were used.
+ */
+export function applyCommitExceptions(
+  sha: string,
+  findings: readonly Finding[],
+  exceptions: readonly BoundaryException[],
+  cwd: string,
+  tips: readonly string[] = PROTECTED_TIPS
+): { kept: Finding[]; applied: number } {
+  const full = sha.toLowerCase();
+  let applied = 0;
+  const kept: Finding[] = [];
+  for (const f of findings) {
+    const match = exceptions.find((e) => e.sha === full && e.rule === f.rule);
+    if (!match) {
+      kept.push(f);
+      continue;
+    }
+    if (!isAncestorOfProtectedTip(full, cwd, tips)) {
+      kept.push(f);
+      continue;
+    }
+    applied++;
+  }
+  return { kept, applied };
 }
 
 function sha256Lower(token: string): string {
@@ -139,6 +242,7 @@ function isProfilePath(norm: string): boolean {
 function shouldSkipPath(norm: string): boolean {
   if (norm === "pnpm-lock.yaml") return true;
   if (norm === "config/policy/boundary-denylist.sha256") return true;
+  if (norm === "config/policy/boundary-exceptions.txt") return true;
   if (norm === ".github/boundary-denylist.sha256") return true;
   if (norm === "tests/fixtures/leak" || norm.startsWith("tests/fixtures/leak/")) return true;
   // Legacy fixture path, still present in older commits.
@@ -240,10 +344,62 @@ function scanRoot(
   }
 }
 
+function listCommitShas(cwd: string, range: string): string[] {
+  const out = execFileSync("git", ["-C", cwd, "rev-list", "--reverse", range], {
+    encoding: "utf8",
+  });
+  return out
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
+function commitMessage(cwd: string, sha: string): string {
+  return execFileSync("git", ["-C", cwd, "log", "-1", "--format=%B", sha], {
+    encoding: "utf8",
+  });
+}
+
+function reportFindings(findings: readonly Finding[]): void {
+  for (const f of findings) {
+    if (f.rule === "denylist-token") {
+      console.error(`[denylist-token] ${f.source} hash=${f.hashPrefix}...`);
+    } else {
+      console.error(`[${f.rule}] ${f.source}`);
+    }
+  }
+}
+
 function main(): void {
   const args = parseArgs(process.argv.slice(2));
   const denylist = loadDenylist(args.denylist);
+  const exceptions = loadExceptions(args.exceptions);
   const findings: Finding[] = [];
+  let exceptionsApplied = 0;
+
+  if (args.commitsRange) {
+    const shas = listCommitShas(args.cwd, args.commitsRange);
+    for (const sha of shas) {
+      const msg = commitMessage(args.cwd, sha);
+      const local: Finding[] = [];
+      scanText(`commit:${sha.slice(0, 7)}`, msg, denylist, local, {
+        checkLongDash: true,
+      });
+      const { kept, applied } = applyCommitExceptions(
+        sha,
+        local,
+        exceptions,
+        args.cwd
+      );
+      exceptionsApplied += applied;
+      findings.push(...kept);
+    }
+    if (exceptionsApplied > 0) {
+      console.log(
+        `check-public-boundary: applied ${exceptionsApplied} listed exception${exceptionsApplied === 1 ? "" : "s"}`
+      );
+    }
+  }
 
   if (args.text != null) {
     scanText(args.source, args.text, denylist, findings, {
@@ -255,29 +411,34 @@ function main(): void {
     const roots = args.roots.length > 0 ? args.roots : [ROOT];
     const useTracked = args.tracked && roots.length === 1 && roots[0] === ROOT;
     for (const root of roots) {
-      // Staged/temp trees: walk files present. Repo tip: git ls-files.
       const tracked = useTracked || (args.tracked && root === ROOT);
       scanRoot(root, denylist, findings, tracked);
     }
   }
 
-  if (args.text == null && !args.tree && !args.tracked && args.roots.length === 0) {
+  if (
+    args.text == null &&
+    !args.tree &&
+    !args.tracked &&
+    args.roots.length === 0 &&
+    !args.commitsRange
+  ) {
     console.error(
-      "check-public-boundary: pass --tree and/or --text-env <VAR> / --text-file <path> / --text <string>"
+      "check-public-boundary: pass --tree and/or --commits <range> and/or --text-env <VAR> / --text-file <path> / --text <string>"
     );
     process.exit(2);
   }
 
   if (findings.length > 0) {
-    for (const f of findings) {
-      if (f.rule === "denylist-token") {
-        console.error(`[denylist-token] ${f.source} hash=${f.hashPrefix}...`);
-      } else {
-        console.error(`[${f.rule}] ${f.source}`);
-      }
-    }
+    reportFindings(findings);
     process.exit(1);
   }
 }
 
-main();
+const isDirectRun =
+  process.argv[1] !== undefined &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  main();
+}
