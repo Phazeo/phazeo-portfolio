@@ -4,55 +4,9 @@
  */
 import type { ProfileConfig, ProfileRegistry } from "#kit";
 import { DEFAULT_THEME } from "#kit";
+import { DIRECTORY_DEMO_NAMES } from "./directory-demo-names";
 
-/** Neutral made-up names (no contact details). Keep in sync with leak/public-boundary expectations. */
-export const DIRECTORY_DEMO_NAMES = [
-  "River Ash",
-  "Cedar Vale",
-  "Moss Quinn",
-  "Lake Harlow",
-  "Pine Ellis",
-  "Coral West",
-  "Sage North",
-  "Willow Grey",
-  "Brook Lane",
-  "Fern Adler",
-  "Reed Hayes",
-  "Cliff Rowan",
-  "Dale Frost",
-  "Glen Avery",
-  "Heath Blair",
-  "Ivy Carroll",
-  "Jade Dalton",
-  "Knott Emery",
-  "Lark Finch",
-  "Maple Grant",
-  "Nova Holt",
-  "Oak Ingram",
-  "Pearl Jessop",
-  "Quill Kent",
-  "Rain Lang",
-  "Stone Moss",
-  "Tide Nolan",
-  "Umber Owen",
-  "Vale Price",
-  "Wave Quinn",
-  "Yale Reed",
-  "Zell Shaw",
-  "Amber Tess",
-  "Birch Underwood",
-  "Cove Vance",
-  "Dune Wells",
-  "Eddy Knox",
-  "Flint York",
-  "Grove Zahn",
-  "Harbor Bly",
-  "Inlet Cruz",
-  "Jetty Drew",
-  "Keel Frost",
-  "Lumen Gale",
-  "Meadow Hart",
-] as const;
+export { DIRECTORY_DEMO_NAMES };
 
 const ROLES = [
   "Software Engineer",

@@ -444,6 +444,7 @@
   background-clip: text;
   color: transparent;
   letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 
 .directory-hero-subtitle {
@@ -452,6 +453,7 @@
   color: var(--dir-text-muted);
   font-size: 1.125rem;
   line-height: 1.55;
+  text-wrap: balance;
 }
 
 .directory-glass-btn {
@@ -1000,6 +1002,85 @@
   font-weight: 500;
 }
 
+.directory-empty {
+  --x: 50%;
+  --y: 0%;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 28rem;
+  margin: 2rem auto;
+  padding: 1.5rem 1.35rem;
+  text-align: center;
+  border-radius: var(--dir-radius);
+  border: 1px solid transparent;
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-card-fill), var(--dir-card-fill));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
+    0 0 0 1px var(--dir-card-hairline),
+    var(--dir-card-shadow);
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+}
+
+.directory-empty::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--dir-card-edge-bright),
+    var(--dir-card-edge-fade)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.directory-empty::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--dir-specular) 0,
+    transparent 14px
+  );
+}
+
+.directory-empty > * {
+  position: relative;
+  z-index: 1;
+}
+
+.directory-empty__text {
+  margin: 0;
+  color: var(--dir-text-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
 
 @supports not (grid-template-rows: subgrid) {
   .directory-card {
@@ -1086,7 +1167,8 @@
   .directory-toolbar-field,
   .directory-segment,
   .directory-glass-btn,
-  .directory-avatar__face {
+  .directory-avatar__face,
+  .directory-empty {
     background: var(--dir-toolbar-fill-opaque);
     background-image: none;
     backdrop-filter: none;
@@ -1181,4 +1263,12 @@
       linear-gradient(var(--dir-card-fill-touch), var(--dir-card-fill-touch));
   }
 }
+}
+
+/* Unlayered so these beat the UA search chrome (keep type="search"). */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  appearance: none;
+  -webkit-appearance: none;
+  display: none;
 }

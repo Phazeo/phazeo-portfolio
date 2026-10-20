@@ -5,10 +5,12 @@
  *
  * Path blocks are structured so static host merge does not duplicate header names:
  * /* carries security headers; /assets/* only adds Cache-Control.
+ *
+ * Usage: node tools/build/write-headers.ts [--check] [--dir <out-dir>]
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   ASSETS_CACHE_VALUE,
@@ -17,9 +19,7 @@ import {
 } from "./headers-merge.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
-const DIST = join(ROOT, "dist");
-const INDEX = join(DIST, "index.html");
-const HEADERS_PATH = join(DIST, "_headers");
+const DEFAULT_DIST = join(ROOT, "dist");
 
 /** Any inline event-handler attribute: on* = … inside a tag. */
 const INLINE_HANDLER = /<[^>]+\son[a-z]+\s*=/i;
@@ -32,6 +32,21 @@ const ASSETS_CACHE = `Cache-Control: ${ASSETS_CACHE_VALUE}`;
 function fail(msg: string): never {
   console.error(`write-headers: ${msg}`);
   process.exit(1);
+}
+
+function parseArgs(argv: readonly string[]): { check: boolean; dist: string } {
+  let check = false;
+  let dist = DEFAULT_DIST;
+  for (let i = 2; i < argv.length; i++) {
+    const next = argv[i + 1];
+    if (argv[i] === "--check") {
+      check = true;
+    } else if (argv[i] === "--dir" && next) {
+      dist = resolve(next);
+      i++;
+    }
+  }
+  return { check, dist };
 }
 
 function sha256Base64(content: string): string {
@@ -53,19 +68,15 @@ function extractInlineScripts(html: string): string[] {
   return scripts;
 }
 
-function buildCsp(html: string): string {
+function buildCsp(html: string, indexLabel: string): string {
   if (INLINE_HANDLER.test(html)) {
-    fail("inline event handler attribute found in dist/index.html");
+    fail(`inline event handler attribute found in ${indexLabel}`);
   }
   if (STYLE_BLOCK.test(html)) {
-    fail(
-      "inline <style> block found in dist/index.html - refuse 'unsafe-inline'; STOP and report"
-    );
+    fail(`inline <style> block found in ${indexLabel} - refuse 'unsafe-inline'; STOP and report`);
   }
   if (STYLE_ATTR.test(html)) {
-    fail(
-      "style= attribute found in dist/index.html - refuse 'unsafe-inline'; STOP and report"
-    );
+    fail(`style= attribute found in ${indexLabel} - refuse 'unsafe-inline'; STOP and report`);
   }
 
   const inline = extractInlineScripts(html);
@@ -107,8 +118,8 @@ function securityHeaderLines(csp: string): string[] {
   ];
 }
 
-function buildHeadersFile(html: string): string {
-  const csp = buildCsp(html);
+function buildHeadersFile(html: string, indexLabel: string): string {
+  const csp = buildCsp(html, indexLabel);
   const sec = securityHeaderLines(csp);
   const lines = ["/*", ...sec, "", "/assets/*", `  ${ASSETS_CACHE}`, ""];
   return lines.join("\n");
@@ -136,28 +147,33 @@ function assertHeadersPolicy(headersText: string): void {
 }
 
 function main(): void {
-  const check = process.argv.includes("--check");
-  if (!existsSync(INDEX)) {
-    fail("dist/index.html missing - run pnpm build first");
+  const { check, dist } = parseArgs(process.argv);
+  const indexPath = join(dist, "index.html");
+  const headersPath = join(dist, "_headers");
+  const indexLabel = relative(ROOT, indexPath) || indexPath;
+  const headersLabel = relative(ROOT, headersPath) || headersPath;
+
+  if (!existsSync(indexPath)) {
+    fail(`${indexLabel} missing - run pnpm build first`);
   }
-  const html = readFileSync(INDEX, "utf8");
-  const expected = buildHeadersFile(html);
+  const html = readFileSync(indexPath, "utf8");
+  const expected = buildHeadersFile(html, indexLabel);
 
   if (check) {
-    if (!existsSync(HEADERS_PATH)) {
-      fail("dist/_headers missing");
+    if (!existsSync(headersPath)) {
+      fail(`${headersLabel} missing`);
     }
-    const actual = readFileSync(HEADERS_PATH, "utf8");
+    const actual = readFileSync(headersPath, "utf8");
     if (actual !== expected) {
-      fail("dist/_headers does not match current dist/index.html hashes");
+      fail(`${headersLabel} does not match current ${indexLabel} hashes`);
     }
     assertHeadersPolicy(actual);
     console.log("write-headers: --check OK");
     return;
   }
 
-  writeFileSync(HEADERS_PATH, expected, "utf8");
-  console.log("write-headers: wrote dist/_headers");
+  writeFileSync(headersPath, expected, "utf8");
+  console.log(`write-headers: wrote ${headersLabel}`);
 }
 
 main();

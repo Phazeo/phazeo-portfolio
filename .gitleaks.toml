@@ -11,6 +11,8 @@ paths = [
   '''(^|/)tests/fixtures/leak/''',
   '''(^|/)node_modules/''',
   '''(^|/)dist/''',
+  '''(^|/)\.tmp-dist-guest/''',
+  '''(^|/)\.tmp-dist-prod-csp/''',
   '''pnpm-lock\.yaml$''',
   # Opaque SHA-256 digests only - hex runs can false-positive phone rules.
   '''(^|/)config/policy/boundary-denylist\.sha256$''',

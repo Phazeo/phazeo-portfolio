@@ -210,6 +210,14 @@ pnpm quality
 pnpm guard:tree
 ```
 
+Browser end-to-end checks use Playwright against system Google Chrome (no `playwright install`). After `pnpm build`:
+
+```sh
+pnpm test:e2e
+```
+
+Use `pnpm test:e2e:site` for the built site (headers, redirects, CSP), `pnpm test:e2e:demo` for the directory demo, and `pnpm test:e2e:guest` for the guest example at `/alex-morgan`. Override the Chrome binary with `PW_CHROME_PATH` if needed.
+
 4. Push again. Do not bypass hooks.
 
 ## Commit rules
