@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { mergeHeadersForPath, parseHeadersFile } from "../../tools/build/headers-merge.ts";
+import { expectNoHorizontalOverflow } from "./helpers/overflow.ts";
 import { ROOT } from "./helpers/scope.ts";
 
 const GUEST_DIST = join(ROOT, ".tmp-dist-guest");
@@ -77,5 +78,9 @@ test.describe("guest example", () => {
     await expect.poll(async () => (await readViolations(page)).length).toBe(0);
     expect(collectors.consoleErrors, collectors.consoleErrors.join("\n")).toEqual([]);
     expect(collectors.pageErrors, collectors.pageErrors.join("\n")).toEqual([]);
+  });
+
+  test("alex-morgan: no horizontal scroll at phone widths", async ({ page }) => {
+    await expectNoHorizontalOverflow(page, GUEST_PATH);
   });
 });
