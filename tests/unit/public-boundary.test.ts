@@ -178,4 +178,18 @@ describe("public-boundary", () => {
     const section = run(["--denylist", tmpDeny, "--text", sectionText]);
     assert.notEqual(section.status, 0, "expected section-ref to fail");
   });
+
+  // Assembled at runtime so the committed denylist name is never a literal in this file.
+  it("public repo name passes the committed denylist", () => {
+    const publicName = ["phazeo", "portfolio"].join("-");
+    const pass = run(["--denylist", DENYLIST, "--text", `repo ${publicName} on main`]);
+    assert.equal(pass.status, 0, `public name should pass: ${pass.stderr}`);
+  });
+
+  it("archived private name is blocked by the committed denylist", () => {
+    const archived = ["phazeo", "portfolio", "archive"].join("-");
+    const blocked = run(["--denylist", DENYLIST, "--text", `do not cite ${archived}`]);
+    assert.notEqual(blocked.status, 0, "archived private name must fail");
+    assert.match(blocked.stderr, /denylist-token/, "expected denylist-token");
+  });
 });

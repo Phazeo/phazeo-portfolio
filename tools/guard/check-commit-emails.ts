@@ -113,7 +113,7 @@ function parseRepoSlug(env: NodeJS.ProcessEnv = process.env): { owner: string; r
     const [owner, repo] = slug.split("/");
     if (owner && repo) return { owner, repo };
   }
-  return { owner: "Phazeo", repo: "phazeo-portfolio-profiles" };
+  return { owner: "Phazeo", repo: "phazeo-portfolio" };
 }
 
 /**
@@ -135,7 +135,7 @@ export async function fetchGithubMergeAttestation(
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "phazeo-portfolio-profiles-commit-emails",
+    "User-Agent": "phazeo-portfolio-commit-emails",
   };
   const token = opts.token ?? process.env["GITHUB_TOKEN"] ?? process.env["GH_TOKEN"];
   if (token) {
