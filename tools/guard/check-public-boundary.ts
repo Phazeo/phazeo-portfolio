@@ -7,6 +7,10 @@
  * - em dash (U+2014) or en dash (U+2013), except under profiles/** and public/profiles/**
  * Never prints matched plaintext - rule, source, and hash prefix only.
  *
+ * Path allowances: digests listed in config/policy/boundary-path-allowances.txt
+ * pass only in the file scan of the exact path .github/workflows/deploy.yml.
+ * Text and commit-message modes never apply them. A malformed file exits 2.
+ *
  * Commit-message mode (--commits): scans each commit message in a git range.
  * Exact full SHAs in config/policy/boundary-exceptions.txt may skip one listed
  * rule only when that SHA is already an ancestor of origin/batch or origin/main.
@@ -17,10 +21,13 @@ import type { Dirent } from "node:fs";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ALLOWANCE_PATH, checkAllowancesBuffer } from "../checks/check-policy-files.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const DENYLIST_PATH = join(ROOT, "config", "policy", "boundary-denylist.sha256");
 const EXCEPTIONS_PATH = join(ROOT, "config", "policy", "boundary-exceptions.txt");
+const ALLOWANCES_PATH = join(ROOT, "config", "policy", "boundary-path-allowances.txt");
+const NO_ALLOWANCES: ReadonlySet<string> = new Set();
 
 const SECTION_RE = /§\d/;
 const LONG_DASH_RE = /[\u2013\u2014]/;
@@ -35,6 +42,7 @@ type Args = {
   tracked: boolean;
   denylist: string;
   exceptions: string;
+  allowances: string;
   allowLongDash: boolean;
   commitsRange: string | null;
   cwd: string;
@@ -59,10 +67,13 @@ function parseArgs(argv: readonly string[]): Args {
     tracked: false,
     denylist: DENYLIST_PATH,
     exceptions: EXCEPTIONS_PATH,
+    allowances: ALLOWANCES_PATH,
     allowLongDash: false,
     commitsRange: null,
     cwd: ROOT,
   };
+  let denylistGiven = false;
+  let allowancesGiven = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i] ?? "";
     const next = argv[i + 1];
@@ -72,9 +83,14 @@ function parseArgs(argv: readonly string[]): Args {
     } else if (a === "--tracked") out.tracked = true;
     else if (a === "--denylist" && next) {
       out.denylist = resolve(next);
+      denylistGiven = true;
       i++;
     } else if (a === "--exceptions" && next) {
       out.exceptions = resolve(next);
+      i++;
+    } else if (a === "--allowances" && next) {
+      out.allowances = resolve(next);
+      allowancesGiven = true;
       i++;
     } else if (a === "--allow-long-dash") out.allowLongDash = true;
     else if (a === "--commits" && next) {
@@ -102,6 +118,9 @@ function parseArgs(argv: readonly string[]): Args {
     } else if (!a.startsWith("-")) out.roots.push(resolve(a));
   }
   if (out.roots.length === 0 && (out.tree || out.tracked)) out.roots.push(ROOT);
+  // The committed allowances belong to the committed denylist: a custom
+  // --denylist without --allowances gets none.
+  if (denylistGiven && !allowancesGiven) out.allowances = "";
   return out;
 }
 
@@ -121,6 +140,18 @@ function loadDenylist(path: string): Set<string> {
     set.add(t);
   }
   return set;
+}
+
+/** Load path allowances. Missing file means none; any format error exits 2. */
+function loadAllowances(path: string, denylist: ReadonlySet<string>): ReadonlySet<string> {
+  if (path === "" || !existsSync(path)) return NO_ALLOWANCES;
+  const result = checkAllowancesBuffer(path, readFileSync(path), denylist);
+  if (!result.ok) {
+    console.error("check-public-boundary: invalid path allowances file:");
+    for (const e of result.errors) console.error(`  ${e}`);
+    process.exit(2);
+  }
+  return result.digests;
 }
 
 /** Load exceptions file. Missing file means no exceptions. */
@@ -255,9 +286,10 @@ function scanText(
   text: string,
   denylist: ReadonlySet<string>,
   findings: Finding[],
-  opts: { checkLongDash?: boolean } = {}
+  opts: { checkLongDash?: boolean; allowed?: ReadonlySet<string> } = {}
 ): void {
   const checkLongDash = opts.checkLongDash !== false;
+  const allowed = opts.allowed ?? NO_ALLOWANCES;
   if (SECTION_RE.test(text)) {
     findings.push({ rule: "section-ref", source });
   }
@@ -266,7 +298,7 @@ function scanText(
   }
   for (const tok of tokensFrom(text)) {
     const digest = sha256Lower(tok);
-    if (denylist.has(digest)) {
+    if (denylist.has(digest) && !allowed.has(digest)) {
       findings.push({
         rule: "denylist-token",
         source,
@@ -318,7 +350,8 @@ function scanRoot(
   root: string,
   denylist: ReadonlySet<string>,
   findings: Finding[],
-  useTracked: boolean
+  useTracked: boolean,
+  allowances: ReadonlySet<string>
 ): void {
   const files = useTracked ? trackedFiles(root) : null;
   const iterable = files ?? walkFiles(root, root);
@@ -340,6 +373,7 @@ function scanRoot(
     }
     scanText(norm, text, denylist, findings, {
       checkLongDash: !isProfilePath(norm),
+      allowed: norm === ALLOWANCE_PATH ? allowances : NO_ALLOWANCES,
     });
   }
 }
@@ -410,9 +444,10 @@ function main(): void {
   if (args.tree || args.tracked || args.roots.length > 0) {
     const roots = args.roots.length > 0 ? args.roots : [ROOT];
     const useTracked = args.tracked && roots.length === 1 && roots[0] === ROOT;
+    const allowances = loadAllowances(args.allowances, denylist);
     for (const root of roots) {
       const tracked = useTracked || (args.tracked && root === ROOT);
-      scanRoot(root, denylist, findings, tracked);
+      scanRoot(root, denylist, findings, tracked, allowances);
     }
   }
 

@@ -1,0 +1,5 @@
+# Denylist digests allowed only in the exact file below, in tree scans.
+# Never in other paths, copies, commit messages, PR text, issues or comments.
+# Format: the one path, one space, 64 lowercase hex. Locked by check-policy-files.
+.github/workflows/deploy.yml b6086e6137a8d3b5df439a842a2840850713632fef199d0aedbcc3a36e9e0ccc
+.github/workflows/deploy.yml 738e22f0acab814cc0c6a9dfdd1c6a193ea278e48b07f070784d608243e68d8c

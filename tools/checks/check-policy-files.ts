@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Strict format lock for policy files that the leak scanner path-allowlists.
+ * Strict format lock for policy files that the leak scanner path-allowlists
+ * (denylist digests, commit exceptions, and the one-file path allowances).
  * Rejects any line that is not a blank, an approved comment, or a matching digest/exception.
  */
 import { readFileSync, statSync } from "node:fs";
@@ -9,6 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const MAX_BYTES = 16 * 1024;
+const ALLOWANCES_MAX_BYTES = 2048;
 
 const COMMENT_TEXT_RE = /^[A-Za-z0-9 ,.:()/-]{0,100}$/;
 const DENYLIST_DIGEST_RE = /^[0-9a-f]{64}$/;
@@ -17,13 +19,20 @@ const EXCEPTION_LINE_RE =
 
 export const DEFAULT_DENYLIST_PATH = resolve(ROOT, "config/policy/boundary-denylist.sha256");
 export const DEFAULT_EXCEPTIONS_PATH = resolve(ROOT, "config/policy/boundary-exceptions.txt");
+export const DEFAULT_ALLOWANCES_PATH = resolve(ROOT, "config/policy/boundary-path-allowances.txt");
 
-export type PolicyKind = "denylist" | "exceptions";
+/** The one file where listed denylist digests may appear (exact repository path). */
+export const ALLOWANCE_PATH = ".github/workflows/deploy.yml";
+const ALLOWANCE_LINE_RE = /^\.github\/workflows\/deploy\.yml [0-9a-f]{64}$/;
+
+export type PolicyKind = "denylist" | "exceptions" | "allowances";
 
 export type PolicyCheckResult = {
   ok: boolean;
   errors: string[];
 };
+
+export type AllowancesCheckResult = PolicyCheckResult & { digests: Set<string> };
 
 function isAsciiUtf8(buf: Buffer): boolean {
   for (const b of buf) {
@@ -32,9 +41,14 @@ function isAsciiUtf8(buf: Buffer): boolean {
   return true;
 }
 
-function checkSharedEnvelope(label: string, buf: Buffer, errors: string[]): string | null {
-  if (buf.byteLength > MAX_BYTES) {
-    errors.push(`${label}: file exceeds ${MAX_BYTES} bytes (${buf.byteLength})`);
+function checkSharedEnvelope(
+  label: string,
+  buf: Buffer,
+  errors: string[],
+  maxBytes = MAX_BYTES
+): string | null {
+  if (buf.byteLength > maxBytes) {
+    errors.push(`${label}: file exceeds ${maxBytes} bytes (${buf.byteLength})`);
     return null;
   }
   if (!isAsciiUtf8(buf)) {
@@ -120,15 +134,79 @@ export function checkExceptionsText(label: string, text: string): PolicyCheckRes
   return { ok: errors.length === 0, errors };
 }
 
-export function checkPolicyFile(path: string, kind: PolicyKind): PolicyCheckResult {
+/**
+ * Path allowances: each line is the one allowed path, one space, and a digest
+ * that must also be in the denylist. Comments follow the shared comment rule.
+ */
+export function checkAllowancesText(
+  label: string,
+  text: string,
+  denylist: ReadonlySet<string>
+): AllowancesCheckResult {
+  const errors: string[] = [];
+  const digests = new Set<string>();
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    const lineNo = i + 1;
+    if (line === "") continue;
+    if (line.startsWith("#")) {
+      checkComment(label, lineNo, line, errors);
+      continue;
+    }
+    if (!ALLOWANCE_LINE_RE.test(line)) {
+      errors.push(`${label}:${lineNo}: expected "${ALLOWANCE_PATH} <64 lowercase hex>"`);
+      continue;
+    }
+    const digest = line.slice(ALLOWANCE_PATH.length + 1);
+    if (digests.has(digest)) {
+      errors.push(`${label}:${lineNo}: duplicate digest`);
+      continue;
+    }
+    if (!denylist.has(digest)) {
+      errors.push(`${label}:${lineNo}: digest is not in the denylist`);
+      continue;
+    }
+    digests.add(digest);
+  }
+  return { ok: errors.length === 0, errors, digests };
+}
+
+/** Digest lines of a denylist text (format is checked separately). */
+export function denylistDigests(text: string): Set<string> {
+  const out = new Set<string>();
+  for (const line of text.split("\n")) {
+    if (DENYLIST_DIGEST_RE.test(line)) out.add(line);
+  }
+  return out;
+}
+
+/** Envelope and line checks for an allowances file already read into memory. */
+export function checkAllowancesBuffer(
+  label: string,
+  buf: Buffer,
+  denylist: ReadonlySet<string>
+): AllowancesCheckResult {
+  const errors: string[] = [];
+  const text = checkSharedEnvelope(label, buf, errors, ALLOWANCES_MAX_BYTES);
+  if (text === null) return { ok: false, errors, digests: new Set() };
+  return checkAllowancesText(label, text, denylist);
+}
+
+export function checkPolicyFile(
+  path: string,
+  kind: PolicyKind,
+  denylist: ReadonlySet<string> = new Set()
+): PolicyCheckResult {
   const label = path;
+  const maxBytes = kind === "allowances" ? ALLOWANCES_MAX_BYTES : MAX_BYTES;
   let buf: Buffer;
   try {
     const st = statSync(path);
-    if (st.size > MAX_BYTES) {
+    if (st.size > maxBytes) {
       return {
         ok: false,
-        errors: [`${label}: file exceeds ${MAX_BYTES} bytes (${st.size})`],
+        errors: [`${label}: file exceeds ${maxBytes} bytes (${st.size})`],
       };
     }
     buf = readFileSync(path);
@@ -138,6 +216,7 @@ export function checkPolicyFile(path: string, kind: PolicyKind): PolicyCheckResu
       errors: [`${label}: ${err instanceof Error ? err.message : String(err)}`],
     };
   }
+  if (kind === "allowances") return checkAllowancesBuffer(label, buf, denylist);
   const errors: string[] = [];
   const text = checkSharedEnvelope(label, buf, errors);
   if (text === null) return { ok: false, errors };
@@ -147,11 +226,19 @@ export function checkPolicyFile(path: string, kind: PolicyKind): PolicyCheckResu
 
 export function checkPolicyFiles(
   denylistPath = DEFAULT_DENYLIST_PATH,
-  exceptionsPath = DEFAULT_EXCEPTIONS_PATH
+  exceptionsPath = DEFAULT_EXCEPTIONS_PATH,
+  allowancesPath = DEFAULT_ALLOWANCES_PATH
 ): PolicyCheckResult {
   const a = checkPolicyFile(denylistPath, "denylist");
   const b = checkPolicyFile(exceptionsPath, "exceptions");
-  return { ok: a.ok && b.ok, errors: [...a.errors, ...b.errors] };
+  let deny = new Set<string>();
+  try {
+    deny = denylistDigests(readFileSync(denylistPath, "utf8"));
+  } catch {
+    // Reported by the denylist check above.
+  }
+  const c = checkPolicyFile(allowancesPath, "allowances", deny);
+  return { ok: a.ok && b.ok && c.ok, errors: [...a.errors, ...b.errors, ...c.errors] };
 }
 
 function main(): void {

@@ -187,8 +187,10 @@ pass_case "clean-tree" sh "$GUARD/check-leaks.sh" --tree
 # --- Staged path ---
 echo "=== PROVE STAGED (throwaway repo) ==="
 STAGED_TMP=$(mktemp -d)
-mkdir -p "$STAGED_TMP/tools/guard" "$STAGED_TMP/config/policy"
+mkdir -p "$STAGED_TMP/tools/guard" "$STAGED_TMP/tools/checks" "$STAGED_TMP/config/policy"
 cp -a "$ROOT/tools/guard/." "$STAGED_TMP/tools/guard/"
+# The boundary scanner imports the policy format lock.
+cp -a "$ROOT/tools/checks/check-policy-files.ts" "$STAGED_TMP/tools/checks/"
 cp -a "$ROOT/.gitleaks.toml" "$STAGED_TMP/.gitleaks.toml"
 cp -a "$ROOT/config/policy/." "$STAGED_TMP/config/policy/"
 cd "$STAGED_TMP"
