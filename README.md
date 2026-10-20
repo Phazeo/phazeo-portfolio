@@ -48,7 +48,7 @@ Open http://localhost:5173 to preview locally.
 ## What CI checks on every PR
 
 - **Leak guard:** personal data, credentials, and host allowlist on the change set and tree.
-- **Public boundary:** denylisted tokens, section-sign markers in text, and long dashes outside profile content.
+- **Public boundary:** denylisted tokens, section-sign markers in text, and long dashes outside profile content. Listed tokens may appear only in the deploy workflow file (`config/policy/boundary-path-allowances.txt`), never in other files, commit messages, PR text, issues or comments.
 - **Profile ownership:** only the profile owner (or an allowed exception) may change that slug.
 - **Import boundaries:** profiles import only their own folder, `#kit`, and an allowed package list.
 - **Build and security headers:** quality, production build, and hashed CSP / headers check.
@@ -61,7 +61,7 @@ Open http://localhost:5173 to preview locally.
 
 ## Deployment
 
-Deployment is handled by the maintainers.
+Every push to `main` runs `.github/workflows/deploy.yml`: it builds and checks the site like CI, then publishes the static files from a protected environment. A check refuses any server-side script. When the site's domain is configured, the workflow compares the live security headers with the build and rolls back on a mismatch. Deploy credentials and settings are managed by the maintainers.
 
 ## License
 
