@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Local check: refuse if git user.email is an AI tool address.
-# Does NOT allowlist humans — any person email is fine.
+# Does NOT allowlist humans - any person email is fine.
 
 set -e
 
@@ -14,6 +14,13 @@ fi
 
 if echo "$NAME" | grep -Eqi 'cursor agent|github copilot|chatgpt|claude code'; then
   echo "COMMIT BLOCKED: git user.name looks like an AI tool ($NAME)."
+  exit 1
+fi
+
+# Leak guard - staged changes only. Fail closed if gitleaks cannot be installed.
+if ! sh tools/guard/check-leaks.sh --staged; then
+  echo "COMMIT BLOCKED: leak guard failed."
+  echo "Install hint: sh tools/guard/ensure-gitleaks.sh  (pinned binary + SHA-256 in tools/guard/gitleaks.pin)"
   exit 1
 fi
 

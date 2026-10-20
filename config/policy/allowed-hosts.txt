@@ -1,0 +1,17 @@
+# Reviewed allowlist - exact host match only.
+# Subdomains are allowed ONLY for entries written as "*.example.com".
+# Never use a wildcard for phazeo.com (no "*.phazeo.com").
+# One host per line. Adding a host requires review.
+phazeo.com
+portfolio.phazeo.com
+github.com
+api.github.com
+linkedin.com
+www.linkedin.com
+biomejs.dev
+www.w3.org
+json-schema.org
+example.com
+www.example.com
+example.org
+www.example.org

@@ -1,0 +1,107 @@
+title = "phazeo-portfolio-profiles leak guard"
+
+[extend]
+useDefault = true
+
+# Fixtures are scanned only via prove/self-test (not production check-leaks).
+# .tools/ is NOT allowlisted - committed tool caches must fail [tool-cache].
+[[allowlists]]
+description = "Leak-guard fixtures, dependency trees, and build output"
+paths = [
+  '''(^|/)tests/fixtures/leak/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
+  '''(^|/)\.tmp-dist-guest/''',
+  '''(^|/)\.tmp-dist-prod-csp/''',
+  '''pnpm-lock\.yaml$''',
+  # Format-locked by tools/checks/check-policy-files.ts (digest/exception lines only).
+  # Opaque SHA-256 digests only - hex runs can false-positive phone rules.
+  '''(^|/)config/policy/boundary-denylist\.sha256$''',
+  # Exact commit SHAs for boundary exceptions - same hex false-positive risk.
+  '''(^|/)config/policy/boundary-exceptions\.txt$''',
+  # Old location, still present in older commits scanned in commits mode.
+  '''(^|/)\.github/boundary-denylist\.sha256$''',
+  '''(^|/)test/leak-fixtures/''',
+]
+
+# --- IPv4: default-deny; only loopback, unspecified, RFC 5737 docs ranges ---
+[[rules]]
+id = "phazeo-ipv4-literal"
+description = "IPv4 literal - private and unexpected ranges fail; loopback/docs allowed"
+regex = '''\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\b'''
+
+[[rules.allowlists]]
+regexTarget = "match"
+regexes = [
+  '''^0\.0\.0\.0$''',
+  '''^127\.(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){2}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)$''',
+  '''^192\.0\.2\.(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d))$''',
+  '''^198\.51\.100\.(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d))$''',
+  '''^203\.0\.113\.(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d))$''',
+]
+
+# --- IPv6: default-deny; only ::1 and RFC 3849 (2001:db8::/32) ---
+# Require a real IPv6 shape so time-like values (e.g. 10:30:00) do not match:
+# compressed form with "::", or full 8 groups, or at least one a-f hex letter.
+[[rules]]
+id = "phazeo-ipv6-literal"
+description = "IPv6 literal - ULA/private fail; ::1 and documentation allowed"
+regex = '''(?i)\b(?:(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}|(?:[0-9a-f]{0,4}:){1,7}:[0-9a-f]{0,4}|:(?::[0-9a-f]{1,4}){1,7}|(?:[0-9a-f]*[a-f][0-9a-f]{0,3}:){1,7}[0-9a-f]{1,4})\b'''
+
+[[rules.allowlists]]
+regexTarget = "match"
+regexes = [
+  '''(?i)^::1$''',
+  '''(?i)^::$''',
+  '''(?i)^2001:db8:''',
+]
+
+# --- Connection strings ---
+[[rules]]
+id = "phazeo-connection-string"
+description = "Database/message-broker connection string with credentials or host"
+regex = '''(?i)\b(?:postgres(?:ql)?|mysql|redis|mongodb(?:\+srv)?|amqp|amqps):\/\/[^\s"'`]+'''
+
+# --- Literal credential assignments ---
+[[rules]]
+id = "phazeo-credential-assignment"
+description = "password/passwd/secret/token/api_key assigned a quoted literal"
+regex = '''(?i)(?:password|passwd|secret|token|api[_-]?key)\s*[=:]\s*['"][^'"]{8,}['"]'''
+
+# --- Authorization headers ---
+[[rules]]
+id = "phazeo-authorization-header"
+description = "Authorization header with a bearer/basic literal"
+regex = '''(?i)(?:authorization)\s*[=:]\s*['"]?(?:bearer|basic)\s+[A-Za-z0-9+/=._-]{8,}'''
+
+# --- Private key blocks ---
+[[rules]]
+id = "phazeo-private-key-block"
+description = "PEM private key block"
+regex = '''-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'''
+
+# --- Phone numbers (personal data). Keep in sync with tools/guard/phone-patterns.ts. ---
+# International: + then 8-15 digits with optional spaces/dots/dashes/brackets.
+[[rules]]
+id = "phazeo-phone-intl"
+description = "International phone number (+ then 8-15 digits with optional separators)"
+regex = '''\+(?:[\s().-]*\d){8,15}\b'''
+
+# Grouped local-style numbers: (xxx) xxx-xxxx or xxx-xxx-xxxx.
+# Avoids SVG path decimals (12.34) and year ranges (2015-2019).
+[[rules]]
+id = "phazeo-phone-grouped"
+description = "Phone-like digit grouping with separators (10+ digits)"
+regex = '''(?:\(\d{2,4}\)[\s-]*\d{2,4}[\s-]+\d{2,4}(?:[\s-]+\d{2,4})?|\b\d{3}-\d{3}-\d{4}\b)'''
+
+# Indian mobile: digit boundaries; 10 digits starting 6-9; optional +91 / 91 / 0; optional 5-5 or 3-3-4 split.
+[[rules]]
+id = "phazeo-phone-in-mobile"
+description = "Indian mobile number (10 digits starting 6-9, optional +91/91/0 and 5-5 or 3-3-4 split)"
+regex = '''(?:^|\D)(?:\+91[\s.-]?|91[\s.-]?|0)?(?:[6-9]\d{9}|[6-9]\d{4}[\s.-]\d{5}|[6-9]\d{2}[\s.-]\d{3}[\s.-]\d{4})(?:\D|$)'''
+
+# Indian landline: digit boundaries; 0 + 2-4 digit area code + space/dash + 6-8 subscriber digits.
+[[rules]]
+id = "phazeo-phone-in-landline"
+description = "Indian landline (0 + area code + separator + 6-8 digits)"
+regex = '''(?:^|\D)0\d{2,4}[\s-]\d{6,8}(?:\D|$)'''

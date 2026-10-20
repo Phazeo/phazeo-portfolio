@@ -1,0 +1,103 @@
+{
+  "$schema": "../schemas/profile.schema.json",
+  "meta": {
+    "owner": {
+      "githubId": 12345678,
+      "githubLogin": "alex-example"
+    },
+    "affiliation": "guest",
+    "theme": "ocean"
+  },
+  "basics": {
+    "name": "Alex Morgan",
+    "label": "Full-Stack Engineer",
+    "summary": "Fictional guest engineer who builds calm, accessible web apps. This example uses every supported field and only example.com / example.org links.",
+    "image": "photo.jpg",
+    "email": "alex.morgan@example.com",
+    "url": "https://www.example.com",
+    "profiles": [
+      {
+        "network": "GitHub",
+        "username": "alex-example",
+        "url": "https://github.com/alex-example"
+      },
+      {
+        "network": "LinkedIn",
+        "username": "alex-morgan-example",
+        "url": "https://www.linkedin.com/in/alex-morgan-example"
+      },
+      {
+        "network": "Website",
+        "username": "example.org",
+        "url": "https://example.org"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "Example Labs",
+      "position": "Senior Engineer",
+      "startDate": "2022-03",
+      "endDate": "2025-06",
+      "summary": "Led product engineering for a documentation platform.",
+      "highlights": [
+        "Shipped a design-system migration without downtime",
+        "Mentored three engineers on accessibility reviews"
+      ]
+    },
+    {
+      "name": "Example Studio",
+      "position": "Software Engineer",
+      "startDate": "2019",
+      "summary": "Built customer-facing dashboards and APIs."
+    }
+  ],
+  "education": [
+    {
+      "institution": "Example University",
+      "area": "Computer Science",
+      "studyType": "BSc",
+      "startDate": "2015-09",
+      "endDate": "2019-06"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Example Portfolio Kit",
+      "description": "A small static kit for publishing personal portfolio pages.",
+      "url": "https://www.example.com/projects/portfolio-kit",
+      "highlights": ["Accessible by default", "No client-side analytics"]
+    }
+  ],
+  "skills": [
+    {
+      "name": "Frontend",
+      "keywords": ["TypeScript", "React", "CSS"]
+    },
+    {
+      "name": "Backend",
+      "keywords": ["Node.js", "PostgreSQL"]
+    }
+  ],
+  "certificates": [
+    {
+      "name": "Example Cloud Practitioner",
+      "issuer": "Example Cloud",
+      "date": "2024-11-02",
+      "url": "https://www.example.com/certs/cloud"
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "fluency": "Native"
+    },
+    {
+      "language": "Spanish",
+      "fluency": "Professional"
+    }
+  ],
+  "resume": {
+    "file": "resume.pdf"
+  }
+}

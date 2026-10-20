@@ -1,0 +1,57 @@
+# Invite-only profile ownership - decision function has no network; uses PR event ids only.
+name: Profile ownership
+
+on:
+  pull_request:
+
+concurrency:
+  group: profile-ownership-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ownership:
+    name: profile-ownership
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        # actions/checkout@v7.0.1 (tag v7.0.1 → this commit; published 2026-07-20)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        # actions/setup-node@v7.0.0 (tag v7.0.0 → this commit; published 2026-07-14)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: ".nvmrc"
+          package-manager-cache: false
+
+      - name: Unit tests (decision function)
+        run: node --test tests/unit/profile-ownership.test.ts
+
+      - name: Collect changed paths
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          files=$(git diff --name-only --no-renames "${BASE_SHA}...${HEAD_SHA}")
+          {
+            echo "files<<EOF"
+            printf '%s\n' "$files"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Enforce ownership
+        env:
+          PR_AUTHOR_ID: ${{ github.event.pull_request.user.id }}
+          PR_AUTHOR_LOGIN: ${{ github.event.pull_request.user.login }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CHANGED_FILES: ${{ steps.changes.outputs.files }}
+        run: node tools/checks/check-profile-ownership.ts

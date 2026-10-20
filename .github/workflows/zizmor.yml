@@ -1,0 +1,36 @@
+# Static analysis of GitHub Actions workflows (zizmor).
+name: zizmor
+
+on:
+  pull_request:
+  push:
+
+concurrency:
+  group: zizmor-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        # actions/checkout@v7.0.1 (tag v7.0.1 → this commit; published 2026-07-20)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        # zizmorcore/zizmor-action@v0.6.4 (tag v0.6.4 → this commit; published 2026-09-09)
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          inputs: .github/workflows
+          collect: workflows
+          version: "1.30.1"
+          online-audits: "false"
+          advanced-security: "false"
+          min-severity: medium

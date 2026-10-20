@@ -1,4 +1,4 @@
-# No-AI commit guard — blocks AI emails / Co-authored-by / Made-with trailers.
+# No-AI commit guard - blocks AI emails / Co-authored-by / Made-with trailers.
 # Human contributor emails are allowed. No allowlist.
 # Local convenience: husky prepare-commit-msg (strip) + commit-msg (refuse).
 name: No AI commit attribution
@@ -18,16 +18,19 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout with full history
-        uses: actions/checkout@v5
+        # actions/checkout@v7.0.1 (tag v7.0.1 → this commit; published 2026-07-20)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        # actions/setup-node@v7.0.0 (tag v7.0.0 → this commit; published 2026-07-14)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24"
-          # This job only runs node scripts — no install. v5 defaults
-          # package-manager-cache:true from package.json and fails without pnpm.
+          node-version-file: ".nvmrc"
+          # This job only runs node scripts - no install. Defaults may enable
+          # package-manager-cache from package.json and fail without pnpm.
           package-manager-cache: false
 
       - name: Check commit messages and AI author emails
@@ -42,6 +45,6 @@ jobs:
             echo "No commits in range; skipping."
             exit 0
           fi
-          node scripts/check-no-ai-commit.mjs --range "$RANGE"
-          node scripts/check-no-ai-commit.mjs --authors "$RANGE"
-          echo "OK — no AI attribution or AI author emails."
+          node tools/guard/check-no-ai-commit.ts --range "$RANGE"
+          node tools/guard/check-no-ai-commit.ts --authors "$RANGE"
+          echo "OK - no AI attribution or AI author emails."

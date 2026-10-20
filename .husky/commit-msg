@@ -1,5 +1,11 @@
 #!/usr/bin/env sh
 # Refuse the commit if AI attribution remains after prepare-commit-msg strip.
-# Human user emails as author are fine — this only checks the message body.
+# Human user emails as author are fine - this only checks the message body.
 
-node scripts/check-no-ai-commit.mjs "$1"
+node tools/guard/check-no-ai-commit.ts "$1" || exit 1
+
+# Public boundary: denylist, section refs, and long dashes in the commit message.
+node tools/guard/check-public-boundary.ts --text-file "$1" || {
+  echo "COMMIT BLOCKED: public-boundary check failed on the commit message."
+  exit 1
+}

@@ -1,0 +1,18 @@
+# Reserved path segments - never valid as profile slugs.
+admin
+api
+assets
+profiles
+static
+public
+login
+logout
+signup
+settings
+about
+contact
+privacy
+terms
+robots.txt
+sitemap.xml
+favicon.ico

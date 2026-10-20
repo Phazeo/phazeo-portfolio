@@ -1,96 +1,69 @@
 # Phazeo Portfolio Profiles
 
-Public repository for portfolio profiles. External developers can add and edit profiles here without needing access to the private monorepo.
+A public showcase of Phazeo team portfolios, plus invited guests.
 
-## Quick Start
+## Profile types
+
+- **Team (React):** `profiles/<slug>/meta.ts` plus a `v1/` React page (lazy-loaded).
+- **Guest (`profile.json`):** invite-only data file at `profiles/<slug>/profile.json`, rendered by the shared template.
+
+Do not put both kinds in the same slug folder.
+
+## Address (slug)
+
+The address is the person's full name as they write it, lowercase and hyphenated. An initial is fine for a later part.
+
+Examples: `firstname-lastname`, `firstname-x`.
+
+Rules: at least two hyphen-separated parts, max 40 characters, must match `^[a-z][a-z0-9]*(-[a-z0-9]+)+$`, and must not appear in `config/slugs/retired.txt` or `config/slugs/reserved.txt`.
+
+## Local development
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Open http://localhost:5173 to preview profiles locally. Profiles use the `componentLoader` pattern for lazy loading—each profile is loaded on demand when visited.
+Other useful commands:
 
-## Structure
-
-```
-phazeo-portfolio-profiles/
-├── profiles/           # Profile folders (one per person)
-│   └── <slug>/
-│       ├── meta.ts     # ProfileConfig (slug, displayName, role, versions, etc.)
-│       └── v1/
-│           ├── index.tsx      # Exports componentLoader, theme, seo (enables lazy loading)
-│           ├── ProfilePage.tsx # Default export: the actual portfolio UI
-│           ├── theme.ts       # Theme + SEO
-│           └── components/
-├── types/              # Shared types (ProfileConfig, ProfileVersion, etc.)
-├── src/                # Dev server (Vite + React Router)
-│   ├── registry.ts     # Imports and registers all profiles
-│   ├── router.tsx
-│   └── pages/
-├── profiles/_shared/      # Shared helpers (asset URLs, navigation shell)
-├── public/
-│   └── profiles/<slug>/   # Static assets (resume.pdf, images) — see Assets below
-└── package.json
+```bash
+pnpm quality
+pnpm check:imports
+pnpm build
 ```
 
-## Assets (local vs production)
+## Repository layout
 
-Store files under `public/profiles/<slug>/` (e.g. `resume.pdf`, photos).
+- `profiles/<slug>/`: one folder per person (React `meta.ts` plus `v1/`, or `profile.json`).
+- `src/app`: app shell (router, providers, not-found page).
+- `src/features`: directory (home), portfolio (profile loader), data-profile (JSON template).
+- `src/registry`: discovers profiles and validates slugs.
+- `src/kit`: the only code profiles may import (`#kit`): types, asset helpers, navigation, fonts.
+- `tools`, `config`, `tests`: checks, policy lists, and tests.
 
-At **production** build time the private monorepo copies those files to
-`apps/portfolio/public/profiles/_public/<slug>/`, so profile code and SEO must
-reference `profiles/_public/<slug>/…`. Use the helpers in
-[`profiles/_shared/assets.ts`](profiles/_shared/assets.ts):
+See [docs/architecture.md](./docs/architecture.md) for the dependency rules.
 
-```ts
-import { profileAssetPath, profileAssetUrl } from "../../_shared/assets";
+Open http://localhost:5173 to preview locally.
 
-const resume = profileAssetUrl("your-slug", "resume.pdf");
-// seo.ogImage: profileAssetPath("your-slug", "profile-photo.jpg")
-```
+## What CI checks on every PR
 
-This preview app rewrites `/profiles/_public/*` → `/profiles/*` in dev/preview
-and copies into `dist/profiles/_public/` on build so local URLs match production.
+- **Leak guard:** personal data, credentials, and host allowlist on the change set and tree.
+- **Public boundary:** denylisted tokens, section-sign markers in text, and long dashes outside profile content.
+- **Profile ownership:** only the profile owner (or an allowed exception) may change that slug.
+- **Import boundaries:** profiles import only their own folder, `#kit`, and an allowed package list.
+- **Build and security headers:** quality, production build, and hashed CSP / headers check.
 
-## Adding a New Profile
+## Contributing and terms
 
-1. Create `profiles/<slug>/meta.ts` with `ProfileConfig`
-2. Create `profiles/<slug>/v1/theme.ts` with theme and SEO
-3. Create `profiles/<slug>/v1/ProfilePage.tsx` with your portfolio component (default export)
-4. Create `profiles/<slug>/v1/index.tsx` exporting `profileVersion` with `componentLoader: () => import("./ProfilePage")`, `theme`, and `seo`
-5. Add components in `profiles/<slug>/v1/components/`
-6. Import and register in `src/registry.ts`
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - how to add or change a profile
+- [PROFILE-TERMS.md](./PROFILE-TERMS.md) - what you may publish
+- [SECURITY.md](./SECURITY.md) - how to report a vulnerability privately
 
-The `componentLoader` pattern enables lazy loading so each profile is loaded on demand when visited.
+## Deployment
 
-See `profiles/sriram/` for a complete example.
-
-## Types
-
-- `ProfileConfig` – metadata (slug, displayName, role, skills, socials, versions)
-- `ProfileVersion` – `{ componentLoader, theme, seo }` (componentLoader enables per-profile code splitting)
-- `ProfileTheme` – CSS variables, optional font URL
-- `ProfileSeo` – title, description, ogImage
-
-## Integration with Main Site
-
-The private `phazeo-portfolio` repo clones this repo at build time, merges the registry, and deploys. Your changes here are pulled in on the next deploy.
-
-### Auto-deploy after CI on main
-
-The `trigger-deploy.yml` workflow runs only after the **CI** workflow succeeds on
-a push to `main` (so a broken main does not poke Cloudflare). It then POSTs to
-the Cloudflare deploy hook so the live site rebuilds with the latest profiles.
-
-**Setup (one-time):** Add a GitHub secret in this repo:
-
-- **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
-- Name: `CLOUDFLARE_DEPLOY_HOOK`
-- Value: the deploy hook URL from Cloudflare Pages (e.g. `https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/...`)
-
-Do not commit the URL. Keep it as a secret.
+Deployment is handled by the maintainers.
 
 ## License
 
-See [LICENSE](./LICENSE).
+- **Code** (app shell, shared scripts, profile UI code): MIT - see [LICENSE](./LICENSE).
+- **Profile content** (biography, experience text, photos, and similar material) belongs to each person and is **not** licensed under MIT.

@@ -1,0 +1,1 @@
+url = https://not-allowed.example.com/bare

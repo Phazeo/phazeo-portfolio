@@ -1,0 +1,1274 @@
+@layer theme, base, components, utilities;
+
+/*
+  Directory glossy glass tokens and surfaces.
+  Contrast is verified by tests/unit/directory-contrast.test.ts
+  (text-zone stack: brightness backdrop + tint + weak overlay).
+*/
+
+@layer components {
+.directory-shell {
+  /* Light: colourful daylight base, milky glass */
+  --dir-base: #c7d2fe;
+  --dir-base-mid: #e9d5ff;
+  --dir-base-end: #fbcfe8;
+  --dir-shape-1-light: #c4b5fd;
+  --dir-shape-1-mid: #8b5cf6;
+  --dir-shape-1-dark: #7c3aed;
+  --dir-shape-2-light: #f9a8d4;
+  --dir-shape-2-mid: #f472b6;
+  --dir-shape-2-dark: #fb923c;
+  --dir-shape-3-light: #a5f3fc;
+  --dir-shape-3-mid: #38bdf8;
+  --dir-shape-3-dark: #3b82f6;
+  --dir-shape-4-light: #fde68a;
+  --dir-shape-4-mid: #fbbf24;
+  --dir-shape-4-dark: #f59e0b;
+  --dir-shape-opacity: 0.9;
+  --dir-shape-inner-alpha: 0.45;
+  --dir-card-fill: rgba(255, 255, 255, 0.38);
+  --dir-card-fill-touch: rgba(255, 255, 255, 0.42);
+  --dir-card-fill-opaque: #f8fafc;
+  --dir-overlay-strong: rgba(255, 255, 255, 0.45);
+  --dir-overlay-mid: rgba(255, 255, 255, 0.275);
+  --dir-overlay-weak: rgba(255, 255, 255, 0.1);
+  --dir-card-edge-bright: rgba(255, 255, 255, 0.95);
+  --dir-card-edge-fade: rgba(255, 255, 255, 0.35);
+  --dir-card-edge-spot: rgba(255, 255, 255, 0.9);
+  --dir-card-hairline: rgba(30, 27, 75, 0.08);
+  --dir-card-highlight: rgba(255, 255, 255, 0.25);
+  --dir-card-shadow-tight: 0 1px 2px rgba(49, 46, 129, 0.08);
+  --dir-card-shadow-wide: 0 16px 40px -12px rgba(88, 28, 135, 0.3);
+  --dir-card-shadow: var(--dir-card-shadow-tight), var(--dir-card-shadow-wide);
+  --dir-specular: rgba(255, 255, 255, 0.45);
+  --dir-bottom-shade: rgba(49, 46, 129, 0.06);
+  --dir-blur: 20px;
+  --dir-saturate: 190%;
+  --dir-brightness: 1.12;
+  --dir-radius: 24px;
+  --dir-radius-control: 16px;
+  --dir-text-name: #0f172a;
+  --dir-text-role: #334155;
+  --dir-text-summary: #334155;
+  --dir-text-muted: #334155;
+  --dir-text-placeholder: #334155;
+  --dir-text-results: #334155;
+  --dir-text-status: #334155;
+  --dir-text-pagination: #334155;
+  --dir-focus-ring: #0c4a6e;
+  --dir-search-icon: #334155;
+  --dir-search-rim-top: rgba(255, 255, 255, 0.9);
+  --dir-search-rim-top-hover: rgba(255, 255, 255, 1);
+  --dir-search-rim-bottom: rgba(255, 255, 255, 0.04);
+  --dir-search-shadow: 0 12px 40px -12px rgba(88, 28, 135, 0.28);
+  --dir-avatar-fill: rgba(255, 255, 255, 0.38);
+  --dir-avatar-ring: rgba(15, 23, 42, 0.12);
+  --dir-avatar-initials: #0f172a;
+  --dir-avatar-glow-opacity: 0.7;
+  --dir-toolbar-fill: rgba(255, 255, 255, 0.38);
+  --dir-toolbar-fill-opaque: #f8fafc;
+  --dir-segment-active-fill: rgba(14, 116, 144, 0.14);
+  --dir-segment-active-text: #0c4a6e;
+  --dir-hero-from: #1e1b4b;
+  --dir-hero-to: #4c1d95;
+  --dir-hero-glow-violet: rgba(139, 92, 246, 0.2);
+  --dir-hero-glow-blue: rgba(59, 130, 246, 0.16);
+  --dir-eyebrow-text: #334155;
+  --dir-grain-opacity: 0.035;
+  --dir-btn-fill: rgba(255, 255, 255, 0.38);
+  --dir-btn-fill-opaque: #f8fafc;
+  --dir-btn-border: rgba(15, 23, 42, 0.12);
+  --dir-divider: rgba(15, 23, 42, 0.1);
+  --dir-status-available: #059669;
+  --dir-status-building: #d97706;
+  --dir-status-away: #64748b;
+
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--dir-text-name);
+  background: var(--dir-base);
+  isolation: isolate;
+}
+
+.dark .directory-shell {
+  --dir-base: #0c0a24;
+  --dir-base-mid: #140b2e;
+  --dir-base-end: #08121f;
+  --dir-shape-1-light: #8b5cf6;
+  --dir-shape-1-mid: #6d28d9;
+  --dir-shape-1-dark: #4c1d95;
+  --dir-shape-2-light: #ec4899;
+  --dir-shape-2-mid: #db2777;
+  --dir-shape-2-dark: #c2410c;
+  --dir-shape-3-light: #06b6d4;
+  --dir-shape-3-mid: #0891b2;
+  --dir-shape-3-dark: #1d4ed8;
+  --dir-shape-4-light: #f59e0b;
+  --dir-shape-4-mid: #d97706;
+  --dir-shape-4-dark: #b45309;
+  --dir-shape-opacity: 0.85;
+  --dir-shape-inner-alpha: 0.18;
+  --dir-card-fill: rgba(14, 12, 40, 0.45);
+  --dir-card-fill-touch: rgba(18, 16, 48, 0.55);
+  --dir-card-fill-opaque: #12101f;
+  --dir-overlay-strong: rgba(255, 255, 255, 0.12);
+  --dir-overlay-mid: rgba(255, 255, 255, 0.06);
+  --dir-overlay-weak: rgba(255, 255, 255, 0.02);
+  --dir-card-edge-bright: rgba(255, 255, 255, 0.7);
+  --dir-card-edge-fade: rgba(255, 255, 255, 0.06);
+  --dir-card-edge-spot: rgba(255, 255, 255, 0.9);
+  --dir-card-hairline: rgba(255, 255, 255, 0.06);
+  --dir-card-highlight: rgba(255, 255, 255, 0.25);
+  --dir-card-shadow-tight: 0 1px 2px rgba(8, 6, 32, 0.35);
+  --dir-card-shadow-wide: 0 10px 40px rgba(8, 6, 32, 0.45);
+  --dir-card-shadow: var(--dir-card-shadow-tight), var(--dir-card-shadow-wide);
+  --dir-specular: rgba(255, 255, 255, 0.18);
+  --dir-bottom-shade: rgba(0, 0, 0, 0.25);
+  --dir-blur: 18px;
+  --dir-saturate: 180%;
+  --dir-brightness: 0.62;
+  --dir-text-name: #fafafa;
+  --dir-text-role: #d4d4d8;
+  --dir-text-summary: #d4d4d8;
+  --dir-text-muted: #d4d4d8;
+  --dir-text-placeholder: #c4c4c8;
+  --dir-text-results: #d4d4d8;
+  --dir-text-status: #d4d4d8;
+  --dir-text-pagination: #d4d4d8;
+  --dir-focus-ring: #67e8f9;
+  --dir-search-icon: #d4d4d8;
+  --dir-search-rim-top: rgba(255, 255, 255, 0.35);
+  --dir-search-rim-top-hover: rgba(255, 255, 255, 0.5);
+  --dir-search-rim-bottom: rgba(255, 255, 255, 0.04);
+  --dir-search-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.5);
+  --dir-avatar-fill: rgba(14, 12, 40, 0.45);
+  --dir-avatar-ring: rgba(255, 255, 255, 0.14);
+  --dir-avatar-initials: #fafafa;
+  --dir-avatar-glow-opacity: 0.55;
+  --dir-toolbar-fill: rgba(14, 12, 40, 0.45);
+  --dir-toolbar-fill-opaque: #12101f;
+  --dir-segment-active-fill: rgba(103, 232, 249, 0.14);
+  --dir-segment-active-text: #a5f3fc;
+  --dir-hero-from: #fafafa;
+  --dir-hero-to: #a1a1aa;
+  --dir-hero-glow-violet: rgba(139, 92, 246, 0.14);
+  --dir-hero-glow-blue: rgba(6, 182, 212, 0.12);
+  --dir-eyebrow-text: #d4d4d8;
+  --dir-grain-opacity: 0.04;
+  --dir-btn-fill: rgba(14, 12, 40, 0.45);
+  --dir-btn-fill-opaque: #12101f;
+  --dir-btn-border: rgba(255, 255, 255, 0.12);
+  --dir-divider: rgba(255, 255, 255, 0.1);
+  --dir-status-available: #34d399;
+  --dir-status-building: #fbbf24;
+  --dir-status-away: #a1a1aa;
+}
+
+.directory-shell__bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(
+    160deg,
+    var(--dir-base) 0%,
+    var(--dir-base-mid) 48%,
+    var(--dir-base-end) 100%
+  );
+}
+
+.directory-shell__shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: var(--dir-shape-opacity);
+  pointer-events: none;
+}
+
+.directory-shell__shape::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 32% 28%,
+    rgb(255 255 255 / var(--dir-shape-inner-alpha)) 0%,
+    rgb(255 255 255 / 0) 55%
+  );
+  pointer-events: none;
+}
+
+/*
+  Shapes sit behind the card column (not the hero or toolbar).
+  Priority if geometry conflicts: clear of hero/toolbar, then card overlap, then viewport fill.
+  Below 1024px sizes scale with clamp(); from 1024px up they lock to desktop sizes and
+  track the centred max-w-4xl column via 50% calcs.
+*/
+.directory-shell__shape--violet {
+  width: clamp(220px, 55vw, 440px);
+  height: clamp(220px, 55vw, 440px);
+  top: 520px;
+  left: -24px;
+  background: linear-gradient(
+    145deg,
+    var(--dir-shape-1-light) 0%,
+    var(--dir-shape-1-mid) 42%,
+    var(--dir-shape-1-dark) 100%
+  );
+}
+
+.directory-shell__shape--fuchsia {
+  width: clamp(200px, 48vw, 380px);
+  height: clamp(200px, 48vw, 380px);
+  top: 600px;
+  right: -20px;
+  background: linear-gradient(
+    145deg,
+    var(--dir-shape-2-light) 0%,
+    var(--dir-shape-2-mid) 45%,
+    var(--dir-shape-2-dark) 100%
+  );
+}
+
+.directory-shell__shape--cyan {
+  width: clamp(200px, 55vw, 320px);
+  height: clamp(200px, 55vw, 320px);
+  top: 720px;
+  left: 8%;
+  background: linear-gradient(
+    145deg,
+    var(--dir-shape-3-light) 0%,
+    var(--dir-shape-3-mid) 48%,
+    var(--dir-shape-3-dark) 100%
+  );
+}
+
+.directory-shell__shape--amber {
+  width: clamp(160px, 45vw, 200px);
+  height: clamp(160px, 45vw, 200px);
+  top: 840px;
+  left: 28%;
+  right: auto;
+  background: linear-gradient(
+    145deg,
+    var(--dir-shape-4-light) 0%,
+    var(--dir-shape-4-mid) 55%,
+    var(--dir-shape-4-dark) 100%
+  );
+}
+
+@media (min-width: 1024px) {
+  .directory-shell__shape--violet {
+    width: 440px;
+    height: 440px;
+    top: 520px;
+    left: calc(50% - 28rem - 40px);
+    right: auto;
+  }
+
+  .directory-shell__shape--fuchsia {
+    width: 380px;
+    height: 380px;
+    top: 560px;
+    left: calc(50% - 2rem);
+    right: auto;
+  }
+
+  .directory-shell__shape--cyan {
+    width: 320px;
+    height: 320px;
+    top: 740px;
+    left: calc(50% - 26rem);
+    right: auto;
+  }
+
+  .directory-shell__shape--amber {
+    width: 200px;
+    height: 200px;
+    top: 780px;
+    left: calc(50% + 10rem);
+    right: auto;
+  }
+}
+
+.directory-shell__grain {
+  position: absolute;
+  inset: 0;
+  background: url("./assets/directory-grain.png");
+  background-size: 64px 64px;
+  opacity: var(--dir-grain-opacity);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.directory-shell__content {
+  position: relative;
+  z-index: 1;
+}
+
+.directory-page {
+  padding-top: 64px;
+  padding-bottom: 4rem;
+}
+
+@media (min-width: 640px) {
+  .directory-page {
+    padding-top: 96px;
+    padding-bottom: 6rem;
+  }
+}
+
+.directory-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.directory-hero__glow {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 0;
+  width: min(900px, 120%);
+  height: 420px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 55% 65% at 32% 42%,
+      var(--dir-hero-glow-violet),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 50% 60% at 72% 38%,
+      var(--dir-hero-glow-blue),
+      transparent 70%
+    );
+}
+
+.directory-hero > :not(.directory-hero__glow) {
+  position: relative;
+  z-index: 1;
+}
+
+.directory-eyebrow {
+  --x: 50%;
+  --y: 0%;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  margin-bottom: 16px;
+  padding: 0 12px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-toolbar-fill), var(--dir-toolbar-fill));
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
+    0 0 0 1px var(--dir-card-hairline),
+    var(--dir-card-shadow-tight);
+  color: var(--dir-eyebrow-text);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.directory-eyebrow__dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--dir-status-available);
+}
+
+.directory-eyebrow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--dir-card-edge-bright),
+    var(--dir-card-edge-fade)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.directory-eyebrow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--dir-specular) 0,
+    transparent 14px
+  );
+}
+
+.directory-eyebrow > * {
+  position: relative;
+  z-index: 1;
+}
+
+.directory-hero-title {
+  margin: 0 0 16px;
+  background-image: linear-gradient(180deg, var(--dir-hero-from), var(--dir-hero-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.directory-hero-subtitle {
+  margin: 0 0 32px;
+  max-width: 36rem;
+  color: var(--dir-text-muted);
+  font-size: 1.125rem;
+  line-height: 1.55;
+  text-wrap: balance;
+}
+
+.directory-glass-btn {
+  --x: 50%;
+  --y: 0%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-btn-fill), var(--dir-btn-fill));
+  border: 1px solid transparent;
+  border-radius: var(--dir-radius-control);
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  color: var(--dir-text-pagination);
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
+    0 0 0 1px var(--dir-card-hairline),
+    var(--dir-card-shadow);
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.directory-glass-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.directory-glass-btn[aria-current="page"],
+.directory-glass-btn[data-active="true"] {
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-segment-active-fill), var(--dir-segment-active-fill));
+  color: var(--dir-segment-active-text);
+}
+
+.directory-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 0 0 48px;
+}
+
+.directory-toolbar__search-wrap {
+  display: block;
+  width: 100%;
+}
+
+.directory-toolbar__form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.directory-toolbar__search {
+  width: min(640px, 100%);
+  min-width: 0;
+}
+
+.directory-toolbar__filters {
+  margin: 0;
+  min-width: 0;
+  width: min(640px, 100%);
+  border: 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .directory-toolbar__filters {
+    width: auto;
+  }
+}
+
+.directory-toolbar-field {
+  --x: 50%;
+  --y: 0%;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 56px;
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-toolbar-fill), var(--dir-toolbar-fill));
+  border: 1px solid transparent;
+  border-radius: 999px;
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
+    var(--dir-search-shadow);
+  transition: box-shadow 160ms ease;
+}
+
+.directory-toolbar-field::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background:
+    radial-gradient(
+      120px circle at var(--x) var(--y),
+      rgba(255, 255, 255, 0),
+      transparent 70%
+    ),
+    linear-gradient(
+      to bottom,
+      var(--dir-search-rim-top),
+      var(--dir-search-rim-bottom)
+    );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 160ms ease;
+}
+
+.directory-toolbar-field:has(input:focus-visible) {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
+    0 0 0 2px var(--dir-focus-ring),
+    0 0 0 6px color-mix(in srgb, var(--dir-focus-ring) 18%, transparent),
+    0 8px 32px color-mix(in srgb, var(--dir-focus-ring) 25%, transparent),
+    var(--dir-search-shadow);
+}
+
+.directory-search-icon {
+  position: absolute;
+  left: 17px;
+  top: 50%;
+  z-index: 1;
+  display: flex;
+  color: var(--dir-search-icon);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.directory-toolbar-field__input {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 0 56px 0 52px;
+  border: 0;
+  color: var(--dir-text-name);
+  background: transparent;
+  font-size: 16px;
+  outline: none;
+}
+
+.directory-toolbar-field__input::placeholder {
+  color: var(--dir-text-placeholder);
+}
+
+.directory-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--dir-text-muted);
+  background: transparent;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.directory-search-clear:focus-visible {
+  outline: 2px solid var(--dir-focus-ring);
+  outline-offset: 0;
+}
+
+.directory-keyhint {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  z-index: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-toolbar-fill), var(--dir-toolbar-fill));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    0 0 0 1px var(--dir-card-hairline);
+  color: var(--dir-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.directory-segment {
+  --x: 50%;
+  --y: 0%;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  padding: 3px;
+  border-radius: 999px;
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-toolbar-fill), var(--dir-toolbar-fill));
+  border: 1px solid transparent;
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
+    0 0 0 1px var(--dir-card-hairline),
+    var(--dir-card-shadow);
+}
+
+@media (min-width: 640px) {
+  .directory-segment {
+    display: inline-flex;
+    width: auto;
+  }
+}
+
+.directory-segment button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--dir-text-muted);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.directory-segment__count {
+  font-variant-numeric: tabular-nums;
+  color: var(--dir-text-muted);
+  opacity: 0.72;
+}
+
+.directory-segment button[aria-pressed="true"] {
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-segment-active-fill), var(--dir-segment-active-fill));
+  color: var(--dir-segment-active-text);
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
+    0 1px 2px rgba(15, 23, 42, 0.12),
+    0 4px 10px -4px rgba(15, 23, 42, 0.18);
+}
+
+.directory-segment button[aria-pressed="true"] .directory-segment__count {
+  color: var(--dir-segment-active-text);
+  opacity: 0.78;
+}
+
+.directory-segment button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.directory-card {
+  --x: 50%;
+  --y: 50%;
+  position: relative;
+  isolation: isolate;
+  height: 100%;
+  border-radius: var(--dir-radius);
+  border: 1px solid transparent;
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-card-fill), var(--dir-card-fill));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
+    0 0 0 1px var(--dir-card-hairline),
+    var(--dir-card-shadow);
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+  outline: none;
+}
+
+.directory-card::before,
+.directory-segment::before,
+.directory-glass-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background:
+    radial-gradient(
+      120px circle at var(--x) var(--y),
+      rgba(255, 255, 255, 0),
+      transparent 70%
+    ),
+    linear-gradient(
+      135deg,
+      var(--dir-card-edge-bright),
+      var(--dir-card-edge-fade)
+    );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 180ms ease;
+}
+
+.directory-card:has(:focus-visible) {
+  outline: 2px solid var(--dir-focus-ring);
+  outline-offset: 2px;
+}
+
+.directory-card__specular {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--dir-specular) 0,
+    transparent 14px
+  );
+}
+
+.directory-glass-btn::after,
+.directory-toolbar-field::after,
+.directory-segment::after,
+.directory-avatar__face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--dir-specular) 0,
+    transparent 14px
+  );
+}
+
+.directory-avatar {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.directory-avatar__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  opacity: var(--dir-avatar-glow-opacity);
+}
+
+.directory-avatar__face {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+  isolation: isolate;
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-avatar-fill), var(--dir-avatar-fill));
+  box-shadow: inset 0 0 0 1px var(--dir-avatar-ring);
+  color: var(--dir-avatar-initials);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.directory-card-name {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--dir-text-name);
+  line-height: 1.3;
+}
+
+.directory-card-role {
+  font-size: 0.875rem;
+  color: var(--dir-text-role);
+}
+
+.directory-card-exp {
+  font-size: 0.875rem;
+  color: var(--dir-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.directory-card-summary {
+  font-size: 0.875rem;
+  color: var(--dir-text-summary);
+}
+
+.directory-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--dir-text-status);
+}
+
+.directory-card-status__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.directory-card-status__dot[data-status="available"] {
+  background: var(--dir-status-available);
+}
+
+.directory-card-status__dot[data-status="building"] {
+  background: var(--dir-status-building);
+}
+
+.directory-card-status__dot[data-status="away"] {
+  background: var(--dir-status-away);
+}
+
+.directory-card-footer {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--dir-divider);
+}
+
+.directory-card-arrow {
+  margin-left: auto;
+  color: var(--dir-text-muted);
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease;
+}
+
+.directory-results-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 0 0 16px;
+}
+
+.directory-results {
+  margin: 0;
+  color: var(--dir-text-results);
+  font-size: 0.875rem;
+}
+
+.directory-results-sort {
+  color: var(--dir-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.directory-empty {
+  --x: 50%;
+  --y: 0%;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 28rem;
+  margin: 2rem auto;
+  padding: 1.5rem 1.35rem;
+  text-align: center;
+  border-radius: var(--dir-radius);
+  border: 1px solid transparent;
+  background-image: linear-gradient(
+      135deg,
+      var(--dir-overlay-strong) 0%,
+      var(--dir-overlay-weak) 20%,
+      var(--dir-overlay-weak) 100%
+    ),
+    linear-gradient(var(--dir-card-fill), var(--dir-card-fill));
+  box-shadow:
+    inset 0 1px 0 var(--dir-card-highlight),
+    inset 0 -1px 0 var(--dir-bottom-shade),
+    0 0 0 1px var(--dir-card-hairline),
+    var(--dir-card-shadow);
+  backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+  -webkit-backdrop-filter: blur(var(--dir-blur)) saturate(var(--dir-saturate))
+    brightness(var(--dir-brightness));
+}
+
+.directory-empty::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--dir-card-edge-bright),
+    var(--dir-card-edge-fade)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.directory-empty::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--dir-specular) 0,
+    transparent 14px
+  );
+}
+
+.directory-empty > * {
+  position: relative;
+  z-index: 1;
+}
+
+.directory-empty__text {
+  margin: 0;
+  color: var(--dir-text-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+@supports not (grid-template-rows: subgrid) {
+  .directory-card {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .directory-keyhint {
+    display: inline-flex;
+  }
+
+  .directory-card:hover {
+    transform: translateY(-3px);
+  }
+
+  .directory-card:hover::before,
+  .directory-segment:hover::before,
+  .directory-glass-btn:hover::before {
+    background:
+      radial-gradient(
+        120px circle at var(--x) var(--y),
+        var(--dir-card-edge-spot),
+        transparent 70%
+      ),
+      linear-gradient(
+        135deg,
+        var(--dir-card-edge-bright),
+        var(--dir-card-edge-fade)
+      );
+  }
+
+  .directory-toolbar-field:hover::before {
+    background:
+      radial-gradient(
+        120px circle at var(--x) var(--y),
+        var(--dir-card-edge-spot),
+        transparent 70%
+      ),
+      linear-gradient(
+        to bottom,
+        var(--dir-search-rim-top-hover),
+        var(--dir-search-rim-bottom)
+      );
+  }
+
+  .directory-card:hover .directory-card-arrow {
+    transform: translateX(2px);
+    color: var(--dir-segment-active-text);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .directory-card,
+  .directory-card-arrow,
+  .directory-glass-btn,
+  .directory-segment button,
+  .directory-toolbar-field {
+    transition: none;
+  }
+
+  .directory-card:hover {
+    transform: none;
+  }
+
+  .directory-card:hover .directory-card-arrow {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .directory-shell__shape {
+    opacity: 0.3;
+  }
+
+  .directory-card {
+    background: var(--dir-card-fill-opaque);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .directory-toolbar-field,
+  .directory-segment,
+  .directory-glass-btn,
+  .directory-avatar__face,
+  .directory-empty {
+    background: var(--dir-toolbar-fill-opaque);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .directory-glass-btn {
+    background: var(--dir-btn-fill-opaque);
+  }
+
+  .directory-card__specular,
+  .directory-glass-btn::after,
+  .directory-toolbar-field::after,
+  .directory-segment::after,
+  .directory-avatar__face::after {
+    display: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .directory-card,
+  .directory-toolbar-field,
+  .directory-segment,
+  .directory-glass-btn {
+    border-color: color-mix(in srgb, var(--dir-text-name) 55%, transparent);
+  }
+
+  .directory-card-name,
+  .directory-hero-title {
+    color: var(--dir-text-name);
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+  }
+
+  .directory-card-role,
+  .directory-card-summary,
+  .directory-results,
+  .directory-card-status {
+    color: var(--dir-text-name);
+  }
+}
+
+@media (forced-colors: active) {
+  .directory-shell__bg,
+  .directory-shell__shape,
+  .directory-shell__grain,
+  .directory-card__specular,
+  .directory-avatar__glow,
+  .directory-glass-btn::after,
+  .directory-toolbar-field::after,
+  .directory-segment::after,
+  .directory-avatar__face::after {
+    display: none !important;
+  }
+
+  .directory-card,
+  .directory-toolbar-field,
+  .directory-segment,
+  .directory-glass-btn {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid ButtonBorder;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .directory-card::before,
+  .directory-toolbar-field::before,
+  .directory-segment::before,
+  .directory-glass-btn::before {
+    display: none;
+  }
+
+  .directory-card:has(:focus-visible),
+  .directory-glass-btn:focus-visible,
+  .directory-segment button:focus-visible,
+  .directory-toolbar-field:has(input:focus-visible) {
+    outline: 2px solid Highlight;
+  }
+}
+
+@media (hover: none) {
+  .directory-card {
+    background-image: linear-gradient(
+        135deg,
+        var(--dir-overlay-strong) 0%,
+        var(--dir-overlay-weak) 20%,
+        var(--dir-overlay-weak) 100%
+      ),
+      linear-gradient(var(--dir-card-fill-touch), var(--dir-card-fill-touch));
+  }
+}
+}
+
+/* Unlayered so these beat the UA search chrome (keep type="search"). */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  appearance: none;
+  -webkit-appearance: none;
+  display: none;
+}

@@ -1,0 +1,9 @@
+/* Latin subset only from @fontsource-variable/playfair-display */
+@font-face {
+  font-family: "Playfair Display Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 900;
+  src: url("@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2")
+    format("woff2-variations");
+}

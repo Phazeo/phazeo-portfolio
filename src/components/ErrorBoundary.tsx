@@ -1,41 +1,58 @@
 import { Component, type ReactNode } from "react";
 
+import { ErrorFallback } from "./ErrorFallback";
+
 type ErrorBoundaryProps = {
   children: ReactNode;
-  fallback?: ReactNode;
+  /** When any value changes, a previously caught error is cleared (no reload). */
+  resetKeys?: ReadonlyArray<string | number | undefined>;
+  /** Called only from the explicit "Try again" action (typically a full reload). */
+  onReset?: () => void;
 };
 
 type ErrorBoundaryState = {
   hasError: boolean;
+  error: unknown;
 };
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false };
+function resetKeysChanged(
+  prev: ReadonlyArray<string | number | undefined> | undefined,
+  next: ReadonlyArray<string | number | undefined> | undefined
+): boolean {
+  if (prev === next) {
+    return false;
+  }
+  if (!prev || !next) {
+    return prev !== next;
+  }
+  if (prev.length !== next.length) {
+    return true;
+  }
+  return prev.some((value, index) => value !== next[index]);
+}
 
-  static getDerivedStateFromError(): ErrorBoundaryState {
-    return { hasError: true };
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  override state: ErrorBoundaryState = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+    return { hasError: true, error };
   }
 
-  render(): ReactNode {
+  override componentDidUpdate(prevProps: ErrorBoundaryProps): void {
+    if (this.state.hasError && resetKeysChanged(prevProps.resetKeys, this.props.resetKeys)) {
+      // Clear error state only - do not reload the page.
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
+  reset = (): void => {
+    this.props.onReset?.();
+    this.setState({ hasError: false, error: null });
+  };
+
+  override render(): ReactNode {
     if (this.state.hasError) {
-      return (
-        this.props.fallback ?? (
-          <div className="min-h-screen flex items-center justify-center bg-(--color-background) px-4">
-            <div className="text-center max-w-md">
-              <h1 className="text-2xl font-semibold text-gray-900 mb-2">Something went wrong</h1>
-              <p className="text-gray-600 mb-6">
-                This profile failed to load. Try refreshing the page or return home.
-              </p>
-              <a
-                href="/"
-                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
-              >
-                Back to profiles
-              </a>
-            </div>
-          </div>
-        )
-      );
+      return <ErrorFallback error={this.state.error} resetErrorBoundary={this.reset} />;
     }
     return this.props.children;
   }
