@@ -65,12 +65,13 @@ export type ExtractedScripts = {
 
 /**
  * Extract every well-formed <script>...</script> pair.
- * Start tags may carry attributes; end tags are case-insensitive and allow
- * optional whitespace before ">" (for example </script > or </SCRIPT>).
+ * Start tags may carry attributes; end tags are case-insensitive and accept
+ * any junk after the name until ">" (for example </script >, </SCRIPT>,
+ * </script foo="x">, or </script with tab/newline before ">").
  * Fail closed when start-tag count does not equal extracted pairs.
  */
 export function extractScripts(html: string): ExtractedScripts {
-  const re = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+  const re = /<script\b([^>]*)>([\s\S]*?)<\/script\b[^>]*>/gi;
   const inline: string[] = [];
   let externalWithSrc = 0;
   for (const m of html.matchAll(re)) {

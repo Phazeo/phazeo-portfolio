@@ -15,6 +15,16 @@ describe("write-headers script extraction", () => {
     assert.deepEqual(extractInlineScripts(html), ["var a=1;"]);
   });
 
+  it('extracts across </script foo="x"> junk attributes', () => {
+    const html = `<html><script>var a2=1;</script foo="x"></html>`;
+    assert.deepEqual(extractInlineScripts(html), ["var a2=1;"]);
+  });
+
+  it("extracts across </script with tab and newline before >", () => {
+    const html = "<html><script>var a3=1;</script\t\n></html>";
+    assert.deepEqual(extractInlineScripts(html), ["var a3=1;"]);
+  });
+
   it("extracts across </SCRIPT> mixed case", () => {
     const html = `<html><SCRIPT type="text/javascript">var b=2;</SCRIPT></html>`;
     assert.deepEqual(extractInlineScripts(html), ["var b=2;"]);
