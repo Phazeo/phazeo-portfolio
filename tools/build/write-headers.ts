@@ -53,19 +53,47 @@ function sha256Base64(content: string): string {
   return createHash("sha256").update(content, "utf8").digest("base64");
 }
 
+/** Case-insensitive script start tags in the document. */
+export function countScriptStartTags(html: string): number {
+  return [...html.matchAll(/<script\b/gi)].length;
+}
+
+export type ExtractedScripts = {
+  inline: string[];
+  externalWithSrc: number;
+};
+
 /**
- * Extract text content of every inline <script> (no src=).
- * Uses a simple scan so we hash exactly what the browser sees.
+ * Extract every well-formed <script>...</script> pair.
+ * Start tags may carry attributes; end tags are case-insensitive and allow
+ * optional whitespace before ">" (for example </script > or </SCRIPT>).
+ * Fail closed when start-tag count does not equal extracted pairs.
  */
-function extractInlineScripts(html: string): string[] {
-  const scripts: string[] = [];
-  const re = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+export function extractScripts(html: string): ExtractedScripts {
+  const re = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+  const inline: string[] = [];
+  let externalWithSrc = 0;
   for (const m of html.matchAll(re)) {
     const attrs = m[1] ?? "";
-    if (/\bsrc\s*=/i.test(attrs)) continue;
-    scripts.push(m[2] ?? "");
+    if (/\bsrc\s*=/i.test(attrs)) {
+      externalWithSrc++;
+      continue;
+    }
+    inline.push(m[2] ?? "");
   }
-  return scripts;
+  const starts = countScriptStartTags(html);
+  const extracted = inline.length + externalWithSrc;
+  if (extracted !== starts) {
+    throw new Error(
+      `write-headers: script tag count mismatch (starts=${starts} extracted=${extracted})`
+    );
+  }
+  return { inline, externalWithSrc };
+}
+
+/** Inline script bodies only (no src=). Used by CSP hashing. */
+export function extractInlineScripts(html: string): string[] {
+  return extractScripts(html).inline;
 }
 
 function buildCsp(html: string, indexLabel: string): string {
@@ -79,7 +107,13 @@ function buildCsp(html: string, indexLabel: string): string {
     fail(`style= attribute found in ${indexLabel} - refuse 'unsafe-inline'; STOP and report`);
   }
 
-  const inline = extractInlineScripts(html);
+  let inline: string[];
+  try {
+    inline = extractInlineScripts(html);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    fail(message.replace(/^write-headers:\s*/, ""));
+  }
   const hashes: string[] = [];
   for (const body of inline) {
     if (body.length === 0) {
@@ -176,4 +210,9 @@ function main(): void {
   console.log(`write-headers: wrote ${headersLabel}`);
 }
 
-main();
+const isDirectRun =
+  process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  main();
+}
