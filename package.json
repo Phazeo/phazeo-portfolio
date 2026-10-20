@@ -24,6 +24,7 @@
     "check:registry": "node tools/checks/check-registry.ts",
     "check:profiles": "node tools/checks/check-profiles.ts",
     "check:imports": "node tools/checks/check-import-boundaries.ts",
+    "check:policy": "node tools/checks/check-policy-files.ts",
     "check:headers": "node tools/build/write-headers.ts --check",
     "test": "node --test tests/unit/*.test.ts",
     "test:ownership": "node --test tests/unit/profile-ownership.test.ts",
@@ -36,6 +37,7 @@
     "test:email-text": "node --test tests/unit/email-text.test.ts",
     "test:profiles": "node --test tests/unit/check-profiles.test.ts",
     "test:public-boundary": "node --test tests/unit/public-boundary.test.ts tests/unit/boundary-exceptions.test.ts tests/unit/commit-emails.test.ts",
+    "test:policy": "node --test tests/unit/check-policy-files.test.ts",
     "guard:tree": "sh tools/guard/check-leaks.sh --tree",
     "guard:staged": "sh tools/guard/check-leaks.sh --staged",
     "test:e2e": "playwright test",
@@ -43,7 +45,7 @@
     "test:e2e:demo": "playwright test --project=demo",
     "test:e2e:guest": "playwright test --project=guest",
     "prove:csp": "pnpm test:e2e:site",
-    "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm check:imports && pnpm test:ownership && pnpm test:profiles && pnpm test:imports && pnpm test:scope && pnpm test:directory && pnpm test:directory-contrast && pnpm test:theme-provider && pnpm test:headers-merge && pnpm test:email-text && pnpm test:public-boundary",
+    "quality": "pnpm check && pnpm typecheck && pnpm check:registry && pnpm check:profiles && pnpm check:imports && pnpm check:policy && pnpm test:ownership && pnpm test:profiles && pnpm test:imports && pnpm test:scope && pnpm test:directory && pnpm test:directory-contrast && pnpm test:theme-provider && pnpm test:headers-merge && pnpm test:email-text && pnpm test:public-boundary && pnpm test:policy",
     "prepare": "husky"
   },
   "lint-staged": {
