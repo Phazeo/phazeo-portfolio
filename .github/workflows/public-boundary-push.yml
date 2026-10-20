@@ -1,0 +1,76 @@
+# Public/private boundary on pushes to protected branches (commit messages + emails).
+name: Public boundary push
+
+on:
+  push:
+    branches:
+      - main
+      - batch/merge-private-into-public
+
+concurrency:
+  group: public-boundary-push-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  public-boundary-push:
+    name: public-boundary-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        # actions/checkout@v7.0.1 (tag v7.0.1 → this commit; published 2026-07-20)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        # actions/setup-node@v7.0.0 (tag v7.0.0 → this commit; published 2026-07-14)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: ".nvmrc"
+          package-manager-cache: false
+
+      - name: Check new commit messages and emails
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          ZERO=0000000000000000000000000000000000000000
+          if [ -z "${BEFORE}" ] || [ "${BEFORE}" = "${ZERO}" ]; then
+            echo "public-boundary-push: before missing or all-zeros; scanning origin/main..AFTER when possible"
+            if git rev-parse --verify origin/main >/dev/null 2>&1 && [ "${GITHUB_REF_NAME}" != "main" ]; then
+              RANGE="origin/main..${AFTER}"
+            else
+              RANGE="${AFTER}"
+            fi
+          elif ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            echo "public-boundary-push: before not in clone; scanning origin/main..AFTER when possible"
+            if git rev-parse --verify origin/main >/dev/null 2>&1 && [ "${GITHUB_REF_NAME}" != "main" ]; then
+              RANGE="origin/main..${AFTER}"
+            else
+              RANGE="${AFTER}"
+            fi
+          elif ! git merge-base --is-ancestor "${BEFORE}" "${AFTER}" 2>/dev/null; then
+            echo "public-boundary-push: before not ancestor of AFTER; scanning origin/main..AFTER when possible"
+            if git rev-parse --verify origin/main >/dev/null 2>&1 && [ "${GITHUB_REF_NAME}" != "main" ]; then
+              RANGE="origin/main..${AFTER}"
+            else
+              RANGE="${AFTER}"
+            fi
+          else
+            RANGE="${BEFORE}..${AFTER}"
+          fi
+          echo "public-boundary-push: range ${RANGE}"
+          if [ -z "$(git rev-list "${RANGE}" 2>/dev/null)" ]; then
+            echo "public-boundary-push: no commits in range; OK"
+            exit 0
+          fi
+          node tools/guard/check-public-boundary.ts --commits "${RANGE}"
+          node tools/guard/check-commit-emails.ts --range "${RANGE}"
