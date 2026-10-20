@@ -5,12 +5,15 @@
 
 export type Owner = { githubId: number; githubLogin: string };
 
+/** null = profile existed on base without an owner field (legacy). */
+export type BaseOwnerEntry = Owner | null;
+
 export type DecisionInput = {
   authorId: number;
   authorLogin: string;
   changedPaths: string[];
   ownersBySlug: Record<string, Owner>;
-  baseOwnersBySlug?: Record<string, Owner> | undefined;
+  baseOwnersBySlug?: Record<string, BaseOwnerEntry> | undefined;
   approvedOwners: Map<number, string>;
   exceptionIds: Set<number>;
 };
@@ -45,7 +48,14 @@ export function decideProfileOwnership(input: DecisionInput): Decision {
         return { ok: false, reason: "shared-profile-path" };
       }
       // Prefer base-branch owner for existing slugs so stealing meta.owner fails closed.
-      const baseOwner = baseOwnersBySlug?.[slug];
+      const hasBaseEntry =
+        baseOwnersBySlug !== undefined && Object.hasOwn(baseOwnersBySlug, slug);
+      const baseOwner = hasBaseEntry ? baseOwnersBySlug[slug] : undefined;
+      // Legacy: base had the profile but no owner field. Only maintainer exceptions
+      // (already returned above) may change, rename, or delete it.
+      if (hasBaseEntry && baseOwner === null) {
+        return { ok: false, reason: "legacy-profile-maintainer-only" };
+      }
       const headOwner = ownersBySlug[slug];
       const owner = baseOwner ?? headOwner;
       if (!owner) {
