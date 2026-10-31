@@ -31,7 +31,10 @@ import {
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const EXCEPTIONS_PATH = resolve(ROOT, "config/policy/boundary-exceptions.txt");
 
+// Retired machine user: kept only so its commits already in history still pass.
 export const PHAZEO_CI_EMAIL = "334465155+phazeo-ci-bot@users.noreply.github.com";
+// The assistant GitHub App: it never authors content, only the merge commits GitHub creates for it.
+export const PHAZEO_BOT_EMAIL = "350456534+phazeo[bot]@users.noreply.github.com";
 export const OWNER_EMAIL = "56721895+dinesh-ad@users.noreply.github.com";
 export const GITHUB_MERGE_COMMITTER = "noreply@github.com";
 export const COMMIT_EMAIL_RULE = "commit-email";
@@ -56,6 +59,11 @@ export function isAllowedAuthorEmail(email: string): boolean {
  * given verification.verified from the GitHub API (required for merge committer).
  */
 export function isAllowedCommitIdentity(commit: CommitIdentity, verified: boolean): boolean {
+  if (commit.authorEmail === PHAZEO_BOT_EMAIL) {
+    return (
+      commit.committerEmail === GITHUB_MERGE_COMMITTER && commit.parents.length >= 2 && verified
+    );
+  }
   if (!isAllowedAuthorEmail(commit.authorEmail)) {
     return false;
   }

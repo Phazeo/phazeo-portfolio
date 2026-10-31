@@ -15,7 +15,7 @@ import { decideProfileOwnership, parseApprovedOwners } from "../../tools/checks/
 const approved = parseApprovedOwners(
   `56721895 dinesh-ad\n13678035 sowmipriya\n99900001 guest-user\n`
 );
-const exceptionIds = new Set([56721895, 334465155]); // dinesh-ad, phazeo-ci-bot
+const exceptionIds = new Set([56721895, 350456534, 334465155]); // dinesh-ad, phazeo[bot], phazeo-ci-bot (retired)
 const ownersBySlug: Record<string, Owner> = {
   "dinesh-allimuthu": { githubId: 56721895, githubLogin: "dinesh-ad" },
   "sowmipriya-rajendiran": { githubId: 13678035, githubLogin: "sowmipriya" },
@@ -100,7 +100,17 @@ describe("profile-ownership", () => {
     "author-not-approved"
   );
 
-  // exception bot may touch anything
+  // exception bots may touch anything
+  check(
+    "app-bot-exception",
+    {
+      authorId: 350456534,
+      authorLogin: "phazeo[bot]",
+      changedPaths: ["src/features/directory/HomePage.tsx", "profiles/sriram-sm/meta.ts"],
+    },
+    true,
+    "exception-author"
+  );
   check(
     "bot-exception",
     {

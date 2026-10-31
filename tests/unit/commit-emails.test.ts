@@ -12,6 +12,7 @@ import {
   COMMIT_EMAIL_RULE,
   GITHUB_MERGE_COMMITTER,
   OWNER_EMAIL,
+  PHAZEO_BOT_EMAIL,
   PHAZEO_CI_EMAIL,
   checkCommitEmails,
   hasCommitEmailException,
@@ -112,6 +113,36 @@ describe("commit-emails identity", () => {
         false
       ),
       true
+    );
+  });
+});
+
+describe("phazeo[bot] identity", () => {
+  it("allows its verified merge commit made by GitHub", () => {
+    assert.equal(isAllowedCommitIdentity(base({ authorEmail: PHAZEO_BOT_EMAIL }), true), true);
+  });
+
+  it("refuses an unverified merge commit", () => {
+    assert.equal(isAllowedCommitIdentity(base({ authorEmail: PHAZEO_BOT_EMAIL }), false), false);
+  });
+
+  it("refuses it as the author of a content commit", () => {
+    assert.equal(
+      isAllowedCommitIdentity(
+        base({ authorEmail: PHAZEO_BOT_EMAIL, parents: ["bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"] }),
+        true
+      ),
+      false
+    );
+  });
+
+  it("refuses it as the committer of its own commit", () => {
+    assert.equal(
+      isAllowedCommitIdentity(
+        base({ authorEmail: PHAZEO_BOT_EMAIL, committerEmail: PHAZEO_BOT_EMAIL }),
+        true
+      ),
+      false
     );
   });
 });
