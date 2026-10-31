@@ -154,8 +154,8 @@ export function runOwnershipCheck(input: OwnershipCheckInput): Decision {
   const approved = parseApprovedOwners(
     readFileSync(join(ROOT, "config", "owners.txt"), "utf8")
   );
-  // dinesh-ad + phazeo-ci-bot (verified via API when this file was authored)
-  const exceptionIds = new Set([56721895, 334465155]);
+  // dinesh-ad, phazeo[bot] and the retired phazeo-ci-bot (ids as GitHub shows them)
+  const exceptionIds = new Set([56721895, 350456534, 334465155]);
 
   const ownersBySlug =
     input.ownersBySlug ?? loadOwnersFromDir(join(ROOT, "profiles"));
